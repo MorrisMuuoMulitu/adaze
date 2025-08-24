@@ -181,7 +181,7 @@ export function FeaturedProducts({ products, loading, error }: FeaturedProductsP
                         </span>
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        by {product.trader}
+                        by {product.trader.name}
                       </div>
                     </div>
 
