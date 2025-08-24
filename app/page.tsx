@@ -73,6 +73,12 @@ export default function Home() {
     }
   };
 
+  const handleLogout = () => {
+    setUser(null);
+    // In a real app, you would also clear any tokens from localStorage/cookies
+    // and potentially make an API call to invalidate the session on the server.
+  };
+
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
     if (user) {
@@ -112,7 +118,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar onAuthClick={setAuthModal} user={user} />
+      <Navbar onAuthClick={setAuthModal} user={user} onLogout={handleLogout} />
       
       <motion.main
         initial={{ opacity: 0 }}

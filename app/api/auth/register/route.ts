@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { User } from '@/types';
 
 // Mock in-memory user store for demo purposes
-const users: User[] = [];
+export const users: User[] = [];
 
 export async function POST(request: Request) {
   const { email, password, firstName, lastName, phone, location, userType } = await request.json();

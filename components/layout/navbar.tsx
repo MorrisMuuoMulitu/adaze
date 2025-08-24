@@ -53,6 +53,7 @@ interface User {
 interface NavbarProps {
   onAuthClick: (type: 'login' | 'register') => void;
   user?: User | null;
+  onLogout: () => void;
 }
 
 export function Navbar({ onAuthClick, user }: NavbarProps) {
@@ -228,7 +229,7 @@ export function Navbar({ onAuthClick, user }: NavbarProps) {
                       <span>Wallet</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600">
+                    <DropdownMenuItem className="text-red-600" onClick={onLogout}>
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Log out</span>
                     </DropdownMenuItem>
