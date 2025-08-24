@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,19 +15,31 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
+import { Separator } from '@/components/ui/separator';
+import { clearCart } from '@/lib/cart';
 
-const paymentSchema = z.object({
-  paymentMethod: z.enum(['card', 'mpesa', 'paypal']),
-  nameOnCard: z.string().optional(),
-  cardNumber: z.string().optional(),
-  expiryDate: z.string().optional(),
-  cvc: z.string().optional(),
-  mpesaNumber: z.string().optional(),
-  paypalEmail: z.string().email().optional(),
-});
+interface CheckoutData {
+  cartItems: any[]; // Define a more specific type if needed
+  subtotal: number;
+  shippingCost: number;
+  total: number;
+}
 
 export default function PaymentsPage() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null);
+
+  useEffect(() => {
+    const storedData = localStorage.getItem('checkoutData');
+    if (storedData) {
+      setCheckoutData(JSON.parse(storedData));
+    } else {
+      toast.error('No checkout data found. Please go back to your cart.');
+      router.push('/cart');
+    }
+  }, [router]);
+
   const { register, handleSubmit, watch, formState: { errors } } = useForm({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
@@ -46,13 +59,16 @@ export default function PaymentsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, ...checkoutData }), // Send checkout data with payment details
       });
 
       const result = await response.json();
 
       if (response.ok) {
         toast.success('Payment successful!', { description: result.message });
+        clearCart(); // Clear cart after successful payment
+        localStorage.removeItem('checkoutData'); // Clear checkout data
+        router.push('/order-confirmation'); // Redirect to a confirmation page
       } else {
         toast.error('Payment failed', { description: result.error });
       }
@@ -63,6 +79,14 @@ export default function PaymentsPage() {
     }
   };
 
+  if (!checkoutData) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading checkout data...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background py-12">
       <motion.div
@@ -70,6 +94,35 @@ export default function PaymentsPage() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-2xl mx-auto px-4"
       >
+        <h1 className="text-3xl font-bold mb-8 text-center">Complete Your Purchase</h1>
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Order Summary</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {checkoutData.cartItems.map((item: any) => (
+              <div key={item.id} className="flex justify-between items-center">
+                <span className="text-muted-foreground">{item.name} (x{item.quantity})</span>
+                <span>KSh {(item.price * item.quantity).toLocaleString()}</span>
+              </div>
+            ))}
+            <Separator />
+            <div className="flex justify-between">
+              <span>Subtotal</span>
+              <span>KSh {checkoutData.subtotal.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Shipping</span>
+              <span>KSh {checkoutData.shippingCost.toLocaleString()}</span>
+            </div>
+            <Separator />
+            <div className="flex justify-between font-bold text-lg">
+              <span>Total</span>
+              <span>KSh {checkoutData.total.toLocaleString()}</span>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl">Secure Checkout</CardTitle>

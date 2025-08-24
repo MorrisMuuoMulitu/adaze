@@ -96,35 +96,32 @@ export function AuthModal({ type, isOpen, onClose, onSuccess }: AuthModalProps) 
     e.preventDefault();
     setLoading(true);
 
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const userData = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: type === 'register' ? `${formData.firstName} ${formData.lastName}` : 'John Doe',
-        email: formData.email,
-        role: formData.userType,
-        avatar: null,
-        location: formData.location || 'Nairobi, Kenya',
-        isVerified: true,
-        wallet: {
-          balance: 0,
-          currency: 'KSh'
-        },
-        preferences: {
-          notifications: true,
-          language: 'en',
-          theme: 'system'
-        }
-      };
+    const url = type === 'register' ? '/api/auth/register' : '/api/auth/login';
+    const payload = type === 'register' ? formData : { email: formData.email, password: formData.password };
 
-      onSuccess(userData);
-      toast.success(`${type === 'login' ? 'Karibu tena!' : 'Account created successfully!'}`, {
-        description: type === 'register' ? 'Your ADAZE journey in Kenya begins now.' : 'Great to see you again.'
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        onSuccess(result.user);
+        toast.success(`${type === 'login' ? 'Karibu tena!' : 'Account created successfully!'}`, {
+          description: type === 'register' ? 'Your ADAZE journey in Kenya begins now.' : 'Great to see you again.'
+        });
+      } else {
+        toast.error('Authentication failed', {
+          description: result.message || 'Please check your credentials and try again.'
+        });
+      }
     } catch (error) {
-      toast.error('Something went wrong', {
+      toast.error('An error occurred', {
         description: 'Please try again later.'
       });
     } finally {

@@ -7,97 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Star, Heart, ShoppingCart, Eye, MapPin } from 'lucide-react';
 
-const products = [
-  {
-    id: 1,
-    name: 'Vintage Denim Jacket',
-    price: 2500,
-    originalPrice: 4000,
-    rating: 4.8,
-    reviews: 124,
-    image: 'https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg',
-    category: 'Jackets',
-    condition: 'Excellent',
-    size: 'M',
-    gender: 'unisex',
-    trader: 'Fashion Hub Nairobi',
-    location: 'Nairobi CBD'
-  },
-  {
-    id: 2,
-    name: 'Designer Handbag Collection',
-    price: 3200,
-    originalPrice: 5500,
-    rating: 4.9,
-    reviews: 89,
-    image: 'https://images.pexels.com/photos/904350/pexels-photo-904350.jpeg',
-    category: 'Bags',
-    condition: 'Like New',
-    gender: 'female',
-    trader: 'Premium Preloved',
-    location: 'Westlands, Nairobi'
-  },
-  {
-    id: 3,
-    name: 'Casual Summer Dress',
-    price: 1800,
-    originalPrice: 3000,
-    rating: 4.7,
-    reviews: 156,
-    image: 'https://images.pexels.com/photos/7679720/pexels-photo-7679720.jpeg',
-    category: 'Dresses',
-    condition: 'Good',
-    size: 'S-L',
-    gender: 'female',
-    trader: 'Mama Jane\'s Fashion',
-    location: 'Kisumu'
-  },
-  {
-    id: 4,
-    name: 'Business Formal Suits',
-    price: 4500,
-    originalPrice: 8000,
-    rating: 4.6,
-    reviews: 67,
-    image: 'https://images.pexels.com/photos/1043474/pexels-photo-1043474.jpeg',
-    category: 'Suits',
-    condition: 'Excellent',
-    size: 'Various',
-    gender: 'male',
-    trader: 'Executive Wear Ltd',
-    location: 'Mombasa'
-  },
-  {
-    id: 5,
-    name: 'Sneaker Collection',
-    price: 2800,
-    originalPrice: 4500,
-    rating: 4.8,
-    reviews: 203,
-    image: 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg',
-    category: 'Shoes',
-    condition: 'Very Good',
-    size: '38-44',
-    gender: 'unisex',
-    trader: 'Kicks & More',
-    location: 'Eldoret'
-  },
-  {
-    id: 6,
-    name: 'Traditional Print Tops',
-    price: 1500,
-    originalPrice: 2800,
-    rating: 4.9,
-    reviews: 91,
-    image: 'https://images.pexels.com/photos/9558599/pexels-photo-9558599.jpeg',
-    category: 'Tops',
-    condition: 'Excellent',
-    size: 'XS-XL',
-    gender: 'female',
-    trader: 'African Elegance',
-    location: 'Nakuru'
-  }
-];
+import { Product } from '@/types';
+
+interface FeaturedProductsProps {
+  products: Product[];
+  loading: boolean;
+  error: string | null;
+}
 
 const getGenderBadgeStyle = (gender: string) => {
   switch (gender) {
@@ -125,7 +41,7 @@ const getGenderLabel = (gender: string) => {
   }
 };
 
-export function FeaturedProducts() {
+export function FeaturedProducts({ products, loading, error }: FeaturedProductsProps) {
   return (
     <section className="py-12 sm:py-16 lg:py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -160,7 +76,10 @@ export function FeaturedProducts() {
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-          {products.map((product, index) => (
+          {loading && <p>Loading products...</p>}
+          {error && <p className="text-red-500">Error: {error}</p>}
+          {!loading && !error && products.length === 0 && <p>No products found.</p>}
+          {!loading && !error && products.map((product, index) => (
             <motion.div
               key={product.id}
               initial={{ opacity: 0, y: 30 }}

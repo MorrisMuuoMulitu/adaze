@@ -16,13 +16,16 @@ import { OnboardingTour } from '@/components/onboarding/onboarding-tour';
 import { PWAPrompt } from '@/components/pwa/pwa-prompt';
 import { LiveChat } from '@/components/chat/live-chat';
 import { NotificationCenter } from '@/components/notifications/notification-center';
-import { User } from '@/types';
+import { User, Product } from '@/types';
 
 export default function Home() {
   const [authModal, setAuthModal] = useState<'login' | 'register' | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsError, setProductsError] = useState<string | null>(null);
 
   useEffect(() => {
     // Simulate loading and check for existing user session
@@ -39,6 +42,26 @@ export default function Home() {
 
     return () => clearTimeout(timer);
   }, [user]);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch('/api/products');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data: Product[] = await response.json();
+        setProducts(data);
+      } catch (error) {
+        setProductsError('Failed to fetch products.');
+        console.error('Failed to fetch products:', error);
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const handleAuthSuccess = (userData: User) => {
     setUser(userData);
@@ -98,7 +121,7 @@ export default function Home() {
       >
         <Hero onGetStarted={() => setAuthModal('register')} />
         <Stats />
-        <FeaturedProducts />
+        <FeaturedProducts products={products} loading={productsLoading} error={productsError} />
         <WhyChooseUs />
         <HowItWorks />
         <Testimonials />

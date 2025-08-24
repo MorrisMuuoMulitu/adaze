@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Product } from '@/types';
+import { addToCart } from '@/lib/cart';
 
 export default function ProductDetails({ product, getGenderBadgeStyle, getGenderLabel, getGenderIcon }: { product: Product, getGenderBadgeStyle: (gender: string) => string, getGenderLabel: (gender: string) => string, getGenderIcon: (gender: string) => string }) {
   const router = useRouter();
@@ -39,6 +40,7 @@ export default function ProductDetails({ product, getGenderBadgeStyle, getGender
   const [isFavorite, setIsFavorite] = useState(false);
 
   const handleAddToCart = () => {
+    addToCart(product, quantity);
     toast.success('Added to cart!', {
       description: `${product.name} has been added to your cart.`
     });

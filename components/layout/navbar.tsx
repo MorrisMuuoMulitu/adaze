@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -33,6 +33,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { getCartItems } from '@/lib/cart';
+import Link from 'next/link'; // Import Link
 
 interface User {
   id: string;
@@ -56,7 +58,12 @@ interface NavbarProps {
 export function Navbar({ onAuthClick, user }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [cartItemCount, setCartItemCount] = useState(0);
   const { t } = useLanguage();
+
+  useEffect(() => {
+    setCartItemCount(getCartItems().length);
+  }, []);
 
   const navItems = [
     { name: t('nav.marketplace'), href: '/marketplace', icon: ShoppingBag },
@@ -144,9 +151,11 @@ export function Navbar({ onAuthClick, user }: NavbarProps) {
                   <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">3</Badge>
                 </Button>
                 
-                <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button">
-                  <ShoppingCart className="h-4 w-4" />
-                  <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">2</Badge>
+                <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button" asChild>
+                  <Link href="/cart">
+                    <ShoppingCart className="h-4 w-4" />
+                    <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">{cartItemCount}</Badge>
+                  </Link>
                 </Button>
                 
                 <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button">
@@ -254,9 +263,11 @@ export function Navbar({ onAuthClick, user }: NavbarProps) {
                   <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-red-500">5</Badge>
                 </Button>
                 
-                <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button">
-                  <ShoppingCart className="h-4 w-4" />
-                  <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">2</Badge>
+                <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button" asChild>
+                  <Link href="/cart">
+                    <ShoppingCart className="h-4 w-4" />
+                    <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">{cartItemCount}</Badge>
+                  </Link>
                 </Button>
               </>
             )}
