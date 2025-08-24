@@ -1,9 +1,8 @@
 
 import { NextResponse } from 'next/server';
+import { hashPassword } from '@/lib/auth';
+import { createUser, findUserByEmail } from '@/lib/user-storage';
 import { User } from '@/types';
-
-// Mock in-memory user store for demo purposes
-export const users: User[] = [];
 
 export async function POST(request: Request) {
   const { email, password, firstName, lastName, phone, location, userType } = await request.json();
@@ -14,7 +13,8 @@ export async function POST(request: Request) {
   }
 
   // Check if user already exists
-  if (users.some(user => user.email === email)) {
+  const existingUser = findUserByEmail(email);
+  if (existingUser) {
     return new NextResponse('User with this email already exists', { status: 409 });
   }
 
@@ -33,8 +33,8 @@ export async function POST(request: Request) {
     preferences: { notifications: true, language: 'en', theme: 'system' },
   };
 
-  users.push(newUser);
-
-  // In a real app, you'd return a token here
-  return NextResponse.json({ message: 'User registered successfully', user: newUser });
+  const hashedPassword = await hashPassword(password);
+  const userToStore = { ...newUser, password: hashedPassword };
+  createUser(userToStore);
+  return NextResponse.json({ message: 'User registered successfully', user: userToStore });
 }

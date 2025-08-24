@@ -92,7 +92,7 @@ export function FeaturedProducts({ products, loading, error }: FeaturedProductsP
                   <div className="relative overflow-hidden cursor-pointer">
                     <div 
                       className="aspect-square bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                      style={{ backgroundImage: `url(${product.image})` }}
+                      style={{ backgroundImage: `url(${product.images[0]})` }}
                     />
                     
                     {/* Overlay */}

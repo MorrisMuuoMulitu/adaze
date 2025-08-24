@@ -1,0 +1,44 @@
+[
+  {
+    "id": "v1dcqtow6",
+    "email": "testuser7@example.com",
+    "password": "$2b$12$9pUwWBMM9J1ccizyxeSMuOiM4tQZEXuc5d08/pNGRraFvh68vOmOG",
+    "name": "Test User",
+    "firstName": "Test",
+    "lastName": "User",
+    "phone": "1234567890",
+    "location": "Nairobi",
+    "role": "buyer",
+    "isVerified": true,
+    "wallet": {
+      "balance": 0,
+      "currency": "KSh"
+    },
+    "preferences": {
+      "notifications": true,
+      "language": "en",
+      "theme": "system"
+    }
+  },
+  {
+    "id": "9suo455vz",
+    "email": "morrismulitu@gmail.com",
+    "password": "$2b$12$QVHAPo7zeP5/e9t4KY4DLu1F1YWoNR84orx4E5X02ByPJurbkLrfu",
+    "name": "Morris Mulitu",
+    "firstName": "Morris",
+    "lastName": "Mulitu",
+    "phone": "0705329860",
+    "location": "Nairobi",
+    "role": "buyer",
+    "isVerified": true,
+    "wallet": {
+      "balance": 0,
+      "currency": "KSh"
+    },
+    "preferences": {
+      "notifications": true,
+      "language": "en",
+      "theme": "system"
+    }
+  }
+]

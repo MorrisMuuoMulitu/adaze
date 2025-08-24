@@ -3,6 +3,10 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  password?: string; // Added password field for authentication
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
   role: 'buyer' | 'trader' | 'transporter';
   avatar?: string;
   location: string;

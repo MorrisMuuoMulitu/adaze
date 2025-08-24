@@ -25,6 +25,13 @@ interface CheckoutData {
   total: number;
 }
 
+const paymentSchema = z.object({
+  paymentMethod: z.enum(['card', 'mpesa', 'paypal']),
+  nameOnCard: z.string().optional(),
+  mpesaNumber: z.string().optional(),
+  paypalEmail: z.string().email().optional(),
+});
+
 export default function PaymentsPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +47,7 @@ export default function PaymentsPage() {
     }
   }, [router]);
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<z.infer<typeof paymentSchema>>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
       paymentMethod: 'card',

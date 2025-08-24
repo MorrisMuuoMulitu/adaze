@@ -1,6 +1,7 @@
 
 import { NextResponse } from 'next/server';
-import { users } from '../register/route'; // Import the mock user store
+import { comparePassword } from '@/lib/auth';
+import { findUserByEmail } from '@/lib/user-storage';
 
 export async function POST(request: Request) {
   const { email, password } = await request.json();
@@ -10,15 +11,18 @@ export async function POST(request: Request) {
     return new NextResponse('Missing email or password', { status: 400 });
   }
 
-  // Find user by email
-  const user = users.find(u => u.email === email);
-
+  const user = findUserByEmail(email);
   if (!user) {
     return new NextResponse('User not found', { status: 404 });
   }
 
-  // In a real app, you'd compare hashed passwords
-  if (user.password !== password) {
+  // Compare hashed passwords
+  if (user.password) {
+    const isPasswordValid = await comparePassword(password, user.password);
+    if (!isPasswordValid) {
+      return new NextResponse('Invalid credentials', { status: 401 });
+    }
+  } else {
     return new NextResponse('Invalid credentials', { status: 401 });
   }
 
