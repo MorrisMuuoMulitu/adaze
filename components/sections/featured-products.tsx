@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Star, Heart, ShoppingCart, Eye, MapPin } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Product } from '@/types';
+import { addToCart } from '@/lib/cart';
 
 interface FeaturedProductsProps {
   products: Product[];
@@ -190,6 +192,10 @@ export function FeaturedProducts({ products, loading, error }: FeaturedProductsP
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        addToCart(product, 1); // Add 1 quantity by default
+                        toast.success('Added to cart!', {
+                          description: `${product.name} has been added to your cart.`
+                        });
                       }}
                     >
                       <ShoppingCart className="h-4 w-4 mr-2" />
