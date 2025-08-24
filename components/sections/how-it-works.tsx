@@ -56,7 +56,7 @@ export function HowItWorks() {
             How ADAZE Works
           </h2>
           <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
-            From discovery to delivery, we've made buying and selling second-hand fashion simple and secure
+            From discovery to delivery, we&apos;ve made buying and selling second-hand fashion simple and secure
           </p>
         </motion.div>
 

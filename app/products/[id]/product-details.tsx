@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from 'react';
@@ -8,15 +9,15 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import {
-  ArrowLeft,
-  Star,
-  Heart,
-  Share2,
-  ShoppingCart,
-  MapPin,
-  Truck,
-  Shield,
+import { 
+  ArrowLeft, 
+  Star, 
+  Heart, 
+  Share2, 
+  ShoppingCart, 
+  MapPin, 
+  Truck, 
+  Shield, 
   Clock,
   MessageCircle,
   Phone,
@@ -29,182 +30,13 @@ import {
   Tag
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Product } from '@/types';
 
-// Mock product data - in a real app, this would come from an API
-const products = [
-  {
-    id: 1,
-    name: 'Vintage Denim Jacket',
-    price: 2500,
-    originalPrice: 4000,
-    rating: 4.8,
-    reviews: 124,
-    images: [
-      'https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg',
-      'https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg',
-      'https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg'
-    ],
-    category: 'Jackets',
-    condition: 'Excellent',
-    size: 'M',
-    brand: 'Levi\'s',
-    color: 'Blue',
-    material: 'Denim',
-    gender: 'unisex',
-    description: 'Authentic vintage Levi\'s denim jacket in excellent condition. This classic piece features the iconic trucker style with button closure, chest pockets, and adjustable side tabs. Perfect for layering and adding a vintage touch to any outfit. Sourced from premium collections and thoroughly inspected for quality.',
-    trader: {
-      id: 'trader-1',
-      name: 'Fashion Hub Nairobi',
-      avatar: 'https://images.pexels.com/photos/3763188/pexels-photo-3763188.jpeg',
-      rating: 4.9,
-      totalSales: 1250,
-      responseTime: '< 1 hour',
-      location: 'Nairobi CBD',
-      verified: true,
-      joinedDate: '2023-01-15'
-    },
-    location: 'Nairobi CBD',
-    availability: 'In Stock',
-    quantity: 1,
-    shipping: {
-      sameDay: true,
-      nextDay: true,
-      standard: true,
-      cost: 200
-    },
-    features: [
-      'Quality verified by ADAZE',
-      'Authentic vintage piece',
-      'Professional cleaning included',
-      'Return guarantee'
-    ],
-    specifications: {
-      'Size': 'Medium (M)',
-      'Chest': '42 inches',
-      'Length': '24 inches',
-      'Sleeve': '25 inches',
-      'Condition': 'Excellent (9/10)',
-      'Age': '1990s vintage',
-      'Care': 'Machine wash cold'
-    }
-  },
-  {
-    id: 2,
-    name: 'Designer Handbag Collection',
-    price: 3200,
-    originalPrice: 5500,
-    rating: 4.9,
-    reviews: 89,
-    images: [
-      'https://images.pexels.com/photos/904350/pexels-photo-904350.jpeg',
-      'https://images.pexels.com/photos/904350/pexels-photo-904350.jpeg'
-    ],
-    category: 'Bags',
-    condition: 'Like New',
-    size: 'Medium',
-    brand: 'Michael Kors',
-    color: 'Brown',
-    material: 'Leather',
-    gender: 'female',
-    description: 'Stunning Michael Kors handbag in like-new condition. Features genuine leather construction, multiple compartments, and gold-tone hardware. Perfect for both casual and formal occasions.',
-    trader: {
-      id: 'trader-2',
-      name: 'Premium Preloved',
-      avatar: 'https://images.pexels.com/photos/3763200/pexels-photo-3763200.jpeg',
-      rating: 4.8,
-      totalSales: 890,
-      responseTime: '< 2 hours',
-      location: 'Westlands, Nairobi',
-      verified: true,
-      joinedDate: '2023-03-20'
-    },
-    location: 'Westlands, Nairobi',
-    availability: 'In Stock',
-    quantity: 1,
-    shipping: {
-      sameDay: true,
-      nextDay: true,
-      standard: true,
-      cost: 250
-    },
-    features: [
-      'Authentic designer piece',
-      'Like-new condition',
-      'Dust bag included',
-      'Certificate of authenticity'
-    ],
-    specifications: {
-      'Dimensions': '30cm x 25cm x 15cm',
-      'Material': 'Genuine Leather',
-      'Hardware': 'Gold-tone',
-      'Closure': 'Zip top',
-      'Compartments': '3 main + 2 side pockets',
-      'Strap': 'Adjustable shoulder strap',
-      'Condition': 'Like New (9.5/10)'
-    }
-  }
-];
-
-
-
-const getGenderBadgeStyle = (gender: string) => {
-  switch (gender) {
-    case 'male':
-      return 'boys-enhanced gender-badge-enhanced gender-text-enhanced';
-    case 'female':
-      return 'girls-enhanced gender-badge-enhanced gender-text-enhanced';
-    case 'unisex':
-      return 'unisex-enhanced gender-badge-enhanced gender-text-enhanced';
-    default:
-      return 'bg-gray-500 text-white hover:bg-gray-600 gender-text-enhanced';
-  }
-};
-
-const getGenderLabel = (gender: string) => {
-  switch (gender) {
-    case 'male':
-      return 'Boys';
-    case 'female':
-      return 'Girls';
-    case 'unisex':
-      return 'Unisex';
-    default:
-      return 'All';
-  }
-};
-
-const getGenderIcon = (gender: string) => {
-  switch (gender) {
-    case 'male':
-      return '👦';
-    case 'female':
-      return '👧';
-    case 'unisex':
-      return '👫';
-    default:
-      return '👤';
-  }
-};
-
-export default function ProductDetailPage() {
-  const params = useParams();
+export default function ProductDetails({ product, getGenderBadgeStyle, getGenderLabel, getGenderIcon }: { product: Product, getGenderBadgeStyle: (gender: string) => string, getGenderLabel: (gender: string) => string, getGenderIcon: (gender: string) => string }) {
   const router = useRouter();
-  const [product, setProduct] = useState<any>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
-
-  useEffect(() => {
-    // Simulate API call to fetch product
-    const productId = parseInt(params.id as string);
-    const foundProduct = products.find(p => p.id === productId);
-    
-    setTimeout(() => {
-      setProduct(foundProduct);
-      setIsLoading(false);
-    }, 500);
-  }, [params.id]);
 
   const handleAddToCart = () => {
     toast.success('Added to cart!', {
@@ -236,21 +68,6 @@ export default function ProductDetailPage() {
       toast.success('Link copied to clipboard!');
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center space-y-4"
-        >
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-muted-foreground">Loading product details...</p>
-        </motion.div>
-      </div>
-    );
-  }
 
   if (!product) {
     return (
@@ -327,7 +144,9 @@ export default function ProductDetailPage() {
                     <button
                       key={index}
                       onClick={() => setSelectedImage(index)}
-                      className={`w-2 h-2 rounded-full transition-colors ${ index === selectedImage ? 'bg-white' : 'bg-white/50'}`}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        index === selectedImage ? 'bg-white' : 'bg-white/50'
+                      }`}
                     />
                   ))}
                 </div>
@@ -359,7 +178,9 @@ export default function ProductDetailPage() {
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
-                    className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${ index === selectedImage ? 'border-primary' : 'border-transparent'}`}
+                    className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
+                      index === selectedImage ? 'border-primary' : 'border-transparent'
+                    }`}
                   >
                     <div 
                       className="w-full h-full bg-cover bg-center"

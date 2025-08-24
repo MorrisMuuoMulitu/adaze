@@ -8,31 +8,15 @@ import { FeaturedProducts } from '@/components/sections/featured-products';
 import { HowItWorks } from '@/components/sections/how-it-works';
 import { Stats } from '@/components/sections/stats';
 import { Testimonials } from '@/components/sections/testimonials';
+import { WhyChooseUs } from '@/components/sections/why-choose-us';
+import { CTA } from '@/components/sections/cta';
 import { Footer } from '@/components/layout/footer';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { OnboardingTour } from '@/components/onboarding/onboarding-tour';
 import { PWAPrompt } from '@/components/pwa/pwa-prompt';
 import { LiveChat } from '@/components/chat/live-chat';
 import { NotificationCenter } from '@/components/notifications/notification-center';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'buyer' | 'trader' | 'transporter';
-  avatar?: string;
-  location: string;
-  isVerified: boolean;
-  wallet: {
-    balance: number;
-    currency: string;
-  };
-  preferences: {
-    notifications: boolean;
-    language: 'en' | 'sw';
-    theme: 'light' | 'dark' | 'system';
-  };
-}
+import { User } from '@/types';
 
 export default function Home() {
   const [authModal, setAuthModal] = useState<'login' | 'register' | null>(null);
@@ -115,8 +99,10 @@ export default function Home() {
         <Hero onGetStarted={() => setAuthModal('register')} />
         <Stats />
         <FeaturedProducts />
+        <WhyChooseUs />
         <HowItWorks />
         <Testimonials />
+        <CTA />
       </motion.main>
 
       <Footer />

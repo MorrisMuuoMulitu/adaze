@@ -102,7 +102,7 @@ export function PWAPrompt() {
                       <span>
                         Add ADAZE to your home screen for the best experience. 
                         <br className="hidden sm:block" />
-                        Tap <Share className="inline h-3 w-3 mx-1" /> and select 'Add to Home Screen'.
+                        Tap <Share className="inline h-3 w-3 mx-1" /> and select &apos;Add to Home Screen&apos;.
                       </span>
                     )
                     : "Install ADAZE for faster access, offline browsing, and push notifications."

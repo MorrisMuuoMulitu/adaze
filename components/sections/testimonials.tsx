@@ -95,7 +95,7 @@ export function Testimonials() {
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-          {testimonials.map((testimonial, index) => (
+          {testimonials.slice(0, 3).map((testimonial, index) => (
             <motion.div
               key={testimonial.id}
               initial={{ opacity: 0, y: 30 }}
@@ -103,37 +103,37 @@ export function Testimonials() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
-              <Card className="h-full group hover:shadow-xl transition-all duration-300 border-0 bg-card/50 backdrop-blur-sm card-shadow hover:card-shadow-lg">
-                <CardContent className="p-4 sm:p-6">
-                  <div className="space-y-4">
+              <Card className="h-full group hover:shadow-xl transition-all duration-300 border bg-card/50 backdrop-blur-sm card-shadow hover:card-shadow-lg">
+                <CardContent className="p-6 sm:p-8">
+                  <div className="space-y-5">
                     {/* Rating */}
                     <div className="flex items-center space-x-1">
                       {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="h-3 w-3 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
+                        <Star key={i} className="h-4 w-4 sm:h-5 sm:w-5 fill-yellow-400 text-yellow-400" />
                       ))}
                     </div>
 
                     {/* Content */}
-                    <blockquote className="text-muted-foreground leading-relaxed italic text-sm sm:text-base">
-                      "{testimonial.content}"
+                    <blockquote className="text-muted-foreground leading-relaxed italic text-base sm:text-lg">
+                      {testimonial.content}
                     </blockquote>
 
                     {/* User info */}
-                    <div className="flex items-center space-x-3 pt-4 border-t">
-                      <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0">
+                    <div className="flex items-center space-x-4 pt-5 border-t border-border/50">
+                      <Avatar className="h-14 w-14 sm:h-16 sm:w-16 flex-shrink-0">
                         <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
                         <AvatarFallback>{testimonial.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                       </Avatar>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2 mb-1">
-                          <p className="font-semibold text-sm truncate">{testimonial.name}</p>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium w-fit ${getUserTypeColor(testimonial.userType)}`}>
+                        <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-3 mb-1">
+                          <p className="font-semibold text-lg truncate">{testimonial.name}</p>
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium w-fit ${getUserTypeColor(testimonial.userType)}`}>
                             {testimonial.userType}
                           </span>
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">{testimonial.role}</p>
-                        <p className="text-xs text-muted-foreground truncate">{testimonial.location}</p>
+                        <p className="text-sm text-muted-foreground truncate">{testimonial.role}</p>
+                        <p className="text-sm text-muted-foreground truncate">{testimonial.location}</p>
                       </div>
                     </div>
                   </div>

@@ -45,7 +45,7 @@ export function Hero({ onGetStarted }: HeroProps) {
               >
                 <Badge className="african-gradient text-white border-0 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium w-fit">
                   <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                  🇰🇪 Kenya's Premier Mitumba Marketplace
+                  🇰🇪 Kenya&apos;s Premier Mitumba Marketplace
                 </Badge>
                 <div className="flex items-center space-x-1">
                   <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 text-primary animate-pulse" />

@@ -246,7 +246,7 @@ export function AuthModal({ type, isOpen, onClose, onSuccess }: AuthModalProps) 
               <Separator className="my-6" />
 
               <p className="text-center text-sm text-muted-foreground">
-                Don't have an account?{' '}
+                Don&apos;t have an account?{' '}
                 <Button 
                   variant="link" 
                   size="sm" 
@@ -269,7 +269,7 @@ export function AuthModal({ type, isOpen, onClose, onSuccess }: AuthModalProps) 
                   <div className="text-center">
                     <h3 className="text-lg sm:text-xl font-semibold mb-2">Choose Your Role in Kenya</h3>
                     <p className="text-sm text-muted-foreground">
-                      Select how you'd like to use ADAZE across Kenya
+                      Select how you&apos;d like to use ADAZE across Kenya
                     </p>
                   </div>
 

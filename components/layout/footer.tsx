@@ -86,7 +86,7 @@ export function Footer() {
                 </div>
 
                 <p className="text-muted-foreground leading-relaxed text-sm sm:text-base">
-                  Kenya's premier marketplace for quality second-hand fashion. 
+                  Kenya&apos;s premier marketplace for quality second-hand fashion. 
                   Connecting traders, buyers, and transporters across all 47 counties 
                   for sustainable and affordable shopping.
                 </p>
