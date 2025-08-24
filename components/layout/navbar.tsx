@@ -56,7 +56,7 @@ interface NavbarProps {
   onLogout: () => void;
 }
 
-export function Navbar({ onAuthClick, user }: NavbarProps) {
+export function Navbar({ onAuthClick, user, onLogout }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [cartItemCount, setCartItemCount] = useState(0);
