@@ -2,6 +2,7 @@
 "use client"
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -77,7 +78,7 @@ export default function CartPage() {
               {cartItems.map((item) => (
                 <Card key={item.id}>
                   <CardContent className="p-4 flex items-center space-x-4">
-                    <img src={item.images[0]} alt={item.name} className="w-24 h-24 object-cover rounded-md flex-shrink-0" />
+                    <Image src={item.images[0]} alt={item.name} width={96} height={96} className="w-24 h-24 object-cover rounded-md flex-shrink-0" />
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg">{item.name}</h3>
                       <p className="text-muted-foreground text-sm">KSh {item.price.toLocaleString()}</p>
