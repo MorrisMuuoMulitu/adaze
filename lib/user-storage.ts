@@ -18,10 +18,6 @@ if (!fs.existsSync(usersFilePath)) {
 export function getUsers(): User[] {
   try {
     const data = fs.readFileSync(usersFilePath, 'utf8');
-    // Handle the case where the file might be missing the opening bracket
-    if (!data.trim().startsWith('[')) {
-      return [];
-    }
     return JSON.parse(data);
   } catch (error) {
     console.error('Error reading users file:', error);
