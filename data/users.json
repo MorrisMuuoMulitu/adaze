@@ -82,5 +82,26 @@
       "language": "en",
       "theme": "system"
     }
+  },
+  {
+    "id": "2ghfsxndz",
+    "email": "mutiso@gmail.com",
+    "password": "$2b$12$Gf5n3OOL0uQEj9A9jgENXOqXhdUG5RSYMTVkezSCQ1a4aZKpMIEuu",
+    "name": "Mutiso Muema",
+    "firstName": "Mutiso",
+    "lastName": "Muema",
+    "phone": "0798475849",
+    "location": "Garissa",
+    "role": "buyer",
+    "isVerified": true,
+    "wallet": {
+      "balance": 0,
+      "currency": "KSh"
+    },
+    "preferences": {
+      "notifications": true,
+      "language": "en",
+      "theme": "system"
+    }
   }
 ]
