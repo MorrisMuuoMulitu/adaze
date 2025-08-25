@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { SiteHeader } from '@/components/layout/navbar';
+import { Navbar } from '@/components/layout/navbar';
 import { Hero } from '@/components/sections/hero';
 import { FeaturedProducts } from '@/components/sections/featured-products';
 import { HowItWorks } from '@/components/sections/how-it-works';
@@ -61,7 +61,7 @@ export default function Home() {
     };
 
     fetchProducts();
-  }, [user]);
+  }, []);
 
   const handleAuthSuccess = (userData: User) => {
     setUser(userData);
@@ -118,7 +118,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteHeader onAuthClick={setAuthModal} user={user} onLogout={handleLogout} />
+      <Navbar onAuthClick={setAuthModal} user={user} onLogout={handleLogout} />
       
       <motion.main
         initial={{ opacity: 0 }}

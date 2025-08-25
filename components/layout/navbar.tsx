@@ -6,8 +6,6 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { LanguageToggle } from '@/components/language-toggle';
 import { useLanguage } from '@/components/language-provider';
-import { useToast } from '@/hooks/use-toast';
-import { useTheme } from 'next-themes';
 import { 
   Menu, 
   X, 
@@ -58,13 +56,11 @@ interface NavbarProps {
   onLogout: () => void;
 }
 
-export function SiteHeader({ onAuthClick, user, onLogout }: NavbarProps) {
-  const { setTheme } = useTheme();
-  const { toast } = useToast();
-  const [searchQuery, setSearchQuery] = useState('');
+export function Navbar({ onAuthClick, user, onLogout }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [cartItemCount, setCartItemCount] = useState(0);
-  const { t, setLanguage } = useLanguage();
+  const { t } = useLanguage();
 
   useEffect(() => {
     setCartItemCount(getCartItems().length);
@@ -123,14 +119,6 @@ export function SiteHeader({ onAuthClick, user, onLogout }: NavbarProps) {
                 placeholder="Search products, traders, or categories..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    toast({
-                      title: "Coming Soon!",
-                      description: "Search functionality is under development.",
-                    });
-                  }
-                }}
                 className="pl-10 pr-4 bg-muted/50 border-0 focus:bg-background transition-colors h-10 focus-ring"
               />
             </div>
@@ -228,10 +216,7 @@ export function SiteHeader({ onAuthClick, user, onLogout }: NavbarProps) {
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => toast({
-                      title: "Coming Soon!",
-                      description: "The Profile page is under development.",
-                    })}>
+                    <DropdownMenuItem>
                       <User className="mr-2 h-4 w-4" />
                       <span>Profile</span>
                     </DropdownMenuItem>
@@ -317,14 +302,6 @@ export function SiteHeader({ onAuthClick, user, onLogout }: NavbarProps) {
                     placeholder="Search..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        toast({
-                          title: "Coming Soon!",
-                          description: "Search functionality is under development.",
-                        });
-                      }
-                    }}
                     className="pl-10 pr-4 h-12 focus-ring"
                   />
                 </div>

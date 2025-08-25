@@ -1,17 +1,17 @@
 [
   {
-    "id": "1",
-    "email": "test@example.com",
-    "password": "$2b$12$ySeU5EsXylmYk0HRkNkfv.N/toX43nZDsujj6mx4aaRdHqEkYvZYC",
+    "id": "v1dcqtow6",
+    "email": "testuser7@example.com",
+    "password": "$2b$12$9pUwWBMM9J1ccizyxeSMuOiM4tQZEXuc5d08/pNGRraFvh68vOmOG",
     "name": "Test User",
     "firstName": "Test",
     "lastName": "User",
     "phone": "1234567890",
-    "location": "Test Location",
+    "location": "Nairobi",
     "role": "buyer",
     "isVerified": true,
     "wallet": {
-      "balance": 100,
+      "balance": 0,
       "currency": "KSh"
     },
     "preferences": {
@@ -21,35 +21,36 @@
     }
   },
   {
-    "id": "76nzpngca",
-    "email": "user@example.com",
-    "name": "Test User",
-    "firstName": "Test",
+    "id": "trader123",
+    "email": "tradertest@example.com",
+    "password": "$2b$12$9pUwWBMM9J1ccizyxeSMuOiM4tQZEXuc5d08/pNGRraFvh68vOmOG",
+    "name": "Trader User",
+    "firstName": "Trader",
     "lastName": "User",
-    "phone": "1234567890",
-    "location": "Nairobi",
-    "role": "buyer",
+    "phone": "0987654321",
+    "location": "Mombasa",
+    "role": "trader",
     "isVerified": true,
     "wallet": {
-      "balance": 0,
+      "balance": 1000,
       "currency": "KSh"
     },
     "preferences": {
       "notifications": true,
       "language": "en",
       "theme": "system"
-    },
-    "password": "$2b$12$h0fSCl5lXQvCD.T1Rud4h.LPZxtcnmv.T/c9LFo395o55b0cr6gAy"
+    }
   },
   {
-    "id": "anfkze5z8",
-    "email": "test2@example.com",
-    "name": "Test2 User",
-    "firstName": "Test2",
-    "lastName": "User",
-    "phone": "1234567890",
+    "id": "kfg19t4bz",
+    "email": "morrismulitu@gmail.com",
+    "password": "$2b$12$ENZtr2X9BGIPDapb3LYv/ev77W1dOuJ2LnMSt.hd39Ynicyr5gK6u",
+    "name": "Morris Mulitu",
+    "firstName": "Morris",
+    "lastName": "Mulitu",
+    "phone": "0705329860",
     "location": "Nairobi",
-    "role": "buyer",
+    "role": "trader",
     "isVerified": true,
     "wallet": {
       "balance": 0,
@@ -59,49 +60,27 @@
       "notifications": true,
       "language": "en",
       "theme": "system"
-    },
-    "password": "$2b$12$4/qxhou52RM0Hcj.oaD9ve4bLn4ooNqOLO2CXvNflydnfWETKlduO"
+    }
   },
   {
-    "id": "fg9mnc2hd",
-    "email": "debug@example.com",
-    "name": "Debug User",
-    "firstName": "Debug",
+    "id": "transporter123",
+    "email": "transportertest@example.com",
+    "password": "$2b$12$9pUwWBMM9J1ccizyxeSMuOiM4tQZEXuc5d08/pNGRraFvh68vOmOG",
+    "name": "Transporter User",
+    "firstName": "Transporter",
     "lastName": "User",
-    "phone": "1234567890",
-    "location": "Nairobi",
-    "role": "buyer",
+    "phone": "1122334455",
+    "location": "Kisumu",
+    "role": "transporter",
     "isVerified": true,
     "wallet": {
-      "balance": 0,
+      "balance": 500,
       "currency": "KSh"
     },
     "preferences": {
       "notifications": true,
       "language": "en",
       "theme": "system"
-    },
-    "password": "$2b$12$imVexnMwbxNZcERacvqmvO1am2tMMH0PKeKWDnlA.r8XiTFYBk8dW"
-  },
-  {
-    "id": "b8yhw2ne7",
-    "email": "testlogin@example.com",
-    "name": "Test Login",
-    "firstName": "Test",
-    "lastName": "Login",
-    "phone": "1234567890",
-    "location": "Nairobi",
-    "role": "buyer",
-    "isVerified": true,
-    "wallet": {
-      "balance": 0,
-      "currency": "KSh"
-    },
-    "preferences": {
-      "notifications": true,
-      "language": "en",
-      "theme": "system"
-    },
-    "password": "$2b$12$OkxL5OwDLxt7CObM9roQ3eqdEO4YXElP12MEU5zX1.Aj87.6Ebd/G"
+    }
   }
 ]
