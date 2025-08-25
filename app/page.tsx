@@ -61,7 +61,7 @@ export default function Home() {
     };
 
     fetchProducts();
-  }, []);
+  }, [user]);
 
   const handleAuthSuccess = (userData: User) => {
     setUser(userData);
