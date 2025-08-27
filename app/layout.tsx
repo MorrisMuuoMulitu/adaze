@@ -17,11 +17,6 @@ export const metadata: Metadata = {
   description: 'Discover quality second-hand fashion at unbeatable prices. Connect traders, buyers, and transporters in Africa\'s premier mitumba marketplace with real-time tracking, secure payments, and community features.',
   keywords: 'mitumba, second-hand clothes, African marketplace, fashion, trading, Kenya, Tanzania, Uganda, Nigeria, Ghana, Rwanda, sustainable fashion, thrift, vintage',
   authors: [{ name: 'ADAZE Team' }],
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F97316' },
-    { media: '(prefers-color-scheme: dark)', color: '#F97316' }
-  ],
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -77,6 +72,8 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+        <meta name="theme-color" content="#F97316" />
       </head>
       <body className={`antialiased bg-grid-slate-900/[0.04]`}>
         <ThemeProvider

@@ -7,9 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Star, Heart, ShoppingCart, Eye, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
+import { useState } from 'react';
 
 import { Product } from '@/types';
 import { addToCart } from '@/lib/cart';
+import { useAuth } from '@/hooks/use-auth';
 
 interface FeaturedProductsProps {
   products: Product[];
@@ -44,6 +46,17 @@ const getGenderLabel = (gender: string) => {
 };
 
 export function FeaturedProducts({ products, loading, error }: FeaturedProductsProps) {
+  const { isAuthenticated } = useAuth();
+  const [selectedGender, setSelectedGender] = useState<string | null>(null);
+
+  const filteredProducts = selectedGender
+    ? products.filter(product => product.gender === selectedGender)
+    : products;
+
+  const handleGenderFilter = (gender: string | null) => {
+    setSelectedGender(gender);
+  };
+
   return (
     <section className="py-12 sm:py-16 lg:py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -55,16 +68,32 @@ export function FeaturedProducts({ products, loading, error }: FeaturedProductsP
         >
           {/* Gender Filter Buttons */}
           <div className="flex justify-center space-x-2 sm:space-x-4 mb-6 sm:mb-8">
-            <Button variant="outline" className="filter-button-boys mobile-button">
+            <Button 
+              variant={selectedGender === 'male' ? 'default' : 'outline'} 
+              className="filter-button-boys mobile-button"
+              onClick={() => handleGenderFilter('male')}
+            >
               👦 Boys Fashion
             </Button>
-            <Button variant="outline" className="filter-button-girls mobile-button">
+            <Button 
+              variant={selectedGender === 'female' ? 'default' : 'outline'} 
+              className="filter-button-girls mobile-button"
+              onClick={() => handleGenderFilter('female')}
+            >
               👧 Girls Fashion
             </Button>
-            <Button variant="outline" className="filter-button-unisex mobile-button">
+            <Button 
+              variant={selectedGender === 'unisex' ? 'default' : 'outline'} 
+              className="filter-button-unisex mobile-button"
+              onClick={() => handleGenderFilter('unisex')}
+            >
               👫 Unisex
             </Button>
-            <Button variant="outline" className="mobile-button">
+            <Button 
+              variant={selectedGender === null ? 'default' : 'outline'} 
+              className="mobile-button"
+              onClick={() => handleGenderFilter(null)}
+            >
               All Items
             </Button>
           </div>
@@ -80,8 +109,8 @@ export function FeaturedProducts({ products, loading, error }: FeaturedProductsP
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {loading && <p>Loading products...</p>}
           {error && <p className="text-red-500">Error: {error}</p>}
-          {!loading && !error && products.length === 0 && <p>No products found.</p>}
-          {!loading && !error && products.map((product, index) => (
+          {!loading && !error && filteredProducts.length === 0 && <p>No products found.</p>}
+          {!loading && !error && filteredProducts.map((product, index) => (
             <motion.div
               key={product.id}
               initial={{ opacity: 0, y: 30 }}
@@ -192,10 +221,12 @@ export function FeaturedProducts({ products, loading, error }: FeaturedProductsP
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        addToCart(product, 1); // Add 1 quantity by default
-                        toast.success('Added to cart!', {
-                          description: `${product.name} has been added to your cart.`
-                        });
+                        const success = addToCart(product, 1, isAuthenticated);
+                        if (success) {
+                          toast.success('Added to cart!', {
+                            description: `${product.name} has been added to your cart.`
+                          });
+                        }
                       }}
                     >
                       <ShoppingCart className="h-4 w-4 mr-2" />

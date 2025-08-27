@@ -17,10 +17,12 @@ import { PWAPrompt } from '@/components/pwa/pwa-prompt';
 import { LiveChat } from '@/components/chat/live-chat';
 import { NotificationCenter } from '@/components/notifications/notification-center';
 import { User, Product } from '@/types';
+import { UserDashboard } from '@/components/sections/user-dashboard';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function Home() {
   const [authModal, setAuthModal] = useState<'login' | 'register' | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const { user, login, logout, isLoading: authLoading } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
@@ -64,7 +66,7 @@ export default function Home() {
   }, []);
 
   const handleAuthSuccess = (userData: User) => {
-    setUser(userData);
+    login(userData);
     setAuthModal(null);
     
     // Show onboarding for new users
@@ -74,7 +76,7 @@ export default function Home() {
   };
 
   const handleLogout = () => {
-    setUser(null);
+    logout();
     // In a real app, you would also clear any tokens from localStorage/cookies
     // and potentially make an API call to invalidate the session on the server.
   };
@@ -125,13 +127,19 @@ export default function Home() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <Hero onGetStarted={() => setAuthModal('register')} />
-        <Stats />
-        <FeaturedProducts products={products} loading={productsLoading} error={productsError} />
-        <WhyChooseUs />
-        <HowItWorks />
-        <Testimonials />
-        <CTA />
+        {user ? (
+          <UserDashboard user={user} products={products} loading={productsLoading} error={productsError} />
+        ) : (
+          <>
+            <Hero onGetStarted={() => setAuthModal('register')} />
+            <Stats />
+            <FeaturedProducts products={products} loading={productsLoading} error={productsError} />
+            <WhyChooseUs />
+            <HowItWorks />
+            <Testimonials />
+            <CTA />
+          </>
+        )}
       </motion.main>
 
       <Footer />

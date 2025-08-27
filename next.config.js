@@ -4,6 +4,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: { unoptimized: true },
+  outputFileTracingRoot: process.cwd(),
 };
 
 module.exports = nextConfig;

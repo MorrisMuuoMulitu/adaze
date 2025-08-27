@@ -1,5 +1,5 @@
-
 import { Product } from '@/types';
+import { toast } from 'sonner';
 
 const CART_STORAGE_KEY = 'adaze_cart';
 
@@ -22,7 +22,11 @@ export const saveCartItems = (cartItems: CartItem[]) => {
   localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
 };
 
-export const addToCart = (product: Product, quantity: number = 1) => {
+export const addToCart = (product: Product, quantity: number = 1, isUserLoggedIn: boolean = false) => {
+  if (!isUserLoggedIn) {
+    toast.error('You must be logged in to add items to the cart.');
+    return false;
+  }
   const cartItems = getCartItems();
   const existingItem = cartItems.find(item => item.id === product.id);
 
@@ -32,6 +36,7 @@ export const addToCart = (product: Product, quantity: number = 1) => {
     cartItems.push({ ...product, quantity });
   }
   saveCartItems(cartItems);
+  return true;
 };
 
 export const removeFromCart = (productId: number) => {
