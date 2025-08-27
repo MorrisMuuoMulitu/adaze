@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import { Product } from '@/types';
 import { FeaturedProducts } from '@/components/sections/featured-products';
+import Link from 'next/link'; // Import Link for navigation
+import { Button } from '@/components/ui/button'; // Import styled Button
+import { ArrowLeft } from 'lucide-react'; // Import arrow icon
 
 export default function MarketplacePage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -55,5 +58,17 @@ export default function MarketplacePage() {
   }
 
   console.log('MarketplacePage: Rendering FeaturedProducts with', products.length, 'products');
-  return <FeaturedProducts products={products} loading={loading} error={error} />;
+  return (
+    <div className="relative">
+      <div className="absolute top-4 left-4 z-10">
+        <Link href="/" passHref>
+          <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Home
+          </Button>
+        </Link>
+      </div>
+      <FeaturedProducts products={products} loading={loading} error={error} />
+    </div>
+  );
 }
