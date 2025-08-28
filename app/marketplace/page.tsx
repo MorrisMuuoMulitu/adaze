@@ -31,6 +31,10 @@ export default function MarketplacePage() {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isClient, setIsClient] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+
+  const categories = [...new Set(allProducts.map(p => p.category))];
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -38,6 +42,7 @@ export default function MarketplacePage() {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 500));
         setProducts(allProducts);
+        setFilteredProducts(allProducts);
         setLoading(false);
       } catch (err) {
         setError('Failed to fetch products.');
@@ -46,6 +51,14 @@ export default function MarketplacePage() {
     };
     fetchProducts();
   }, []);
+
+  useEffect(() => {
+    if (selectedCategories.length === 0) {
+      setFilteredProducts(products);
+    } else {
+      setFilteredProducts(products.filter(p => selectedCategories.includes(p.category)));
+    }
+  }, [selectedCategories, products]);
 
   useEffect(() => {
     setIsClient(true);
@@ -59,6 +72,14 @@ export default function MarketplacePage() {
       window.removeEventListener('cartUpdated', handleCartUpdate);
     };
   }, []);
+
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category) 
+        : [...prev, category]
+    );
+  };
 
   const handleRemoveFromCart = (productId: number) => {
     removeFromCart(productId);
@@ -84,14 +105,16 @@ export default function MarketplacePage() {
                 <CardContent className="p-4">
                   <h3 className="font-semibold mb-4">Category</h3>
                   <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="shirts" />
-                      <label htmlFor="shirts">Shirts</label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="pants" />
-                      <label htmlFor="pants">Pants</label>
-                    </div>
+                    {categories.map(category => (
+                      <div key={category} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={category}
+                          checked={selectedCategories.includes(category)}
+                          onCheckedChange={() => handleCategoryChange(category)}
+                        />
+                        <label htmlFor={category}>{category}</label>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
@@ -124,7 +147,7 @@ export default function MarketplacePage() {
             </div>
 
             {/* Product Grid */}
-            <FeaturedProducts products={products} loading={loading} error={error} />
+            <FeaturedProducts products={filteredProducts} loading={loading} error={error} />
 
           </main>
 
