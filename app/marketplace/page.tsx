@@ -32,9 +32,11 @@ export default function MarketplacePage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isClient, setIsClient] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
 
   const categories = [...new Set(allProducts.map(p => p.category))];
+  const maxPrice = Math.max(...allProducts.map(p => p.price));
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -53,12 +55,16 @@ export default function MarketplacePage() {
   }, []);
 
   useEffect(() => {
-    if (selectedCategories.length === 0) {
-      setFilteredProducts(products);
-    } else {
-      setFilteredProducts(products.filter(p => selectedCategories.includes(p.category)));
+    let tempProducts = products;
+
+    if (selectedCategories.length > 0) {
+      tempProducts = tempProducts.filter(p => selectedCategories.includes(p.category));
     }
-  }, [selectedCategories, products]);
+
+    tempProducts = tempProducts.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
+
+    setFilteredProducts(tempProducts);
+  }, [selectedCategories, priceRange, products]);
 
   useEffect(() => {
     setIsClient(true);
@@ -103,7 +109,10 @@ export default function MarketplacePage() {
               <h2 className="text-lg font-semibold">Filters</h2>
               <Card>
                 <CardContent className="p-4">
-                  <h3 className="font-semibold mb-4">Category</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold">Category</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedCategories([])} className="text-xs">Clear all</Button>
+                  </div>
                   <div className="space-y-2">
                     {categories.map(category => (
                       <div key={category} className="flex items-center space-x-2">
@@ -121,7 +130,16 @@ export default function MarketplacePage() {
               <Card>
                 <CardContent className="p-4">
                   <h3 className="font-semibold mb-4">Price Range</h3>
-                  <Slider defaultValue={[50]} max={100} step={1} />
+                  <Slider 
+                    defaultValue={[0, maxPrice]} 
+                    max={maxPrice} 
+                    step={100} 
+                    onValueChange={(value) => setPriceRange(value as [number, number])}
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                    <span>KSh {priceRange[0]}</span>
+                    <span>KSh {priceRange[1]}</span>
+                  </div>
                 </CardContent>
               </Card>
             </div>
