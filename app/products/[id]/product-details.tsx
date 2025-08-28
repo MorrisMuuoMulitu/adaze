@@ -42,12 +42,7 @@ export default function ProductDetails({ product, getGenderBadgeStyle, getGender
   const [isFavorite, setIsFavorite] = useState(false);
 
   const handleAddToCart = () => {
-    const success = addToCart(product, quantity, isAuthenticated);
-    if (success) {
-      toast.success('Added to cart!', {
-        description: `${product.name} has been added to your cart.`
-      });
-    }
+    addToCart(product, quantity, isAuthenticated);
   };
 
   const handleBuyNow = () => {

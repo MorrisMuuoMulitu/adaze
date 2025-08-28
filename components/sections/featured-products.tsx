@@ -221,12 +221,7 @@ export function FeaturedProducts({ products, loading, error }: FeaturedProductsP
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        const success = addToCart(product, 1, isAuthenticated);
-                        if (success) {
-                          toast.success('Added to cart!', {
-                            description: `${product.name} has been added to your cart.`
-                          });
-                        }
+                        addToCart(product, 1, isAuthenticated);
                       }}
                     >
                       <ShoppingCart className="h-4 w-4 mr-2" />

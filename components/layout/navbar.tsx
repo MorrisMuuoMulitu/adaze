@@ -64,6 +64,16 @@ export function Navbar({ onAuthClick, user, onLogout }: NavbarProps) {
 
   useEffect(() => {
     setCartItemCount(getCartItems().length);
+
+    const handleCartUpdate = () => {
+      setCartItemCount(getCartItems().length);
+    };
+
+    window.addEventListener('cartUpdated', handleCartUpdate);
+
+    return () => {
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+    };
   }, []);
 
   const navItems = [

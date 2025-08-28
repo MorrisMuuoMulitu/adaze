@@ -36,6 +36,8 @@ export const addToCart = (product: Product, quantity: number = 1, isUserLoggedIn
     cartItems.push({ ...product, quantity });
   }
   saveCartItems(cartItems);
+  toast.success('Item added to cart');
+  window.dispatchEvent(new Event('cartUpdated'));
   return true;
 };
 
