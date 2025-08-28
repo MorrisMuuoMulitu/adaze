@@ -37,13 +37,22 @@ export function saveUsers(users: User[]): void {
   }
 }
 
-export function findUserByEmail(email: string): User | undefined {
+export function findUserByEmail(email: string, role?: 'buyer' | 'trader' | 'transporter'): User | undefined {
   const users = getUsers();
-  return users.find(user => user.email === email);
+  return users.find(user => {
+    if (role) {
+      return user.email === email && user.role === role;
+    }
+    return user.email === email;
+  });
 }
 
 export function createUser(userData: User): void {
   const users = getUsers();
+  const existingUser = findUserByEmail(userData.email, userData.role);
+  if (existingUser) {
+    throw new Error('User with this email and role already exists');
+  }
   users.push(userData);
   saveUsers(users);
 }

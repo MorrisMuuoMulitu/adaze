@@ -4,14 +4,14 @@ import { comparePassword } from '@/lib/auth';
 import { findUserByEmail } from '@/lib/user-storage';
 
 export async function POST(request: Request) {
-  const { email, password } = await request.json();
+  const { email, password, role } = await request.json();
 
   // Basic validation
-  if (!email || !password) {
-    return new NextResponse('Missing email or password', { status: 400 });
+  if (!email || !password || !role) {
+    return new NextResponse('Missing email, password or role', { status: 400 });
   }
 
-  const user = findUserByEmail(email);
+  const user = findUserByEmail(email, role);
   if (!user) {
     return new NextResponse('User not found', { status: 404 });
   }
