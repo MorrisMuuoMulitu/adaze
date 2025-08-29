@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import Image from 'next/image';
 import { 
   ArrowLeft, 
   Star, 
@@ -133,9 +134,12 @@ export default function ProductDetails({ product, getGenderBadgeStyle, getGender
           >
             {/* Main Image */}
             <div className="aspect-square bg-muted rounded-2xl overflow-hidden relative group">
-              <div 
-                className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                style={{ backgroundImage: `url(${product.images[selectedImage]})` }}
+              <Image
+                src={product.images[selectedImage]}
+                alt={product.name}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
               
               {/* Image Navigation */}
@@ -183,9 +187,12 @@ export default function ProductDetails({ product, getGenderBadgeStyle, getGender
                       index === selectedImage ? 'border-primary' : 'border-transparent'
                     }`}
                   >
-                    <div 
-                      className="w-full h-full bg-cover bg-center"
-                      style={{ backgroundImage: `url(${image})` }}
+                    <Image
+                      src={image}
+                      alt={`${product.name} thumbnail ${index + 1}`}
+                      fill
+                      sizes="(max-width: 768px) 25vw, (max-width: 1200px) 12vw, 8vw"
+                      className="object-cover"
                     />
                   </button>
                 ))}

@@ -18,33 +18,33 @@
 
 @layer base {
   :root {
-    --background: 222 84% 5%;
-    --foreground: 210 40% 98%;
-    --card: 222 84% 5%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 84% 5%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 25 95% 53%;
+    --background: 220 10% 8%; /* Softer dark */
+    --foreground: 210 20% 95%; /* Brighter off-white */
+    --card: 220 10% 8%;
+    --card-foreground: 210 20% 95%;
+    --popover: 220 10% 8%;
+    --popover-foreground: 210 20% 95%;
+    --primary: 25 95% 45%; /* Deeper, richer primary */
     --primary-foreground: 0 0% 98%;
     --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary-foreground: 210 20% 95%;
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
-    --accent: 173 58% 39%;
+    --accent: 173 65% 45%; /* More vibrant, slightly warmer accent */
     --accent-foreground: 0 0% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 217 33% 17%;
     --input: 217 33% 17%;
-    --ring: 25 95% 53%;
+    --ring: 25 95% 45%;
     --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
+    --chart-2: 173 65% 45%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.75rem;
-    --african-orange: 25 95% 53%;
-    --african-teal: 173 58% 39%;
+    --african-orange: 25 95% 45%;
+    --african-teal: 173 65% 45%;
     --african-brown: 30 25% 35%;
     --african-gold: 43 74% 66%;
     --neon-green: 120 100% 50%;
@@ -52,27 +52,27 @@
     --neon-blue: 200 100% 60%;
   }
   .light {
-    --background: 0 0% 100%;
-    --foreground: 222 84% 5%;
+    --background: 0 0% 98%; /* Very light, almost white */
+    --foreground: 220 10% 15%; /* Softer dark */
     --card: 0 0% 100%;
-    --card-foreground: 222 84% 5%;
+    --card-foreground: 220 10% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 84% 5%;
-    --primary: 25 95% 53%;
+    --popover-foreground: 220 10% 15%;
+    --primary: 25 90% 50%; /* Slightly less saturated primary */
     --primary-foreground: 0 0% 98%;
     --secondary: 210 40% 96%;
-    --secondary-foreground: 222 84% 5%;
+    --secondary-foreground: 220 10% 15%;
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
-    --accent: 173 58% 39%;
+    --accent: 173 60% 40%; /* Slightly brighter, more inviting accent */
     --accent-foreground: 0 0% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 25 95% 53%;
+    --ring: 25 90% 50%;
     --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
+    --chart-2: 173 60% 40%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
@@ -85,6 +85,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif; /* Prioritize Inter */
     font-feature-settings: "rlig" 1, "calt" 1;
     font-size: 16px;
     line-height: 1.6;

@@ -1,6 +1,7 @@
 "use client"
 
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useTransform } from 'framer-motion';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +49,24 @@ const getGenderLabel = (gender: string) => {
 export function FeaturedProducts({ products, loading, error }: FeaturedProductsProps) {
   const { isAuthenticated } = useAuth();
   const [selectedGender, setSelectedGender] = useState<string | null>(null);
+
+  // For 3D tilt effect
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useTransform(y, [-100, 100], [10, -10]); // Map y-position to rotateX
+  const rotateY = useTransform(x, [-100, 100], [-10, 10]); // Map x-position to rotateY
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    x.set(e.clientX - rect.left - rect.width / 2);
+    y.set(e.clientY - rect.top - rect.height / 2);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
 
   const filteredProducts = selectedGender
     ? products.filter(product => product.gender === selectedGender)
@@ -117,20 +136,35 @@ export function FeaturedProducts({ products, loading, error }: FeaturedProductsP
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
+              // Add tilt effect
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+              style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+              whileHover={{ scale: 1.02 }} // Combine with existing hover scale
             >
-              <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-0 bg-card/50 backdrop-blur-sm card-shadow hover:card-shadow-lg">
+              <Card className="group overflow-hidden transition-all duration-300 border border-transparent hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/20 bg-card/50 backdrop-blur-sm">
                 <Link href={`/products/${product.id}`} className="block">
-                  <div className="relative overflow-hidden cursor-pointer">
-                    <div 
-                      className="aspect-square bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                      style={{ backgroundImage: `url(${product.images[0]})` }}
+                  <div className="relative overflow-hidden cursor-pointer aspect-square"> {/* Added aspect-square here */}
+                    <Image
+                      src={product.images[0]}
+                      alt={product.name}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     
-                    {/* Overlay */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
+                    {/* Overlay with subtle gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/0 to-black/0 group-hover:from-black/60 group-hover:to-black/20 transition-all duration-300" />
                     
                     {/* Quick actions */}
-                    <div className="absolute top-3 right-3 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <motion.div
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 0, x: 10 }} // Keep initial state for non-hover
+                      whileInView={{}} // No whileInView needed here
+                      whileHover={{ opacity: 1, x: 0 }} // Animate on hover
+                      transition={{ duration: 0.2, delay: 0.1 }}
+                      className="absolute top-3 right-3 flex flex-col space-y-2"
+                    >
                       <Button 
                         size="sm" 
                         variant="secondary" 
