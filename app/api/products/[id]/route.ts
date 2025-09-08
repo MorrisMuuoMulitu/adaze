@@ -2,9 +2,13 @@
 import { NextResponse } from 'next/server';
 import { products } from '@/lib/data';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const id = parseInt(params.id);
-  const product = products.find(p => p.id === id);
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const productId = parseInt(id);
+  const product = products.find(p => p.id === productId);
 
   if (product) {
     return NextResponse.json(product);

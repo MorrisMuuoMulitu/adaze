@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 
 const CART_STORAGE_KEY = 'adaze_cart';
 
-interface CartItem extends Product {
+export interface CartItem extends Product {
   quantity: number;
 }
 

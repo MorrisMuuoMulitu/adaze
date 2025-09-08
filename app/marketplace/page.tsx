@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { products as allProducts } from '@/lib/data';
 import { Product } from '@/types';
+import { CartItem } from '@/lib/cart';
 import { FeaturedProducts } from '@/components/sections/featured-products';
 import { getCartItems, removeFromCart, updateCartItemQuantity } from '@/lib/cart';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -35,7 +36,7 @@ export default function MarketplacePage() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
 
-  const categories = [...new Set(allProducts.map(p => p.category))];
+  const categories = Array.from(new Set(allProducts.map(p => p.category)));
   const maxPrice = Math.max(...allProducts.map(p => p.price));
 
   useEffect(() => {

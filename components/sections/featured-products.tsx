@@ -187,7 +187,7 @@ export function FeaturedProducts({ products, loading, error }: FeaturedProductsP
                       >
                         <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
-                    </div>
+                    </motion.div>
 
                     {/* Badges */}
                     <div className="absolute top-3 left-3 space-y-2">

@@ -1,0 +1,24 @@
+feat: Redesign UI and enhance key sections
+
+This commit introduces a comprehensive UI redesign and enhancements across several key sections of the application.
+
+Key changes include:
+- **Global UI Redesign:**
+  - Updated core color palette in `app/globals.css` for both dark and light themes to a more modern and vibrant aesthetic.
+  - Prioritized 'Inter' font globally for improved typography.
+- **Hero Section Revamp:**
+  - Simplified background to a solid color, allowing animated elements to stand out.
+  - Enhanced animated background elements with more dynamic movements, scaling, and smoother animations.
+  - Added a subtle radial gradient overlay to the background pattern for visual depth.
+- **Featured Products Section Enhancement:**
+  - Implemented a 3D-like tilt effect on product cards on hover for increased interactivity.
+  - Enhanced product card hover effects with more aggressive lift and shadow.
+  - Added a subtle gradient overlay on product image hover.
+  - Added a slide-in animation for quick action buttons on product card hover.
+- **Call to Action (CTA) Section Refinement:**
+  - Removed placeholder image for a cleaner, text-focused design.
+  - Centered text content for better readability.
+  - Updated container background to a subtle radial gradient for visual interest.
+  - Standardized button styles and updated text colors for a professional and cohesive look.
+- **Product Details Page Optimization:**
+  - Switched main product image and thumbnail images to use Next.js `Image` component for improved performance and lazy loading.
