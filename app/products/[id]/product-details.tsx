@@ -33,10 +33,11 @@ import {
 import { toast } from 'sonner';
 import { Product } from '@/types';
 import { addToCart } from '@/lib/cart';
-import { useAuth } from '@/hooks/use-auth'; // Import the auth hook
+import { useAuth } from '@/components/auth/auth-provider'; // Import the auth hook
 
 export default function ProductDetails({ product, getGenderBadgeStyle, getGenderLabel, getGenderIcon }: { product: Product, getGenderBadgeStyle: (gender: string) => string, getGenderLabel: (gender: string) => string, getGenderIcon: (gender: string) => string }) {
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
   const router = useRouter();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);

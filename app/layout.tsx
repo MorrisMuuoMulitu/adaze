@@ -1,3 +1,4 @@
+import { AuthProvider } from '@/components/auth/auth-provider';
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
@@ -82,21 +83,23 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange={false}
         >
-          <LanguageProvider>
-            <div className="min-h-screen bg-background text-foreground">
-              {children}
-            </div>
-            <Toaster 
-              position="top-right"
-              toastOptions={{
-                style: {
-                  background: 'hsl(var(--card))',
-                  color: 'hsl(var(--card-foreground))',
-                  border: '1px solid hsl(var(--border))'
-                }
-              }}
-            />
-          </LanguageProvider>
+          <AuthProvider>
+            <LanguageProvider>
+              <div className="min-h-screen bg-background text-foreground">
+                {children}
+              </div>
+              <Toaster 
+                position="top-right"
+                toastOptions={{
+                  style: {
+                    background: 'hsl(var(--card))',
+                    color: 'hsl(var(--card-foreground))',
+                    border: '1px solid hsl(var(--border))'
+                  }
+                }}
+              />
+            </LanguageProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

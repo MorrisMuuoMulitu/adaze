@@ -18,11 +18,11 @@ import { LiveChat } from '@/components/chat/live-chat';
 import { NotificationCenter } from '@/components/notifications/notification-center';
 import { User, Product } from '@/types';
 import { UserDashboard } from '@/components/sections/user-dashboard';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/components/auth/auth-provider';
 
 export default function Home() {
   const [authModal, setAuthModal] = useState<'login' | 'register' | null>(null);
-  const { user, login, logout, isLoading: authLoading } = useAuth();
+  const { user } = useAuth(); // New useAuth hook
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
@@ -30,11 +30,8 @@ export default function Home() {
   const [productsError, setProductsError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate loading and check for existing user session
     const timer = setTimeout(() => {
       setIsLoading(false);
-      
-      // Check if user is first time visitor
       const hasVisited = localStorage.getItem('adaze-visited');
       if (!hasVisited && !user) {
         setShowOnboarding(true);
@@ -65,25 +62,15 @@ export default function Home() {
     fetchProducts();
   }, []);
 
-  const handleAuthSuccess = (userData: User) => {
-    login(userData);
+  const handleAuthSuccess = () => {
     setAuthModal(null);
-    
-    // Show onboarding for new users
-    if (!localStorage.getItem(`adaze-onboarded-${userData.id}`)) {
-      setShowOnboarding(true);
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
-    // In a real app, you would also clear any tokens from localStorage/cookies
-    // and potentially make an API call to invalidate the session on the server.
+    // Onboarding logic can be triggered based on user profile data from the database
   };
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
     if (user) {
+      // You might want to set a flag in your database that onboarding is complete
       localStorage.setItem(`adaze-onboarded-${user.id}`, 'true');
     }
   };
@@ -120,7 +107,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar onAuthClick={setAuthModal} user={user} onLogout={handleLogout} />
+      <Navbar onAuthClick={setAuthModal} />
       
       <motion.main
         initial={{ opacity: 0 }}
@@ -156,7 +143,7 @@ export default function Home() {
         <OnboardingTour 
           isOpen={showOnboarding}
           onComplete={handleOnboardingComplete}
-          userRole={user?.role}
+          userRole={user?.user_metadata.role}
         />
       )}
       
@@ -164,8 +151,18 @@ export default function Home() {
       
       {user && (
         <>
-          <LiveChat user={user} />
-          <NotificationCenter user={user} />
+          <LiveChat user={{
+            id: user.id,
+            name: user.user_metadata.full_name || user.email,
+            email: user.email || '',
+            role: user.user_metadata.role || 'buyer',
+            avatar: user.user_metadata.avatar_url,
+          }} />
+          <NotificationCenter user={{
+            id: user.id,
+            name: user.user_metadata.full_name || user.email,
+            role: user.user_metadata.role || 'buyer',
+          }} />
         </>
       )}
     </div>

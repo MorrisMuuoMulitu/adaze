@@ -149,6 +149,7 @@ export function AuthModal({ type, isOpen, onClose, onSuccess }: AuthModalProps) 
         toast.success('Karibu tena!', {
           description: 'Great to see you again.'
         });
+        window.location.reload(); // Reload to update UI
       } else {
         toast.error('Authentication failed', {
           description: result.message || 'Please check your credentials and try again.'
@@ -177,7 +178,7 @@ export function AuthModal({ type, isOpen, onClose, onSuccess }: AuthModalProps) 
       if (response.ok) {
         onSuccess(result.user);
         toast.success('Account created successfully!', {
-          description: 'Your ADAZE journey in Kenya begins now.'
+          description: result.message || 'Please check your email to confirm your account.'
         });
       } else {
         toast.error('Authentication failed', {

@@ -72,12 +72,45 @@ const getGenderIcon = (gender: string) => {
   }
 };
 
-export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const res = await fetch(`http://localhost:3000/api/products/${id}`);
+export default function ProductPage() {
+  const params = useParams();
+  const id = params.id as string;
+
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/api/products/${id}`);
+        if (!res.ok) {
+          throw new Error('Product not found or API error');
+        }
+        const data: Product = await res.json();
+        setProduct(data);
+      } catch (err: any) {
+        setError(err.message);
+        toast.error(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchProduct();
+    }
+  }, [id]);
   
-  if (!res.ok) {
-    // Handle cases where the product is not found or API call fails
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        Loading product details...
+      </div>
+    );
+  }
+
+  if (error || !product) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -92,8 +125,6 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
       </div>
     );
   }
-
-  const product: Product = await res.json();
 
   return <ProductDetails product={product} getGenderBadgeStyle={getGenderBadgeStyle} getGenderLabel={getGenderLabel} getGenderIcon={getGenderIcon} />;
 }

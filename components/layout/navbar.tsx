@@ -34,33 +34,25 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { getCartItems } from '@/lib/cart';
-import Link from 'next/link'; // Import Link
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'buyer' | 'trader' | 'transporter';
-  avatar?: string;
-  location: string;
-  isVerified: boolean;
-  wallet: {
-    balance: number;
-    currency: string;
-  };
-}
+import Link from 'next/link';
+import { useAuth } from '@/components/auth/auth-provider';
+import { createClient } from '@/lib/supabase/client';
 
 interface NavbarProps {
   onAuthClick: (type: 'login' | 'register') => void;
-  user?: User | null;
-  onLogout: () => void;
 }
 
-export function Navbar({ onAuthClick, user, onLogout }: NavbarProps) {
+export function Navbar({ onAuthClick }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [cartItemCount, setCartItemCount] = useState(0);
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const supabase = createClient();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
 
   useEffect(() => {
     setCartItemCount(getCartItems().length);
@@ -98,6 +90,10 @@ export function Navbar({ onAuthClick, user, onLogout }: NavbarProps) {
       default: return 'bg-primary';
     }
   };
+
+  const userRole = user?.user_metadata.role || 'buyer';
+  const userName = user?.user_metadata.full_name || 'User';
+  const isVerified = !!user?.email_confirmed_at;
 
   return (
     <motion.nav 
@@ -178,25 +174,17 @@ export function Navbar({ onAuthClick, user, onLogout }: NavbarProps) {
                   <MessageCircle className="h-4 w-4" />
                 </Button>
 
-                {/* Wallet Balance */}
-                <div className="flex items-center space-x-2 px-3 py-1.5 bg-muted rounded-lg">
-                  <Wallet className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">
-                    {user.wallet.currency} {user.wallet.balance.toLocaleString()}
-                  </span>
-                </div>
-
                 {/* User Menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full mobile-button">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.avatar} alt={user.name} />
-                        <AvatarFallback className={getRoleColor(user.role)}>
-                          {user.name?.charAt(0) || 'U'}
+                        <AvatarImage src={user.user_metadata.avatar_url} alt={userName} />
+                        <AvatarFallback className={getRoleColor(userRole)}>
+                          {userName?.charAt(0) || 'U'}
                         </AvatarFallback>
                       </Avatar>
-                      {user.isVerified && (
+                      {isVerified && (
                         <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
                       )}
                     </Button>
@@ -206,9 +194,9 @@ export function Navbar({ onAuthClick, user, onLogout }: NavbarProps) {
                       <div className="flex flex-col space-y-2">
                         <div className="flex items-center space-x-2">
                           <p className="text-sm font-medium leading-none truncate">
-                            {user.name}
+                            {userName}
                           </p>
-                          {user.isVerified && (
+                          {isVerified && (
                             <Badge variant="secondary" className="text-xs">Verified</Badge>
                           )}
                         </div>
@@ -217,18 +205,20 @@ export function Navbar({ onAuthClick, user, onLogout }: NavbarProps) {
                         </p>
                         <div className="flex items-center space-x-2">
                           <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                            {getRoleIcon(user.role)}
-                            <span className="capitalize">{user.role}</span>
+                            {getRoleIcon(userRole)}
+                            <span className="capitalize">{userRole}</span>
                           </div>
                           <span className="text-xs text-muted-foreground">•</span>
-                          <span className="text-xs text-muted-foreground">{user.location}</span>
+                          <span className="text-xs text-muted-foreground">{user.user_metadata.location}</span>
                         </div>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Profile</span>
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Profile</span>
+                      </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem>
                       <Settings className="mr-2 h-4 w-4" />
@@ -239,7 +229,7 @@ export function Navbar({ onAuthClick, user, onLogout }: NavbarProps) {
                       <span>Wallet</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600" onClick={onLogout}>
+                    <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Log out</span>
                     </DropdownMenuItem>
@@ -331,20 +321,14 @@ export function Navbar({ onAuthClick, user, onLogout }: NavbarProps) {
                 {user && (
                   <div className="flex items-center space-x-3 px-2 pt-2 border-t">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={user.avatar} alt={user.name} />
-                      <AvatarFallback className={getRoleColor(user.role)}>
-                        {user.name?.charAt(0) || 'U'}
+                      <AvatarImage src={user.user_metadata.avatar_url} alt={userName} />
+                      <AvatarFallback className={getRoleColor(userRole)}>
+                        {userName?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{user.name}</p>
+                      <p className="font-medium text-sm truncate">{userName}</p>
                       <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                    </div>
-                    <div className="flex items-center space-x-2 px-3 py-1 bg-muted rounded-lg">
-                      <Wallet className="h-3 w-3 text-primary" />
-                      <span className="text-xs font-medium">
-                        {user.wallet.currency} {user.wallet.balance.toLocaleString()}
-                      </span>
                     </div>
                   </div>
                 )}

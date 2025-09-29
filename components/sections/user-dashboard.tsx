@@ -1,5 +1,7 @@
 "use client"
 
+"use client"
+
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +19,8 @@ import {
   MessageCircle,
   Settings
 } from 'lucide-react';
-import { User, Product } from '@/types';
+import { type User } from '@supabase/supabase-js';
+import { Product } from '@/types';
 import { getCartItems } from '@/lib/cart';
 
 interface UserDashboardProps {
@@ -45,14 +48,6 @@ export function UserDashboard({ user, products, loading, error }: UserDashboardP
       icon: Heart,
       color: 'text-pink-500',
       bgColor: 'bg-pink-100 dark:bg-pink-900/20'
-    },
-    {
-      title: 'Wallet Balance',
-      value: user.wallet.balance,
-      icon: Wallet,
-      color: 'text-green-500',
-      format: (val: number) => `${user.wallet.currency} ${val.toLocaleString()}`,
-      bgColor: 'bg-green-100 dark:bg-green-900/20'
     },
     {
       title: 'Orders',
@@ -111,7 +106,7 @@ export function UserDashboard({ user, products, loading, error }: UserDashboardP
                 transition={{ delay: 0.1 }}
                 className="text-3xl font-bold text-foreground"
               >
-                Welcome back, {user.name}!
+                Welcome back, {user.user_metadata.full_name || user.email}!
               </motion.h1>
               <motion.p 
                 initial={{ opacity: 0, x: -20 }}
@@ -128,13 +123,12 @@ export function UserDashboard({ user, products, loading, error }: UserDashboardP
               transition={{ delay: 0.3 }}
             >
               <Badge variant="secondary" className="text-sm">
-                {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                {(user.user_metadata.role || '').charAt(0).toUpperCase() + (user.user_metadata.role || '').slice(1)}
               </Badge>
             </motion.div>
           </div>
         </div>
       </motion.div>
-
       {/* Stats Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div

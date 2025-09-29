@@ -1,40 +1,34 @@
 
-import { NextResponse } from 'next/server';
-import { hashPassword } from '@/lib/auth';
-import { createUser, findUserByEmail } from '@/lib/user-storage';
-import { User } from '@/types';
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: Request) {
-  const { email, password, firstName, lastName, phone, location, userType } = await request.json();
+  const { email, password, firstName, lastName, phone, location, role } = await request.json();
 
   // Basic validation
-  if (!email || !password || !firstName || !lastName || !userType) {
-    return new NextResponse('Missing required fields', { status: 400 });
+  if (!email || !password || !firstName || !lastName || !role) {
+    return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
   }
 
-  // Check if user already exists
-  const existingUser = findUserByEmail(email, userType);
-  if (existingUser) {
-    return new NextResponse('User with this email and role already exists', { status: 409 });
-  }
-
-  const newUser: User = {
-    id: Math.random().toString(36).substr(2, 9),
+  const supabase = createClient();
+  const { data, error } = await supabase.auth.signUp({
     email,
-    password, // In a real app, hash this password!
-    name: `${firstName} ${lastName}`,
-    firstName,
-    lastName,
-    phone,
-    location,
-    role: userType,
-    isVerified: true,
-    wallet: { balance: 0, currency: 'KSh' },
-    preferences: { notifications: true, language: 'en', theme: 'system' },
-  };
+    password,
+    options: {
+      data: {
+        full_name: `${firstName} ${lastName}`,
+        phone,
+        location,
+        role: role,
+      },
+    },
+  });
 
-  const hashedPassword = await hashPassword(password);
-  const userToStore = { ...newUser, password: hashedPassword };
-  createUser(userToStore);
-  return NextResponse.json({ message: 'User registered successfully', user: userToStore });
+  if (error) {
+    return NextResponse.json({ message: error.message }, { status: error.status || 500 });
+  }
+
+  // The user is signed up, and the trigger has created their profile.
+  // Supabase sends a confirmation email by default.
+  return NextResponse.json({ message: 'User registered successfully. Please check your email to confirm.', user: data.user });
 }

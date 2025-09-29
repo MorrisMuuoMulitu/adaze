@@ -1,31 +1,25 @@
 
-import { NextResponse } from 'next/server';
-import { comparePassword } from '@/lib/auth';
-import { findUserByEmail } from '@/lib/user-storage';
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: Request) {
-  const { email, password, role } = await request.json();
+  const { email, password } = await request.json();
 
   // Basic validation
-  if (!email || !password || !role) {
-    return new NextResponse('Missing email, password or role', { status: 400 });
+  if (!email || !password) {
+    return NextResponse.json({ message: 'Missing email or password' }, { status: 400 });
   }
 
-  const user = findUserByEmail(email, role);
-  if (!user) {
-    return new NextResponse('User not found', { status: 404 });
+  const supabase = createClient();
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    return NextResponse.json({ message: error.message }, { status: error.status || 401 });
   }
 
-  // Compare hashed passwords
-  if (user.password) {
-    const isPasswordValid = await comparePassword(password, user.password);
-    if (!isPasswordValid) {
-      return new NextResponse('Invalid credentials', { status: 401 });
-    }
-  } else {
-    return new NextResponse('Invalid credentials', { status: 401 });
-  }
-
-  // In a real app, you'd generate and return a token here
-  return NextResponse.json({ message: 'Login successful', user });
+  return NextResponse.json({ message: 'Login successful', user: data.user });
 }

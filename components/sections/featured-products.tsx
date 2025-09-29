@@ -12,7 +12,7 @@ import { useState } from 'react';
 
 import { Product } from '@/types';
 import { addToCart } from '@/lib/cart';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/components/auth/auth-provider';
 
 interface FeaturedProductsProps {
   products: Product[];
@@ -47,7 +47,8 @@ const getGenderLabel = (gender: string) => {
 };
 
 export function FeaturedProducts({ products, loading, error }: FeaturedProductsProps) {
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
   const [selectedGender, setSelectedGender] = useState<string | null>(null);
 
   // For 3D tilt effect
