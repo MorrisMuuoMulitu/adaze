@@ -62,7 +62,8 @@ const registerSchema = z.object({
 });
 
 interface AuthModalProps {
-  type: 'login' | 'register' | null;
+  type?: 'login' | 'register' | null; // Make type optional
+  initialType?: 'login' | 'register'; // Add initialType
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (user: any) => void;
@@ -77,7 +78,8 @@ const kenyanCounties = [
   'Nandi', 'Baringo', 'Turkana', 'West Pokot', 'Bungoma', 'Busia', 'Siaya', 'Homa Bay'
 ];
 
-export function AuthModal({ type, isOpen, onClose, onSuccess }: AuthModalProps) {
+export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: AuthModalProps) {
+  const [authType, setAuthType] = useState(initialType || type || 'login'); // Use initialType or type
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
