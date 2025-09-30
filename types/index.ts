@@ -30,6 +30,7 @@ export interface Product {
   rating: number;
   reviews: number;
   images: string[];
+  image_url?: string; // Add image_url property
   category: string;
   condition: string;
   size: string;
