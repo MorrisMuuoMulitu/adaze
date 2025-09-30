@@ -21,7 +21,9 @@ import {
   ShoppingCart,
   Wallet,
   MessageCircle,
-  Package
+  Package,
+  LayoutDashboard,
+  ClipboardList
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -118,11 +120,21 @@ export function Navbar({ onAuthClick }: NavbarProps) {
     await supabase.auth.signOut();
   };
 
+  const userRole = user?.user_metadata.role || 'buyer';
+  const userName = user?.user_metadata.full_name || 'User';
+  const isVerified = !!user?.email_confirmed_at;
+
   const navItems = [
     { name: t('nav.marketplace'), href: '/marketplace', icon: ShoppingBag },
     { name: t('nav.how_it_works'), href: '#how-it-works', icon: null },
     { name: t('nav.about'), href: '/about', icon: null },
     { name: t('nav.contact'), href: '/contact', icon: null },
+  ];
+
+  const traderNavItems = [
+    { name: 'Dashboard', href: '/dashboard/trader', icon: LayoutDashboard },
+    { name: 'Products', href: '/products/manage', icon: Package },
+    { name: 'Orders', href: '/orders/received', icon: ClipboardList },
   ];
 
   const getRoleIcon = (role: string) => {
@@ -140,10 +152,6 @@ export function Navbar({ onAuthClick }: NavbarProps) {
       default: return 'bg-primary';
     }
   };
-
-  const userRole = user?.user_metadata.role || 'buyer';
-  const userName = user?.user_metadata.full_name || 'User';
-  const isVerified = !!user?.email_confirmed_at;
 
   return (
     <motion.nav 
@@ -184,7 +192,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-6">
-            {navItems.map((item) => (
+            {(userRole === 'trader' ? traderNavItems : navItems).map((item) => (
               <motion.a
                 key={item.name}
                 href={item.href}
@@ -214,10 +222,12 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                         </Link>
                       </Button>
                       
-                      <CartSidebar 
-                        cartCount={cartItemCount} 
-                        onCartUpdate={setCartItemCount} 
-                      />
+                      {userRole === 'buyer' && (
+                        <CartSidebar 
+                          cartCount={cartItemCount} 
+                          onCartUpdate={setCartItemCount} 
+                        />
+                      )}
                       
                       <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button">
                         <Bell className="h-4 w-4" />
@@ -282,12 +292,14 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                               <span>Wishlist</span>
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href="/orders">
-                              <Package className="mr-2 h-4 w-4" />
-                              <span>My Orders</span>
-                            </Link>
-                          </DropdownMenuItem>
+                          {userRole === 'buyer' && (
+                            <DropdownMenuItem asChild>
+                              <Link href="/orders">
+                                <Package className="mr-2 h-4 w-4" />
+                                <span>My Orders</span>
+                              </Link>
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem asChild>
                             <Link href="/settings">
                               <Settings className="mr-2 h-4 w-4" />
@@ -336,12 +348,14 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                   )}
                 </Button>
                 
-                <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button" asChild>
-                  <Link href="/cart">
-                    <ShoppingCart className="h-4 w-4" />
-                    <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">{cartItemCount}</Badge>
-                  </Link>
-                </Button>
+                {userRole === 'buyer' && (
+                  <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button" asChild>
+                    <Link href="/cart">
+                      <ShoppingCart className="h-4 w-4" />
+                      <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">{cartItemCount}</Badge>
+                    </Link>
+                  </Button>
+                )}
               </>
             )}
             
@@ -378,7 +392,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                   />
                 </div>
 
-                {navItems.map((item) => (
+                {(userRole === 'trader' ? traderNavItems : navItems).map((item) => (
                   <a
                     key={item.name}
                     href={item.href}

@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { Navbar } from '@/components/layout/navbar';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { wishlistService } from '@/lib/wishlistService';
+import { createClient } from '@/lib/supabase/client';
 
 export default function MarketplacePage() {
   const { user } = useAuth();
@@ -37,6 +38,27 @@ export default function MarketplacePage() {
   const handleCloseAuthModal = () => {
     setShowAuthModal(false);
   };
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const checkUserRole = async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (data && data.role === 'trader') {
+        router.push('/dashboard/trader');
+      }
+    };
+
+    checkUserRole();
+  }, [user, router]);
 
   useEffect(() => {
     if (!user) {
