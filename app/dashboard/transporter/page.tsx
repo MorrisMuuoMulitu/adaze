@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { User, BarChart3, ClipboardList, Globe, PlusCircle, List, Star } from 'lucide-react';
+import { User, Truck, MapPin, BarChart3, Package, Star } from 'lucide-react';
 import { reviewService } from '@/lib/reviewService';
 
 interface Profile {
@@ -21,7 +21,7 @@ interface Profile {
   role: 'buyer' | 'trader' | 'transporter';
 }
 
-export default function TraderDashboardPage() {
+export default function TransporterDashboardPage() {
   const { user } = useAuth();
   const router = useRouter();
   const supabase = createClient();
@@ -47,7 +47,7 @@ export default function TraderDashboardPage() {
         console.error('Error fetching profile:', error);
       } else if (data) {
         setProfile(data);
-        // Fetch average rating for the trader
+        // Fetch average rating for the transporter
         const avgRating = await reviewService.getAverageRating(user.id);
         setAverageRating(avgRating);
       }
@@ -93,37 +93,29 @@ export default function TraderDashboardPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <PlusCircle className="h-5 w-5" />
-                  List a New Product
+                  <Package className="h-5 w-5" />
+                  Available Deliveries
                 </CardTitle>
-                <CardDescription>Add a new product to the marketplace for buyers to purchase.</CardDescription>
+                <CardDescription>View and accept new delivery requests</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button onClick={() => router.push('/products/add')} className="mt-4 w-full">List New Product</Button>
+                <p className="text-3xl font-bold">0</p>
+                <p className="text-sm text-muted-foreground">Deliveries awaiting acceptance</p>
+                <Button onClick={() => router.push('/transporter/available-deliveries')} className="mt-4 w-full">View Available</Button>
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <List className="h-5 w-5" />
-                  Manage Your Listings
+                  <Truck className="h-5 w-5" />
+                  My Deliveries
                 </CardTitle>
-                <CardDescription>View, edit, or remove your current product listings.</CardDescription>
+                <CardDescription>View and manage your assigned deliveries</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button onClick={() => router.push('/products/manage')} className="mt-4 w-full">Manage Listings</Button>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ClipboardList className="h-5 w-5" />
-                  View Received Orders
-                </CardTitle>
-                <CardDescription>See and manage the orders that buyers have placed for your products.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button onClick={() => router.push('/orders/received')} className="mt-4 w-full">View Received Orders</Button>
+                <p className="text-3xl font-bold">0</p>
+                <p className="text-sm text-muted-foreground">Deliveries in progress</p>
+                <Button onClick={() => router.push('/transporter/my-deliveries')} className="mt-4 w-full">View My Deliveries</Button>
               </CardContent>
             </Card>
             <Card>
@@ -132,7 +124,7 @@ export default function TraderDashboardPage() {
                   <Star className="h-5 w-5" />
                   Your Rating
                 </CardTitle>
-                <CardDescription>Average rating from buyers</CardDescription>
+                <CardDescription>Average rating from traders and buyers</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold">{averageRating !== null ? averageRating.toFixed(1) : 'N/A'}</p>
@@ -142,28 +134,42 @@ export default function TraderDashboardPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
+                  <Truck className="h-5 w-5" />
+                  Assigned Deliveries
+                </CardTitle>
+                <CardDescription>Manage deliveries assigned to you</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold">0</p>
+                <p className="text-sm text-muted-foreground">Active deliveries</p>
+                <Button onClick={() => router.push('/transporter')} className="mt-4 w-full">View Deliveries</Button>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
                   Service Area
                 </CardTitle>
-                <CardDescription>Manage your service locations</CardDescription>
+                <CardDescription>Manage your delivery zones</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="font-medium">{profile.location || 'Not set'}</p>
-                <Button onClick={() => router.push('/profile')} variant="outline" className="mt-4 w-full">Update Area</Button>
+                <Button onClick={() => router.push('/profile')} variant="outline" className="mt-4 w-full">Update Zones</Button>
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
-                  Sales Analytics
+                  Delivery Performance
                 </CardTitle>
-                <CardDescription>Track your sales performance and product insights</CardDescription>
+                <CardDescription>Track your delivery statistics and performance</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold">KSh 0.00</p>
-                <p className="text-sm text-muted-foreground">Total revenue</p>
-                <Button onClick={() => router.push('/dashboard/trader/analytics')} className="mt-4 w-full">View Analytics</Button>
+                <p className="text-3xl font-bold">0</p>
+                <p className="text-sm text-muted-foreground">Total deliveries completed</p>
+                <Button onClick={() => router.push('/dashboard/transporter/performance')} className="mt-4 w-full">View Performance</Button>
               </CardContent>
             </Card>
           </div>

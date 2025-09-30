@@ -34,7 +34,7 @@ export interface OrderFilters {
 }
 
 class OrderService {
-  private supabase = createClient();
+  public supabase = createClient();
 
   async getAllOrders(filters?: OrderFilters): Promise<Order[]> {
     try {
@@ -410,6 +410,141 @@ class OrderService {
       throw error;
     }
   }
+
+  async autoAssignTransporter(orderId: string): Promise<Order | null> {
+    try {
+      // 1. Get the order details
+      const order = await this.getOrderById(orderId);
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      // Only auto-assign if status is confirmed and no transporter is assigned
+      if (order.status !== 'confirmed' || order.transporter_id !== null) {
+        return order; // No action needed
+      }
+
+      // Extract city from shipping address (simple approach: assume last part is city)
+      const shippingAddressParts = order.shipping_address.split(',').map(part => part.trim());
+      const targetCity = shippingAddressParts[shippingAddressParts.length - 2]; // Assuming city is second to last part
+
+      let availableTransporters: { id: string; full_name: string; location: string; }[] | null = null;
+
+      // Try to find transporters in the target city
+      if (targetCity) {
+        const { data, error } = await this.supabase
+          .from('profiles')
+          .select('id, full_name, location')
+          .eq('role', 'transporter')
+          .eq('location', targetCity); // Match by city
+
+        if (error) {
+          console.error('Error fetching transporters by city:', error);
+        } else {
+          availableTransporters = data;
+        }
+      }
+
+      // Fallback: if no city-specific transporters or no city found, get all transporters
+      if (!availableTransporters || availableTransporters.length === 0) {
+        console.warn(`No transporters found for city: ${targetCity || 'N/A'}. Falling back to all available transporters.`);
+        const { data, error } = await this.supabase
+          .from('profiles')
+          .select('id, full_name, location')
+          .eq('role', 'transporter');
+        
+        if (error) {
+          throw error;
+        }
+        availableTransporters = data;
+      }
+
+      if (!availableTransporters || availableTransporters.length === 0) {
+        console.warn('No transporters available for auto-assignment.');
+        return order; // No transporter to assign
+      }
+
+      // Pick a random transporter from the available ones
+      const assignedTransporter = availableTransporters[Math.floor(Math.random() * availableTransporters.length)];
+
+      // 3. Assign Transporter and update status
+      const { data, error } = await this.supabase
+        .from('orders')
+        .update({ transporter_id: assignedTransporter.id, status: 'in_transit' })
+        .eq('id', orderId)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      const updatedOrder = data as Order;
+
+      // 4. Notify Transporter (and buyer/trader)
+      await notificationService.createOrderNotification(
+        assignedTransporter.id,
+        updatedOrder.id,
+        `New Delivery Assignment: ${updatedOrder.title}`,
+        'in_transit'
+      );
+      // Also notify buyer and trader about status change
+      await this.createStatusChangeNotifications(updatedOrder);
+
+      return updatedOrder;
+    } catch (error) {
+      const appError = ErrorHandler.handle(error, 'OrderService.autoAssignTransporter');
+      ErrorHandler.showErrorToast(appError);
+      throw error;
+    }
+  }
+
+  async getDetailedOrderById(id: string): Promise<OrderWithDetails | null> {
+    try {
+      const { data, error } = await this.supabase
+        .from('orders')
+        .select(`
+          *,
+          profiles:trader_id (full_name),
+          transporters:transporter_id (full_name),
+          order_items (
+            quantity,
+            products (
+              name
+            )
+          )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data as OrderWithDetails;
+    } catch (error) {
+      if ((error as any).code === 'PGRST116') {
+        // Record not found
+        return null;
+      } else {
+        const appError = ErrorHandler.handle(error, 'OrderService.getDetailedOrderById');
+        ErrorHandler.showErrorToast(appError);
+        throw error;
+      }
+    }
+  }
 }
 
 export const orderService = new OrderService();
+
+export interface OrderWithDetails extends Order {
+    profiles: { full_name: string } | null; // Trader's profile
+    transporters: { full_name: string } | null; // Transporter's profile
+    order_items: {
+        quantity: number;
+        price_at_time: number; // Add this line
+        products: {
+            name: string;
+        };
+    }[];
+}

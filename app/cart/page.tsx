@@ -94,7 +94,7 @@ export default function CartPage() {
       return;
     }
     try {
-      await cartService.updateCartItemQuantity(cartItemId, newQuantity);
+      await cartService.updateQuantity(cartItemId, newQuantity);
       setCartItems(prevItems =>
         prevItems.map(item =>
           item.id === cartItemId ? { ...item, quantity: newQuantity } : item

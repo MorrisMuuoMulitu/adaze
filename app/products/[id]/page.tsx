@@ -1,16 +1,8 @@
-"use client";
-
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { useAuth } from '@/components/auth/auth-provider';
-import { productService, Product } from '@/lib/productService';
-import { cartService } from '@/lib/cartService';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useRouter, useParams } from 'next/navigation';
 import { Package, MapPin, DollarSign, ShoppingCart, Star, Heart, ArrowLeft, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { reviewService } from '@/lib/reviewService';
+import { createClient } from '@/lib/supabase/client';
+import { wishlistService } from '@/lib/wishlistService';
 
 export default function ProductDetailPage() {
   const { user } = useAuth();
@@ -22,6 +14,8 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [cartCount, setCartCount] = useState(0);
+  const [traderInfo, setTraderInfo] = useState<{ name: string; averageRating: number | null } | null>(null);
+  const [isWishlisted, setIsWishlisted] = useState(false);
 
   useEffect(() => {
     if (!productId) {
@@ -35,6 +29,27 @@ export default function ProductDetailPage() {
         const productData = await productService.getProductById(productId);
         if (productData) {
           setProduct(productData);
+
+          // Fetch trader info
+          const supabase = createClient();
+          const { data: traderProfile, error: traderError } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', productData.trader_id)
+            .single();
+
+          if (traderError) {
+            console.error('Error fetching trader profile:', traderError);
+          } else if (traderProfile) {
+            const avgRating = await reviewService.getAverageRating(productData.trader_id);
+            setTraderInfo({ name: traderProfile.full_name, averageRating: avgRating });
+          }
+
+          // Check wishlist status
+          if (user) {
+            const inWishlist = await wishlistService.isInWishlist(user.id, productData.id);
+            setIsWishlisted(inWishlist);
+          }
         } else {
           router.push('/marketplace');
         }
@@ -82,6 +97,30 @@ export default function ProductDetailPage() {
     } catch (error) {
       console.error('Error adding to cart:', error);
       toast.error('Failed to add item to cart');
+    }
+  };
+
+  const handleToggleWishlist = async () => {
+    if (!user || !product) {
+      toast.error('Please log in to manage your wishlist.');
+      return;
+    }
+
+    try {
+      if (isWishlisted) {
+        await wishlistService.removeFromWishlist(user.id, product.id);
+        setIsWishlisted(false);
+        toast.success('Removed from wishlist!');
+      } else {
+        await wishlistService.addToWishlist(user.id, product.id);
+        setIsWishlisted(true);
+        toast.success('Added to wishlist!');
+      }
+      // Notify Navbar to update wishlist count
+      window.dispatchEvent(new CustomEvent('wishlistUpdated'));
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+      toast.error('Failed to update wishlist.');
     }
   };
 
@@ -143,12 +182,9 @@ export default function ProductDetailPage() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => {
-                    // Add to wishlist functionality (not implemented yet)
-                    toast.info('Added to wishlist');
-                  }}
+                  onClick={handleToggleWishlist}
                 >
-                  <Heart className="h-4 w-4 mr-2" />
+                  <Heart className={`h-4 w-4 mr-2 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
                   Wishlist
                 </Button>
                 <Button 
@@ -195,7 +231,18 @@ export default function ProductDetailPage() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Seller:</span>
-                  <span className="font-medium">Trusted Seller</span>
+                  <span className="font-medium">
+                    {traderInfo?.name || 'N/A'}
+                    {traderInfo?.averageRating !== null && (
+                      <span className="ml-2 flex items-center">
+                        ({traderInfo?.averageRating.toFixed(1)} <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 ml-1" />)
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Delivery:</span>
+                  <span className="font-medium">Standard (3-5 days)</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Available:</span>

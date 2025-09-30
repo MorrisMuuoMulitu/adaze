@@ -1,21 +1,24 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/components/auth/auth-provider';
-import { orderService, Order } from '@/lib/orderService';
+import { orderService, Order, OrderWithDetails } from '@/lib/orderService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
-import { Package, MapPin, DollarSign, Calendar, User, CheckCircle, Truck, Clock, XCircle } from 'lucide-react';
+import { Package, MapPin, DollarSign, Calendar, User, CheckCircle, Truck, Clock, XCircle, ShoppingCart } from 'lucide-react';
+import { ReviewModal } from '@/components/reviews/review-modal';
 
 export default function OrdersPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
-  const [role, setRole] = useState<'buyer' | 'trader' | 'transporter' | null>(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedOrderForReview, setSelectedOrderForReview] = useState<OrderWithDetails | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -23,45 +26,56 @@ export default function OrdersPage() {
       return;
     }
 
-    const fetchRoleAndOrders = async () => {
+    const fetchOrders = async () => {
       setLoading(true);
       
       try {
-        // Get user's role from their profile
-        const supabase = (await import('@/lib/supabase/client')).createClient();
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError) {
-          throw profileError;
-        }
-
-        setRole(profile.role as 'buyer' | 'trader' | 'transporter');
-        
-        // For traders, redirect to marketplace since they might want to browse orders
-        if (profile.role === 'trader') {
-          router.push('/marketplace');
-          return;
-        }
-        
-        // Fetch orders based on user role (for buyers and transporters)
         const userOrders = await orderService.getAllOrders({
           userId: user.id,
-          role: profile.role as 'buyer' | 'trader' | 'transporter'
+          role: 'buyer'
         });
         
-        setOrders(userOrders);
+        // Fetch detailed order items and related profiles
+        const ordersWithDetails = (await Promise.all(userOrders.map(async (order) => {
+          const detailedOrder = await orderService.getDetailedOrderById(order.id);
+          if (!detailedOrder) {
+            console.error('Error fetching detailed order for ID:', order.id);
+            return null; // Return null if details fail
+          }
+          return detailedOrder;
+        }))).filter(Boolean) as OrderWithDetails[]; // Filter out nulls and assert type
+
+        setOrders(ordersWithDetails);
       } catch (error) {
-        console.error('Error fetching role and orders:', error);
+        console.error('Error fetching orders:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchRoleAndOrders();
+    fetchOrders();
+
+    // Set up Supabase Realtime listener for orders
+    const ordersChannel = orderService.supabase
+      .channel('orders_changes')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `buyer_id=eq.${user.id}` },
+        (payload) => {
+          const updatedOrder = payload.new as OrderWithDetails;
+          setOrders(prevOrders => 
+            prevOrders.map(order => 
+              order.id === updatedOrder.id ? { ...order, ...updatedOrder } : order
+            )
+          );
+          toast.info(`Order ${updatedOrder.title} status updated to ${updatedOrder.status}`);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      ordersChannel.unsubscribe();
+    };
   }, [user, router]);
 
   const getStatusBadgeVariant = (status: string) => {
@@ -98,54 +112,12 @@ export default function OrdersPage() {
     }
   };
 
-  const handleOrderAction = async (orderId: string, action: string) => {
-    try {
-      let updatedOrder: Order | null = null;
-      
-      switch (action) {
-        case 'accept':
-          if (role === 'trader') {
-            updatedOrder = await orderService.assignOrderToTrader(orderId, user?.id || '');
-          }
-          break;
-        case 'assign_transporter':
-          if (role === 'trader') {
-            // In a real app, this would show a list of available transporters
-            // For now, we'll just update the status
-            updatedOrder = await orderService.assignOrderToTransporter(orderId, user?.id || '');
-          }
-          break;
-        case 'mark_delivered':
-          if (role === 'transporter') {
-            updatedOrder = await orderService.completeOrder(orderId);
-          }
-          break;
-      }
-      
-      if (updatedOrder) {
-        // Update the order in the local state
-        setOrders(prev => 
-          prev.map(order => 
-            order.id === orderId ? updatedOrder! : order
-          )
-        );
-      }
-    } catch (error) {
-      console.error('Error performing order action:', error);
-    }
-  };
-
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading orders...</div>;
   }
 
   if (!user) {
     return <div className="min-h-screen flex items-center justify-center">Please log in to view your orders.</div>;
-  }
-
-  // This should not render if user is trader (they get redirected)
-  if (role === 'trader') {
-    return <div className="min-h-screen flex items-center justify-center">Redirecting...</div>;
   }
 
   return (
@@ -159,14 +131,13 @@ export default function OrdersPage() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold">Your Orders</h1>
-              <p className="text-muted-foreground">Manage your orders based on your role: {role}</p>
+              <p className="text-muted-foreground">View your purchase history and track order status.</p>
             </div>
             <div className="mt-4 md:mt-0">
-              {role === 'buyer' && (
-                <Button onClick={() => router.push('/orders/create')}>
-                  Create New Order
-                </Button>
-              )}
+              <Button onClick={() => router.push('/marketplace')}>
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Continue Shopping
+              </Button>
             </div>
           </div>
 
@@ -174,16 +145,10 @@ export default function OrdersPage() {
             <div className="text-center py-12">
               <Package className="h-12 w-12 mx-auto text-muted-foreground" />
               <h3 className="mt-4 text-xl font-semibold">No orders found</h3>
-              <p className="text-muted-foreground mt-2">
-                {role === 'buyer'
-                  ? 'You have not created any orders yet.'
-                  : 'No orders are assigned to you for delivery yet.'}
-              </p>
-              {role === 'buyer' && (
-                <Button className="mt-4" onClick={() => router.push('/orders/create')}>
-                  Create Your First Order
-                </Button>
-              )}
+              <p className="text-muted-foreground mt-2">You have not placed any orders yet.</p>
+              <Button className="mt-4" onClick={() => router.push('/marketplace')}>
+                Start Shopping
+              </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -203,7 +168,29 @@ export default function OrdersPage() {
                     <div className="space-y-3">
                       <div className="flex items-center text-sm text-muted-foreground">
                         <DollarSign className="h-4 w-4 mr-2" />
-                        <span>${order.amount}</span>
+                        <span>KSh {order.amount.toFixed(2)}</span>
+                      </div>
+                      
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <User className="h-4 w-4 mr-2" />
+                        <span>Trader: {order.profiles?.full_name || 'N/A'}</span>
+                      </div>
+
+                      {order.transporters && (
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Truck className="h-4 w-4 mr-2" />
+                          <span>Transporter: {order.transporters.full_name}</span>
+                        </div>
+                      )}
+
+                      <div className="text-sm text-muted-foreground">
+                        <h4 className="font-semibold mb-1">Products:</h4>
+                        {order.order_items.map((item, index) => (
+                          <div key={index} className="flex justify-between text-xs pl-4">
+                            <span>{item.products.name} (x{item.quantity})</span>
+                            <span>KSh {(item.quantity * item.price_at_time).toFixed(2)}</span>
+                          </div>
+                        ))}
                       </div>
                       
                       <div className="flex items-center text-sm text-muted-foreground">
@@ -223,15 +210,15 @@ export default function OrdersPage() {
                         <span>{new Date(order.created_at).toLocaleDateString()}</span>
                       </div>
 
-                      {/* Role-specific action buttons */}
-                      {role === 'transporter' && 
-                        order.status === 'in_transit' && 
-                        order.transporter_id === user?.id && (
+                      {order.status === 'delivered' && (
                         <Button 
                           className="w-full mt-4" 
-                          onClick={() => handleOrderAction(order.id, 'mark_delivered')}
+                          onClick={() => {
+                            setSelectedOrderForReview(order);
+                            setShowReviewModal(true);
+                          }}
                         >
-                          Mark as Delivered
+                          Leave Review
                         </Button>
                       )}
                     </div>
@@ -242,6 +229,13 @@ export default function OrdersPage() {
           )}
         </motion.div>
       </div>
+      {selectedOrderForReview && (
+        <ReviewModal 
+          isOpen={showReviewModal} 
+          onClose={() => setShowReviewModal(false)} 
+          order={selectedOrderForReview}
+        />
+      )}
     </div>
   );
 }
