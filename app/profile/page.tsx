@@ -283,6 +283,7 @@ export default function ProfilePage() {
         isOpen={showAuthModal} 
         onClose={handleCloseAuthModal} 
         initialType={authModalType} 
+        onSuccess={handleCloseAuthModal} // Add onSuccess prop
       />
       <main className="flex-grow">
         <div className="min-h-screen bg-background py-12">
