@@ -100,7 +100,7 @@ export default function MarketplacePage() {
 
   const addToCart = async (productId: string) => {
     if (!user) {
-      router.push('/login');
+      router.push('/');
       return;
     }
     

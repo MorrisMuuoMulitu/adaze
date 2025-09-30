@@ -66,7 +66,7 @@ export default function ProductDetailPage() {
 
   const addToCart = async () => {
     if (!user) {
-      router.push('/login');
+      router.push('/');
       return;
     }
     
