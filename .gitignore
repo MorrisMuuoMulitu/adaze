@@ -40,3 +40,4 @@ next-env.d.ts
 
 # Backup files
 app/error.tsx.bak
+supabase-wishlist-and-function-update.sql
