@@ -19,7 +19,7 @@ interface WishlistItem {
   user_id: string;
   product_id: string;
   created_at: string;
-  products: Product; // Joined product data
+  products: Product[]; // Joined product data as an array
 }
 
 export default function WishlistPage() {
@@ -188,10 +188,10 @@ export default function WishlistPage() {
                   <Card key={item.product_id} className="overflow-hidden">
                     <div className="relative">
                       <div className="h-48 bg-gray-200 relative overflow-hidden">
-                        {item.products.image_url ? (
+                        {item.products[0]?.image_url ? (
                           <img 
-                            src={item.products.image_url} 
-                            alt={item.products.name} 
+                            src={item.products[0]?.image_url} 
+                            alt={item.products[0]?.name} 
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -210,13 +210,13 @@ export default function WishlistPage() {
                       </Button>
                     </div>
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">{item.products.name}</CardTitle>
-                      <CardDescription>{item.products.description.substring(0, 60)}...</CardDescription>
+                      <CardTitle className="text-lg">{item.products[0]?.name}</CardTitle>
+                      <CardDescription>{item.products[0]?.description?.substring(0, 60)}...</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-xl font-bold text-primary">
-                          KSh {item.products.price.toFixed(2)}
+                          KSh {item.products[0]?.price.toFixed(2)}
                         </span>
                         <div className="flex items-center">
                           <Heart className="h-4 w-4 fill-red-400 text-red-400 mr-1" />
