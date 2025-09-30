@@ -48,7 +48,7 @@ export const wishlistService = {
         user_id,
         product_id,
         created_at,
-        products (*)
+        products:product_id (*)
       `)
       .eq('user_id', userId);
 
