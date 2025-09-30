@@ -310,7 +310,7 @@ DROP FUNCTION IF EXISTS public.handle_new_user();
 
 -- Create a new function that copies metadata to the profiles table
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.profiles (id, full_name, phone, location, role)
   VALUES (
@@ -338,7 +338,7 @@ BEGIN
   );
   RETURN NEW;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Recreate the trigger to use the new function
 CREATE TRIGGER on_auth_user_created
