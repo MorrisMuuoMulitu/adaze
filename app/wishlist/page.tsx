@@ -8,7 +8,7 @@ import { wishlistService } from '@/lib/wishlistService';
 import { Product } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Heart, ShoppingCart as ShoppingCartIcon } from 'lucide-react';
+import { Package, Heart, ShoppingCart as ShoppingCartIcon, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/layout/navbar';
 import { AuthModal } from '@/components/auth/auth-modal';
