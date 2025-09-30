@@ -6,7 +6,7 @@ interface WishlistItem {
   user_id: string;
   product_id: string;
   created_at: string;
-  products: Product; // Joined product data
+  products: Product[]; // Joined product data as an array
 }
 
 export const wishlistService = {
