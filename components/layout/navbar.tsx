@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { LanguageToggle } from '@/components/language-toggle';
 import { useLanguage } from '@/components/language-provider';
-import { 
-  Menu, 
-  X, 
-  ShoppingBag, 
-  User, 
+import {
+  Menu,
+  X,
+  ShoppingBag,
+  User,
   Settings,
   LogOut,
   Truck,
@@ -35,6 +35,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { cartService } from '@/lib/cartService';
+import { notificationService } from '@/lib/notificationService'; // Import notificationService
 import Link from 'next/link';
 import { useAuth } from '@/components/auth/auth-provider';
 import { createClient } from '@/lib/supabase/client';
@@ -48,23 +49,34 @@ export function Navbar({ onAuthClick }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [cartItemCount, setCartItemCount] = useState(0);
+  const [wishlistItemCount, setWishlistItemCount] = useState(0); // New state for wishlist
+  const [notificationCount, setNotificationCount] = useState(0); // New state for notifications
   const { t } = useLanguage();
   const { user } = useAuth();
   const supabase = createClient();
 
-  // Fetch cart count when user logs in
+  // Fetch counts when user logs in or on component mount
   useEffect(() => {
     if (user) {
-      const fetchCartCount = async () => {
+      const fetchCounts = async () => {
         try {
-          const count = await cartService.getCartCount(user.id);
-          setCartItemCount(count);
+          const cartCount = await cartService.getCartCount(user.id);
+          setCartItemCount(cartCount);
+
+          // For wishlist, assuming a placeholder for now or fetching from a service
+          // If you have a wishlist service, integrate it here:
+          // const wishlistCount = await wishlistService.getWishlistCount(user.id);
+          // setWishlistItemCount(wishlistCount);
+          setWishlistItemCount(0); // Placeholder: no actual wishlist service yet
+
+          const unreadNotifications = await notificationService.getUnreadNotificationCount(user.id);
+          setNotificationCount(unreadNotifications);
         } catch (error) {
-          console.error('Error fetching cart count:', error);
+          console.error('Error fetching counts:', error);
         }
       };
 
-      fetchCartCount();
+      fetchCounts();
 
       // Set up listener for cart updates
       const handleCartUpdate = async () => {
@@ -78,40 +90,23 @@ export function Navbar({ onAuthClick }: NavbarProps) {
 
       window.addEventListener('cartUpdated', handleCartUpdate);
 
+      // Set up listener for notification updates (if applicable)
+      // window.addEventListener('notificationUpdated', handleNotificationUpdate);
+
       return () => {
         window.removeEventListener('cartUpdated', handleCartUpdate);
+        // window.removeEventListener('notificationUpdated', handleNotificationUpdate);
       };
     } else {
       setCartItemCount(0);
+      setWishlistItemCount(0);
+      setNotificationCount(0);
     }
   }, [user]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
-
-  useEffect(() => {
-    if (user) {
-      const fetchCartCount = async () => {
-        try {
-          const count = await cartService.getCartCount(user.id);
-          setCartItemCount(count);
-        } catch (error) {
-          console.error('Error fetching cart count:', error);
-        }
-      };
-      
-      fetchCartCount();
-      
-      // Set up a mechanism to update cart count when cart changes
-      // For now, we'll just refetch periodically
-      const interval = setInterval(fetchCartCount, 30000); // Every 30 seconds
-      
-      return () => {
-        clearInterval(interval);
-      };
-    }
-  }, [user]);
 
   const navItems = [
     { name: t('nav.marketplace'), href: '/marketplace', icon: ShoppingBag },
@@ -150,17 +145,19 @@ export function Navbar({ onAuthClick }: NavbarProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-14 sm:h-16">
           {/* Logo */}
-          <motion.div 
-            className="flex items-center space-x-2"
-            whileHover={{ scale: 1.05 }}
-          >
-            <div className="african-gradient w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center">
-              <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-            </div>
-            <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              ADAZE
-            </span>
-          </motion.div>
+          <Link href="/" passHref>
+            <motion.div 
+              className="flex items-center space-x-2 cursor-pointer"
+              whileHover={{ scale: 1.05 }}
+            >
+              <div className="african-gradient w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center">
+                <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+              </div>
+              <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                ADAZE
+              </span>
+            </motion.div>
+          </Link>
 
           {/* Search Bar - Desktop */}
           <div className="hidden lg:flex flex-1 max-w-md mx-8">
@@ -200,7 +197,9 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                       {/* Quick Actions */}
                       <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button">
                         <Heart className="h-4 w-4" />
-                        <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">3</Badge>
+                        {wishlistItemCount > 0 && (
+                          <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">{wishlistItemCount}</Badge>
+                        )}
                       </Button>
                       
                       <CartSidebar 
@@ -210,7 +209,9 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                       
                       <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button">
                         <Bell className="h-4 w-4" />
-                        <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-red-500">5</Badge>
+                        {notificationCount > 0 && (
+                          <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-red-500">{notificationCount}</Badge>
+                        )}
                       </Button>
 
                       <Button variant="ghost" size="sm" className="w-9 h-9 p-0 mobile-button">
@@ -312,7 +313,9 @@ export function Navbar({ onAuthClick }: NavbarProps) {
               <>
                 <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button">
                   <Bell className="h-4 w-4" />
-                  <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-red-500">5</Badge>
+                  {notificationCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-red-500">{notificationCount}</Badge>
+                  )}
                 </Button>
                 
                 <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button" asChild>
@@ -352,7 +355,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                   <Input
                     placeholder="Search..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 pr-4 h-12 focus-ring"
                   />
                 </div>
