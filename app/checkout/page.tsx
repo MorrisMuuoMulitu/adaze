@@ -27,12 +27,10 @@ interface CartItem {
   quantity: number;
   created_at: string;
   updated_at: string;
-  products: {
-    id: string;
-    name: string;
-    price: number;
-    image_url?: string;
-  }; // Joined product data
+  // Additional product info
+  product_name: string;
+  product_price: number;
+  product_image_url: string | null;
 }
 
 const checkoutSchema = z.object({
@@ -109,7 +107,7 @@ export default function CheckoutPage() {
     fetchCartItems();
   }, [user, router]);
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.products.price * item.quantity, 0);
+  const subtotal = cartItems.reduce((sum, item) => sum + item.product_price * item.quantity, 0);
   const shippingCost = 0; // Placeholder for shipping cost
   const total = subtotal + shippingCost;
 
@@ -135,7 +133,7 @@ export default function CheckoutPage() {
         items: cartItems.map(item => ({
           product_id: item.product_id,
           quantity: item.quantity,
-          price_at_time: item.products.price,
+          price_at_time: item.product_price,
         })),
       };
 
@@ -260,7 +258,7 @@ export default function CheckoutPage() {
                           name="email"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Email</FormLabel>
+                              <FormLabel>Email</Label>
                               <FormControl>
                                 <Input type="email" placeholder="john.doe@example.com" {...field} />
                               </FormControl>
@@ -274,7 +272,7 @@ export default function CheckoutPage() {
                         name="phone"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
+                            <FormLabel>Phone Number</Label>
                             <FormControl>
                               <Input placeholder="+254712345678" {...field} />
                             </FormControl>
@@ -287,7 +285,7 @@ export default function CheckoutPage() {
                         name="shippingAddress"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Shipping Address</FormLabel>
+                            <FormLabel>Shipping Address</Label>
                             <FormControl>
                               <Textarea placeholder="123 Main St" {...field} />
                             </FormControl>
@@ -301,7 +299,7 @@ export default function CheckoutPage() {
                           name="city"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>City</FormLabel>
+                              <FormLabel>City</Label>
                               <FormControl>
                                 <Input placeholder="Nairobi" {...field} />
                               </FormControl>
@@ -314,7 +312,7 @@ export default function CheckoutPage() {
                           name="postalCode"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Postal Code</FormLabel>
+                              <FormLabel>Postal Code</Label>
                               <FormControl>
                                 <Input placeholder="00100" {...field} />
                               </FormControl>
@@ -328,7 +326,7 @@ export default function CheckoutPage() {
                         name="country"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Country</FormLabel>
+                            <FormLabel>Country</Label>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
                                 <SelectTrigger>
@@ -349,7 +347,7 @@ export default function CheckoutPage() {
                         name="notes"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Order Notes (Optional)</FormLabel>
+                            <FormLabel>Order Notes (Optional)</Label>
                             <FormControl>
                               <Textarea placeholder="e.g., Leave at the front desk" {...field} />
                             </FormControl>
@@ -371,17 +369,17 @@ export default function CheckoutPage() {
                           <div key={item.id} className="flex justify-between items-center text-sm">
                             <div className="flex items-center space-x-2">
                               <div className="w-10 h-10 flex-shrink-0">
-                                {item.products.image_url ? (
-                                  <img src={item.products.image_url} alt={item.products.name} className="w-full h-full object-cover rounded-md" />
+                                {item.product_image_url ? (
+                                  <img src={item.product_image_url} alt={item.product_name} className="w-full h-full object-cover rounded-md" />
                                 ) : (
                                   <div className="w-full h-full bg-muted flex items-center justify-center rounded-md">
                                     <Package className="h-6 w-6 text-gray-400" />
                                   </div>
                                 )}
                               </div>
-                              <span>{item.products.name} x {item.quantity}</span>
+                              <span>{item.product_name} x {item.quantity}</span>
                             </div>
-                            <span>KSh {(item.products.price * item.quantity).toFixed(2)}</span>
+                            <span>KSh {(item.product_price * item.quantity).toFixed(2)}</span>
                           </div>
                         ))}
                       </div>
