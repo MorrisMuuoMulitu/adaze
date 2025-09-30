@@ -1,9 +1,6 @@
 "use client";
 
-import React from 'react';
-import { createClient } from '@/lib/supabase/server';
-
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/components/auth/auth-provider';
 import { productService, Product } from '@/lib/productService';
@@ -15,6 +12,8 @@ import { useRouter } from 'next/navigation';
 import { Package, MapPin, DollarSign, ShoppingCart, Star, Search, Heart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { Navbar } from '@/components/layout/navbar'; // Import Navbar
+import { AuthModal } from '@/components/auth/auth-modal'; // Import AuthModal
 
 export default function MarketplacePage() {
   const { user } = useAuth();
@@ -25,6 +24,17 @@ export default function MarketplacePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [cartCount, setCartCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalType, setAuthModalType] = useState<'login' | 'register'>('login');
+
+  const handleAuthClick = (type: 'login' | 'register') => {
+    setAuthModalType(type);
+    setShowAuthModal(true);
+  };
+
+  const handleCloseAuthModal = () => {
+    setShowAuthModal(false);
+  };
 
   // Handle user redirection if not logged in
   useEffect(() => {
@@ -152,147 +162,157 @@ export default function MarketplacePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold">
-                {role === 'trader' ? 'Your Products' : 'Marketplace'}
-              </h1>
-              <p className="text-muted-foreground">
-                {role === 'trader' 
-                  ? 'Manage your products' 
-                  : 'Browse products available for purchase'}
-              </p>
-            </div>
-            <div className="mt-4 md:mt-0 flex gap-2">
-              {role === 'trader' && (
-                <Button onClick={() => router.push('/products/create')}>
-                  Add New Product
-                </Button>
-              )}
-              <Button onClick={() => router.push('/cart')}>
-                <ShoppingCart className="h-4 w-4 mr-2" />
-                Cart ({cartCount})
-              </Button>
-            </div>
-          </div>
+    <div className="flex flex-col min-h-screen">
+      <Navbar onAuthClick={handleAuthClick} />
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={handleCloseAuthModal} 
+        initialType={authModalType} 
+      />
+      <main className="flex-grow">
+        <div className="min-h-screen bg-background py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+                <div>
+                  <h1 className="text-3xl font-bold">
+                    {role === 'trader' ? 'Your Products' : 'Marketplace'}
+                  </h1>
+                  <p className="text-muted-foreground">
+                    {role === 'trader' 
+                      ? 'Manage your products' 
+                      : 'Browse products available for purchase'}
+                  </p>
+                </div>
+                <div className="mt-4 md:mt-0 flex gap-2">
+                  {role === 'trader' && (
+                    <Button onClick={() => router.push('/products/create')}>
+                      Add New Product
+                    </Button>
+                  )}
+                  <Button onClick={() => router.push('/cart')}>
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Cart ({cartCount})
+                  </Button>
+                </div>
+              </div>
 
-          {/* Search Section */}
-          <div className="mb-6 flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                type="text"
-                placeholder="Search products..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
+              {/* Search Section */}
+              <div className="mb-6 flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
 
-          {filteredProducts.length === 0 ? (
-            <div className="text-center py-12">
-              <Package className="h-12 w-12 mx-auto text-muted-foreground" />
-              <h3 className="mt-4 text-xl font-semibold">No products available</h3>
-              <p className="text-muted-foreground mt-2">
-                {role === 'trader'
-                  ? 'You have not added any products yet.'
-                  : 'No products match your search. Check back later for new items!'}
-              </p>
-              {role === 'trader' ? (
-                <Button className="mt-4" onClick={() => router.push('/products/create')}>
-                  Add Your First Product
-                </Button>
+              {filteredProducts.length === 0 ? (
+                <div className="text-center py-12">
+                  <Package className="h-12 w-12 mx-auto text-muted-foreground" />
+                  <h3 className="mt-4 text-xl font-semibold">No products available</h3>
+                  <p className="text-muted-foreground mt-2">
+                    {role === 'trader'
+                      ? 'You have not added any products yet.'
+                      : 'No products match your search. Check back later for new items!'}
+                  </p>
+                  {role === 'trader' ? (
+                    <Button className="mt-4" onClick={() => router.push('/products/create')}>
+                      Add Your First Product
+                    </Button>
+                  ) : (
+                    <div className="mt-6 space-y-3">
+                      <p className="text-muted-foreground">Try:</p>
+                      <ul className="text-muted-foreground space-y-1">
+                        <li>• Changing your search terms</li>
+                        <li>• Browsing different categories</li>
+                        <li>• Checking back later for new products</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
               ) : (
-                <div className="mt-6 space-y-3">
-                  <p className="text-muted-foreground">Try:</p>
-                  <ul className="text-muted-foreground space-y-1">
-                    <li>• Changing your search terms</li>
-                    <li>• Browsing different categories</li>
-                    <li>• Checking back later for new products</li>
-                  </ul>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {filteredProducts.map((product) => (
+                    <Card key={product.id} className="overflow-hidden group">
+                      <div className="relative">
+                        <div className="h-48 bg-gray-200 relative overflow-hidden">
+                          {product.image_url ? (
+                            <img 
+                              src={product.image_url} 
+                              alt={product.name} 
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-muted flex items-center justify-center">
+                              <Package className="h-12 w-12 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="absolute top-2 right-2">
+                          <Button 
+                            size="sm" 
+                            variant="secondary" 
+                            className="rounded-full p-2"
+                            onClick={() => {
+                              // Add to wishlist functionality (not implemented yet)
+                              toast.info('Added to wishlist');
+                            }}
+                          >
+                            <Heart className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg h-12 overflow-hidden">{product.name}</CardTitle>
+                        <CardDescription className="h-12 overflow-hidden">
+                          {product.description.substring(0, 60)}...
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="text-xl font-bold text-primary">
+                            KSh {product.price.toFixed(2)}
+                          </span>
+                          <div className="flex items-center">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
+                            <span>{product.rating.toFixed(1)}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex space-x-2">
+                          <Button 
+                            className="flex-1" 
+                            onClick={() => addToCart(product.id)}
+                          >
+                            <ShoppingCart className="h-4 w-4 mr-2" />
+                            Add to Cart
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => router.push(`/products/${product.id}`)}
+                          >
+                            View
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map((product) => (
-                <Card key={product.id} className="overflow-hidden group">
-                  <div className="relative">
-                    <div className="h-48 bg-gray-200 relative overflow-hidden">
-                      {product.image_url ? (
-                        <img 
-                          src={product.image_url} 
-                          alt={product.name} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-muted flex items-center justify-center">
-                          <Package className="h-12 w-12 text-gray-400" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="absolute top-2 right-2">
-                      <Button 
-                        size="sm" 
-                        variant="secondary" 
-                        className="rounded-full p-2"
-                        onClick={() => {
-                          // Add to wishlist functionality (not implemented yet)
-                          toast.info('Added to wishlist');
-                        }}
-                      >
-                        <Heart className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg h-12 overflow-hidden">{product.name}</CardTitle>
-                    <CardDescription className="h-12 overflow-hidden">
-                      {product.description.substring(0, 60)}...
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-xl font-bold text-primary">
-                        KSh {product.price.toFixed(2)}
-                      </span>
-                      <div className="flex items-center">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                        <span>{product.rating.toFixed(1)}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex space-x-2">
-                      <Button 
-                        className="flex-1" 
-                        onClick={() => addToCart(product.id)}
-                      >
-                        <ShoppingCart className="h-4 w-4 mr-2" />
-                        Add to Cart
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => router.push(`/products/${product.id}`)}
-                      >
-                        View
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </motion.div>
-      </div>
+            </motion.div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

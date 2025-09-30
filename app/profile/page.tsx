@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -15,6 +15,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { MapPin, Phone, User as UserIcon, Mail, Camera } from 'lucide-react';
+import { Navbar } from '@/components/layout/navbar'; // Import Navbar
+import { AuthModal } from '@/components/auth/auth-modal'; // Import AuthModal
 
 interface Profile {
   id: string;
@@ -23,6 +25,7 @@ interface Profile {
   location: string;
   avatar_url: string;
   role: 'buyer' | 'trader' | 'transporter';
+  created_at: string; // Add created_at to the Profile interface
 }
 
 export default function ProfilePage() {
@@ -42,6 +45,17 @@ export default function ProfilePage() {
     avatar_url: '',
     role: 'buyer',
   });
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalType, setAuthModalType] = useState<'login' | 'register'>('login');
+
+  const handleAuthClick = (type: 'login' | 'register') => {
+    setAuthModalType(type);
+    setShowAuthModal(true);
+  };
+
+  const handleCloseAuthModal = () => {
+    setShowAuthModal(false);
+  };
 
   useEffect(() => {
     if (!user) {
@@ -55,7 +69,7 @@ export default function ProfilePage() {
         console.log('Fetching profile for user ID:', user.id);
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, full_name, phone, location, avatar_url, role')
+          .select('id, full_name, phone, location, avatar_url, role, created_at') // Include created_at
           .eq('id', user.id)
           .single();
 
@@ -263,281 +277,291 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold">My Account</h1>
-            <Button variant="outline" onClick={() => router.push('/marketplace')}>
-              Back to Shopping
-            </Button>
-          </div>
+    <div className="flex flex-col min-h-screen">
+      <Navbar onAuthClick={handleAuthClick} />
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={handleCloseAuthModal} 
+        initialType={authModalType} 
+      />
+      <main className="flex-grow">
+        <div className="min-h-screen bg-background py-12">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-bold">My Account</h1>
+                <Button variant="outline" onClick={() => router.push('/marketplace')}>
+                  Back to Shopping
+                </Button>
+              </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Profile Summary Card */}
-            <div className="lg:col-span-1">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-center mb-6">
-                    <div className="relative inline-block">
-                      <Avatar className="h-32 w-32 mx-auto">
-                        <AvatarImage src={profile.avatar_url || `https://ui-avatars.com/api/?name=${profile.full_name || user.email}&background=random`} alt={profile.full_name || user.email} />
-                        <AvatarFallback className="text-2xl">{(profile.full_name || user.email)?.charAt(0).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      {editing && (
-                        <label className="absolute bottom-2 right-2 bg-primary rounded-full p-1.5 cursor-pointer hover:opacity-80 transition-opacity">
-                          <input 
-                            type="file" 
-                            accept="image/*" 
-                            className="hidden" 
-                            onChange={handleImageUpload}
-                            disabled={uploading}
-                          />
-                          <Camera className={`h-4 w-4 text-white ${uploading ? 'animate-pulse' : ''}`} />
-                        </label>
-                      )}
-                    </div>
-                    {uploading && <p className="text-sm text-muted-foreground mt-2">Uploading...</p>}
-                    
-                    <h2 className="text-xl font-bold mt-4">{profile.full_name || user.email}</h2>
-                    <p className="text-muted-foreground">{user.email}</p>
-                    <Badge variant="secondary" className="mt-2 capitalize">{profile.role}</Badge>
-                  </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Profile Summary Card */}
+                <div className="lg:col-span-1">
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="text-center mb-6">
+                        <div className="relative inline-block">
+                          <Avatar className="h-32 w-32 mx-auto">
+                            <AvatarImage src={profile.avatar_url || `https://ui-avatars.com/api/?name=${profile.full_name || user.email}&background=random`} alt={profile.full_name || user.email} />
+                            <AvatarFallback className="text-2xl">{(profile.full_name || user.email)?.charAt(0).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          {editing && (
+                            <label className="absolute bottom-2 right-2 bg-primary rounded-full p-1.5 cursor-pointer hover:opacity-80 transition-opacity">
+                              <input 
+                                type="file" 
+                                accept="image/*" 
+                                className="hidden" 
+                                onChange={handleImageUpload}
+                                disabled={uploading}
+                              />
+                              <Camera className={`h-4 w-4 text-white ${uploading ? 'animate-pulse' : ''}`} />
+                            </label>
+                          )}
+                        </div>
+                        {uploading && <p className="text-sm text-muted-foreground mt-2">Uploading...</p>}
+                        
+                        <h2 className="text-xl font-bold mt-4">{profile.full_name || user.email}</h2>
+                        <p className="text-muted-foreground">{user.email}</p>
+                        <Badge variant="secondary" className="mt-2 capitalize">{profile.role}</Badge>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="bg-primary/10 p-2 rounded-lg">
+                            <UserIcon className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Member since</p>
+                            <p className="font-medium">{profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-3">
+                          <div className="bg-primary/10 p-2 rounded-lg">
+                            <Phone className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Phone</p>
+                            <p className="font-medium">{profile.phone || 'Not set'}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-3">
+                          <div className="bg-primary/10 p-2 rounded-lg">
+                            <MapPin className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Location</p>
+                            <p className="font-medium">{profile.location || 'Not set'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                   
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="bg-primary/10 p-2 rounded-lg">
-                        <UserIcon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Member since</p>
-                        <p className="font-medium">N/A</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-3">
-                      <div className="bg-primary/10 p-2 rounded-lg">
-                        <Phone className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Phone</p>
-                        <p className="font-medium">{profile.phone || 'Not set'}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-3">
-                      <div className="bg-primary/10 p-2 rounded-lg">
-                        <MapPin className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Location</p>
-                        <p className="font-medium">{profile.location || 'Not set'}</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {/* Quick Actions */}
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/orders')}>
-                      My Orders
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/cart')}>
-                      Shopping Cart
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start text-red-600 hover:text-red-600 hover:bg-red-50"
-                      onClick={async () => {
-                        await supabase.auth.signOut();
-                        router.push('/');
-                      }}
-                    >
-                      Sign Out
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            {/* Profile Details Card */}
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl">Profile Information</CardTitle>
-                  <CardDescription>Manage your personal information and preferences.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {!editing ? (
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Full Name</h3>
-                          <p className="text-lg font-medium">{profile.full_name || 'Not set'}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Email</h3>
-                          <p className="text-lg font-medium">{user.email}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Phone</h3>
-                          <p className="text-lg font-medium">{profile.phone || 'Not set'}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Location</h3>
-                          <p className="text-lg font-medium">{profile.location || 'Not set'}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Role</h3>
-                          <p className="text-lg font-medium capitalize">{profile.role}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-end pt-6">
-                        <Button onClick={() => setEditing(true)}>Edit Profile</Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleSave} className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <Label htmlFor="full_name">Full Name</Label>
-                          <Input
-                            id="full_name"
-                            name="full_name"
-                            value={formData.full_name}
-                            onChange={handleChange}
-                            placeholder="Enter your full name"
-                            className={errors.full_name ? 'border-red-500' : ''}
-                          />
-                          {errors.full_name && <p className="text-sm text-red-500 mt-1">{errors.full_name}</p>}
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="phone">Phone Number</Label>
-                          <Input
-                            id="phone"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                            placeholder="Enter your phone number"
-                            className={errors.phone ? 'border-red-500' : ''}
-                          />
-                          {errors.phone && <p className="text-sm text-red-500 mt-1">{errors.phone}</p>}
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="location">Location</Label>
-                          <Input
-                            id="location"
-                            name="location"
-                            value={formData.location}
-                            onChange={handleChange}
-                            placeholder="Enter your location"
-                            className={errors.location ? 'border-red-500' : ''}
-                          />
-                          {errors.location && <p className="text-sm text-red-500 mt-1">{errors.location}</p>}
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="role">Role</Label>
-                          <select
-                            id="role"
-                            name="role"
-                            value={formData.role}
-                            onChange={(e) => setFormData({...formData, role: e.target.value as any})}
-                            className="w-full border border-input bg-background rounded-md px-3 py-2 h-10 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                            disabled
-                          >
-                            <option value="buyer">Buyer</option>
-                            <option value="trader">Trader</option>
-                            <option value="transporter">Transporter</option>
-                          </select>
-                          <p className="text-xs text-muted-foreground mt-1">Role cannot be changed directly</p>
-                        </div>
-                        
-                        <div className="md:col-span-2">
-                          <Label htmlFor="avatar_url">Avatar URL</Label>
-                          <Input
-                            id="avatar_url"
-                            name="avatar_url"
-                            value={formData.avatar_url}
-                            onChange={handleChange}
-                            placeholder="URL to your avatar image"
-                            className={errors.avatar_url ? 'border-red-500' : ''}
-                          />
-                          {errors.avatar_url && <p className="text-sm text-red-500 mt-1">{errors.avatar_url}</p>}
-                          <p className="text-sm text-muted-foreground mt-1">Or upload an image using the camera icon above</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-between pt-4">
-                        <div className="flex space-x-2">
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={() => {
-                              setEditing(false);
-                              router.push('/marketplace');
-                            }}
-                            disabled={loading}
-                          >
-                            Exit & Go to Marketplace
-                          </Button>
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={() => setEditing(false)}
-                            disabled={loading}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                        <Button type="submit" disabled={loading}>
-                          {loading ? 'Saving...' : 'Save Changes'}
+                  {/* Quick Actions */}
+                  <Card className="mt-6">
+                    <CardHeader>
+                      <CardTitle>Quick Actions</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/orders')}>
+                          My Orders
+                        </Button>
+                        <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/cart')}>
+                          Shopping Cart
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          className="w-full justify-start text-red-600 hover:text-red-600 hover:bg-red-50"
+                          onClick={async () => {
+                            await supabase.auth.signOut();
+                            router.push('/');
+                          }}
+                        >
+                          Sign Out
                         </Button>
                       </div>
-                    </form>
-                  )}
-                </CardContent>
-              </Card>
-              
-              {/* Order Stats */}
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle>Order Statistics</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-muted rounded-lg">
-                      <p className="text-2xl font-bold">0</p>
-                      <p className="text-sm text-muted-foreground">Total Orders</p>
-                    </div>
-                    <div className="text-center p-4 bg-muted rounded-lg">
-                      <p className="text-2xl font-bold">KSh 0.00</p>
-                      <p className="text-sm text-muted-foreground">Total Spent</p>
-                    </div>
-                    <div className="text-center p-4 bg-muted rounded-lg">
-                      <p className="text-2xl font-bold">0</p>
-                      <p className="text-sm text-muted-foreground">Items Purchased</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                {/* Profile Details Card */}
+                <div className="lg:col-span-2">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-xl">Profile Information</CardTitle>
+                      <CardDescription>Manage your personal information and preferences.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {!editing ? (
+                        <div className="space-y-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <h3 className="text-sm font-medium text-muted-foreground">Full Name</h3>
+                              <p className="text-lg font-medium">{profile.full_name || 'Not set'}</p>
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-medium text-muted-foreground">Email</h3>
+                              <p className="text-lg font-medium">{user.email}</p>
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-medium text-muted-foreground">Phone</h3>
+                              <p className="text-lg font-medium">{profile.phone || 'Not set'}</p>
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-medium text-muted-foreground">Location</h3>
+                              <p className="text-lg font-medium">{profile.location || 'Not set'}</p>
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-medium text-muted-foreground">Role</h3>
+                              <p className="text-lg font-medium capitalize">{profile.role}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex justify-end pt-6">
+                            <Button onClick={() => setEditing(true)}>Edit Profile</Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <form onSubmit={handleSave} className="space-y-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              <Label htmlFor="full_name">Full Name</Label>
+                              <Input
+                                id="full_name"
+                                name="full_name"
+                                value={formData.full_name}
+                                onChange={handleChange}
+                                placeholder="Enter your full name"
+                                className={errors.full_name ? 'border-red-500' : ''}
+                              />
+                              {errors.full_name && <p className="text-sm text-red-500 mt-1">{errors.full_name}</p>}
+                            </div>
+                            
+                            <div>
+                              <Label htmlFor="phone">Phone Number</Label>
+                              <Input
+                                id="phone"
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleChange}
+                                placeholder="Enter your phone number"
+                                className={errors.phone ? 'border-red-500' : ''}
+                              />
+                              {errors.phone && <p className="text-sm text-red-500 mt-1">{errors.phone}</p>}
+                            </div>
+                            
+                            <div>
+                              <Label htmlFor="location">Location</Label>
+                              <Input
+                                id="location"
+                                name="location"
+                                value={formData.location}
+                                onChange={handleChange}
+                                placeholder="Enter your location"
+                                className={errors.location ? 'border-red-500' : ''}
+                              />
+                              {errors.location && <p className="text-sm text-red-500 mt-1">{errors.location}</p>}
+                            </div>
+                            
+                            <div>
+                              <Label htmlFor="role">Role</Label>
+                              <select
+                                id="role"
+                                name="role"
+                                value={formData.role}
+                                onChange={(e) => setFormData({...formData, role: e.target.value as any})}
+                                className="w-full border border-input bg-background rounded-md px-3 py-2 h-10 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                disabled
+                              >
+                                <option value="buyer">Buyer</option>
+                                <option value="trader">Trader</option>
+                                <option value="transporter">Transporter</option>
+                              </select>
+                              <p className="text-xs text-muted-foreground mt-1">Role cannot be changed directly</p>
+                            </div>
+                            
+                            <div className="md:col-span-2">
+                              <Label htmlFor="avatar_url">Avatar URL</Label>
+                              <Input
+                                id="avatar_url"
+                                name="avatar_url"
+                                value={formData.avatar_url}
+                                onChange={handleChange}
+                                placeholder="URL to your avatar image"
+                                className={errors.avatar_url ? 'border-red-500' : ''}
+                                disabled={uploading} // Disable when uploading
+                              />
+                              {errors.avatar_url && <p className="text-sm text-red-500 mt-1">{errors.avatar_url}</p>}
+                              <p className="text-sm text-muted-foreground mt-1">Or upload an image using the camera icon above</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex justify-end pt-4">
+                            <div className="flex space-x-2">
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                onClick={() => {
+                                  setEditing(false);
+                                  setFormData({
+                                    full_name: profile.full_name || '',
+                                    phone: profile.phone || '',
+                                    location: profile.location || '',
+                                    avatar_url: profile.avatar_url || '',
+                                    role: profile.role || 'buyer',
+                                  });
+                                  setErrors({}); // Clear any validation errors
+                                }}
+                                disabled={loading}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                            <Button type="submit" disabled={loading || Object.keys(errors).length > 0}>
+                              {loading ? 'Saving...' : 'Save Changes'}
+                            </Button>
+                          </div>
+                        </form>
+                      )}
+                    </CardContent>
+                  </Card>
+                  
+                  {/* Order Stats */}
+                  <Card className="mt-6">
+                    <CardHeader>
+                      <CardTitle>Order Statistics</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="text-center p-4 bg-muted rounded-lg">
+                          <p className="text-2xl font-bold">0</p>
+                          <p className="text-sm text-muted-foreground">Total Orders</p>
+                        </div>
+                        <div className="text-center p-4 bg-muted rounded-lg">
+                          <p className="text-2xl font-bold">KSh 0.00</p>
+                          <p className="text-sm text-muted-foreground">Total Spent</p>
+                        </div>
+                        <div className="text-center p-4 bg-muted rounded-lg">
+                          <p className="text-2xl font-bold">0</p>
+                          <p className="text-sm text-muted-foreground">Items Purchased</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </motion.div>
           </div>
-        </motion.div>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
