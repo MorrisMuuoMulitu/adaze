@@ -36,6 +36,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { cartService } from '@/lib/cartService';
 import { notificationService } from '@/lib/notificationService'; // Import notificationService
+import { wishlistService } from '@/lib/wishlistService'; // Import wishlistService
 import Link from 'next/link';
 import { useAuth } from '@/components/auth/auth-provider';
 import { createClient } from '@/lib/supabase/client';
@@ -63,11 +64,8 @@ export function Navbar({ onAuthClick }: NavbarProps) {
           const cartCount = await cartService.getCartCount(user.id);
           setCartItemCount(cartCount);
 
-          // For wishlist, assuming a placeholder for now or fetching from a service
-          // If you have a wishlist service, integrate it here:
-          // const wishlistCount = await wishlistService.getWishlistCount(user.id);
-          // setWishlistItemCount(wishlistCount);
-          setWishlistItemCount(0); // Placeholder: no actual wishlist service yet
+          const wishlistCount = await wishlistService.getWishlistCount(user.id); // Fetch actual wishlist count
+          setWishlistItemCount(wishlistCount);
 
           const unreadNotifications = await notificationService.getUnreadNotificationCount(user.id);
           setNotificationCount(unreadNotifications);
@@ -90,11 +88,23 @@ export function Navbar({ onAuthClick }: NavbarProps) {
 
       window.addEventListener('cartUpdated', handleCartUpdate);
 
+      // Set up listener for wishlist updates (if applicable)
+      const handleWishlistUpdate = async () => {
+        try {
+          const count = await wishlistService.getWishlistCount(user.id);
+          setWishlistItemCount(count);
+        } catch (error) {
+          console.error('Error updating wishlist count:', error);
+        }
+      };
+      window.addEventListener('wishlistUpdated', handleWishlistUpdate);
+
       // Set up listener for notification updates (if applicable)
       // window.addEventListener('notificationUpdated', handleNotificationUpdate);
 
       return () => {
         window.removeEventListener('cartUpdated', handleCartUpdate);
+        window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
         // window.removeEventListener('notificationUpdated', handleNotificationUpdate);
       };
     } else {
@@ -195,11 +205,13 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                   {user ? (
                     <div className="flex items-center space-x-2">
                       {/* Quick Actions */}
-                      <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button">
-                        <Heart className="h-4 w-4" />
-                        {wishlistItemCount > 0 && (
-                          <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">{wishlistItemCount}</Badge>
-                        )}
+                      <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button" asChild>
+                        <Link href="/wishlist">
+                          <Heart className="h-4 w-4" />
+                          {wishlistItemCount > 0 && (
+                            <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">{wishlistItemCount}</Badge>
+                          )}
+                        </Link>
                       </Button>
                       
                       <CartSidebar 
@@ -262,6 +274,12 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                             <Link href="/profile">
                               <User className="mr-2 h-4 w-4" />
                               <span>Profile</span>
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link href="/wishlist">
+                              <Heart className="mr-2 h-4 w-4" />
+                              <span>Wishlist</span>
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>

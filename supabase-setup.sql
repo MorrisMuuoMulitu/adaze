@@ -279,6 +279,31 @@ CREATE POLICY "Users can delete their own notifications" ON public.notifications
   FOR DELETE TO authenticated
   USING (auth.uid() = user_id);
 
+-- Create wishlist table
+CREATE TABLE IF NOT EXISTS public.wishlist (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) NOT NULL,
+  product_id UUID REFERENCES public.products(id) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, product_id) -- Ensure a user can only add a product to their wishlist once
+);
+
+-- Enable Row Level Security (RLS) on wishlist table
+ALTER TABLE public.wishlist ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for the wishlist table
+CREATE POLICY "Users can view their own wishlist" ON public.wishlist
+  FOR SELECT TO authenticated
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can add to their own wishlist" ON public.wishlist
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can remove from their own wishlist" ON public.wishlist
+  FOR DELETE TO authenticated
+  USING (auth.uid() = user_id);
+
 -- Drop the old trigger and function to safely recreate them
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP FUNCTION IF EXISTS public.handle_new_user();

@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/layout/navbar'; // Import Navbar
 import { AuthModal } from '@/components/auth/auth-modal'; // Import AuthModal
+import { wishlistService } from '@/lib/wishlistService'; // Import wishlistService
 
 export default function MarketplacePage() {
   const { user } = useAuth();
@@ -26,6 +27,7 @@ export default function MarketplacePage() {
   const [error, setError] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalType, setAuthModalType] = useState<'login' | 'register'>('login');
+  const [wishlistStatus, setWishlistStatus] = useState<Record<string, boolean>>({}); // New state for wishlist status
 
   const handleAuthClick = (type: 'login' | 'register') => {
     setAuthModalType(type);
@@ -76,6 +78,13 @@ export default function MarketplacePage() {
         console.log('Fetched products:', allProducts);
         setProducts(allProducts);
         setError(null);
+
+        // Fetch wishlist status for all products
+        const initialWishlistStatus: Record<string, boolean> = {};
+        for (const product of allProducts) {
+          initialWishlistStatus[product.id] = await wishlistService.isInWishlist(user.id, product.id);
+        }
+        setWishlistStatus(initialWishlistStatus);
         
         // Get cart count
         const count = await cartService.getCartCount(user.id);
@@ -97,6 +106,29 @@ export default function MarketplacePage() {
 
     fetchData();
   }, [user, router]);
+
+  const handleToggleWishlist = async (productId: string) => {
+    if (!user) {
+      toast.error('Please log in to manage your wishlist.');
+      return;
+    }
+
+    try {
+      if (wishlistStatus[productId]) {
+        await wishlistService.removeFromWishlist(user.id, productId);
+        setWishlistStatus(prev => ({ ...prev, [productId]: false }));
+        toast.success('Removed from wishlist!');
+      } else {
+        await wishlistService.addToWishlist(user.id, productId);
+        setWishlistStatus(prev => ({ ...prev, [productId]: true }));
+        toast.success('Added to wishlist!');
+      }
+      window.dispatchEvent(new CustomEvent('wishlistUpdated')); // Notify Navbar
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+      toast.error('Failed to update wishlist.');
+    }
+  };
 
   const addToCart = async (productId: string) => {
     if (!user) {
@@ -258,20 +290,16 @@ export default function MarketplacePage() {
                             </div>
                           )}
                         </div>
-                        <div className="absolute top-2 right-2">
-                          <Button 
-                            size="sm" 
-                            variant="secondary" 
-                            className="rounded-full p-2"
-                            onClick={() => {
-                              // Add to wishlist functionality (not implemented yet)
-                              toast.info('Added to wishlist');
-                            }}
-                          >
-                            <Heart className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
+                                            <div className="absolute top-2 right-2">
+                                              <Button 
+                                                size="sm" 
+                                                variant="secondary" 
+                                                className="rounded-full p-2"
+                                                onClick={() => handleToggleWishlist(product.id)}
+                                              >
+                                                <Heart className={`h-4 w-4 ${wishlistStatus[product.id] ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
+                                              </Button>
+                                            </div>                      </div>
                       <CardHeader className="pb-3">
                         <CardTitle className="text-lg h-12 overflow-hidden">{product.name}</CardTitle>
                         <CardDescription className="h-12 overflow-hidden">
