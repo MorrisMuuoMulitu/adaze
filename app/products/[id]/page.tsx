@@ -1,3 +1,14 @@
+"use client";
+
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { useAuth } from '@/components/auth/auth-provider';
+import { productService, Product } from '@/lib/productService';
+import { cartService } from '@/lib/cartService';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useRouter, useParams } from 'next/navigation';
 import { Package, MapPin, DollarSign, ShoppingCart, Star, Heart, ArrowLeft, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { reviewService } from '@/lib/reviewService';

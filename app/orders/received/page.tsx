@@ -32,7 +32,7 @@ interface Profile {
 }
 
 interface OrderWithDetails extends Order {
-    profiles: { full_name: string };
+    profiles: { full_name: string } | null; // Trader's profile
     order_items: {
         quantity: number;
         products: {
@@ -183,7 +183,7 @@ export default function ReceivedOrdersPage() {
                 {orders.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell>{order.title}</TableCell>
-                    <TableCell>{order.profiles.full_name}</TableCell>
+                    <TableCell>{order.profiles?.full_name || 'N/A'}</TableCell>
                     <TableCell>
                       {order.order_items.map((item, index) => (
                         <div key={index}>

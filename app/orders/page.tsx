@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { Package, MapPin, DollarSign, Calendar, User, CheckCircle, Truck, Clock, XCircle, ShoppingCart } from 'lucide-react';
 import { ReviewModal } from '@/components/reviews/review-modal';
+import { toast } from 'sonner';
 
 export default function OrdersPage() {
   const { user } = useAuth();
