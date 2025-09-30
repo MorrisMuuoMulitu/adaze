@@ -373,7 +373,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                   <Input
                     placeholder="Search..."
                     value={searchQuery}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10 pr-4 h-12 focus-ring"
                   />
                 </div>
