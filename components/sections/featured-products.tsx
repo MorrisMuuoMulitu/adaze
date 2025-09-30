@@ -1,292 +1,279 @@
-"use client"
-
-import { motion, useMotionValue, useTransform } from 'framer-motion';
-import Image from 'next/image';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Star, Heart, ShoppingCart, Eye, MapPin } from 'lucide-react';
-import { toast } from 'sonner';
-import { useState } from 'react';
-
-import { Product } from '@/types';
-import { addToCart } from '@/lib/cart';
+import { 
+  ShoppingBag, 
+  Star, 
+  Heart, 
+  ShoppingCart,
+  Package,
+  TrendingUp,
+  Award,
+  Zap,
+  MapPin
+} from 'lucide-react';
+// Use the database product structure directly
+interface DBProduct {
+  id: string;
+  trader_id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  image_url: string | null;
+  stock_quantity: number;
+  rating: number;
+  created_at: string;
+  updated_at: string;
+}
+import Link from 'next/link';
 import { useAuth } from '@/components/auth/auth-provider';
+import { createClient } from '@/lib/supabase/client';
 
 interface FeaturedProductsProps {
-  products: Product[];
+  products: DBProduct[];
   loading: boolean;
   error: string | null;
 }
 
-const getGenderBadgeStyle = (gender: string) => {
-  switch (gender) {
-    case 'male':
-      return 'boys-enhanced gender-badge-enhanced gender-text-enhanced';
-    case 'female':
-      return 'girls-enhanced gender-badge-enhanced gender-text-enhanced';
-    case 'unisex':
-      return 'unisex-enhanced gender-badge-enhanced gender-text-enhanced';
-    default:
-      return 'bg-gray-500 text-white hover:bg-gray-600 gender-text-enhanced';
-  }
-};
-
-const getGenderLabel = (gender: string) => {
-  switch (gender) {
-    case 'male':
-      return 'Boys';
-    case 'female':
-      return 'Girls';
-    case 'unisex':
-      return 'Unisex';
-    default:
-      return 'All';
-  }
-};
-
 export function FeaturedProducts({ products, loading, error }: FeaturedProductsProps) {
   const { user } = useAuth();
   const isAuthenticated = !!user;
-  const [selectedGender, setSelectedGender] = useState<string | null>(null);
+  const [featuredProducts, setFeaturedProducts] = useState<DBProduct[]>([]);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
 
-  // For 3D tilt effect
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotateX = useTransform(y, [-100, 100], [10, -10]); // Map y-position to rotateX
-  const rotateY = useTransform(x, [-100, 100], [-10, 10]); // Map x-position to rotateY
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      try {
+        setFeaturedLoading(true);
+        const supabase = createClient();
+        
+        // Fetch random featured products from the database
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .limit(4)
+          .order('rating', { ascending: false });
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const card = e.currentTarget;
-    const rect = card.getBoundingClientRect();
-    x.set(e.clientX - rect.left - rect.width / 2);
-    y.set(e.clientY - rect.top - rect.height / 2);
-  };
+        if (error) {
+          throw error;
+        }
 
-  const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
+        setFeaturedProducts(data as DBProduct[]);
+      } catch (error) {
+        console.error('Error fetching featured products:', error);
+        // Fallback to some default products if fetch fails
+        setFeaturedProducts([
+          {
+            id: '1',
+            trader_id: '00000000-0000-0000-0000-000000000001',
+            name: 'Premium Leather Jacket',
+            description: 'Genuine leather jacket with premium stitching and modern design.',
+            price: 8999,
+            category: 'Fashion',
+            image_url: 'https://images.unsplash.com/photo-1521334884684-d80222895326?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80',
+            rating: 4.8,
+            stock_quantity: 15,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: '2',
+            trader_id: '00000000-0000-0000-0000-000000000001',
+            name: 'Wireless Headphones',
+            description: 'Noise-cancelling headphones with 30-hour battery life.',
+            price: 12999,
+            category: 'Electronics',
+            image_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80',
+            rating: 4.6,
+            stock_quantity: 25,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: '3',
+            trader_id: '00000000-0000-0000-0000-000000000001',
+            name: 'Smart Fitness Watch',
+            description: 'Track your health and fitness with advanced sensors.',
+            price: 15999,
+            category: 'Wearables',
+            image_url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80',
+            rating: 4.7,
+            stock_quantity: 10,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: '4',
+            trader_id: '00000000-0000-0000-0000-000000000001',
+            name: 'Designer Sunglasses',
+            description: 'UV protection sunglasses with polarized lenses.',
+            price: 3999,
+            category: 'Accessories',
+            image_url: 'https://images.unsplash.com/photo-1577803645773-f96470509666?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80',
+            rating: 4.5,
+            stock_quantity: 30,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        ]);
+      } finally {
+        setFeaturedLoading(false);
+      }
+    };
 
-  const filteredProducts = selectedGender
-    ? products.filter(product => product.gender === selectedGender)
-    : products;
+    fetchFeaturedProducts();
+  }, []);
 
-  const handleGenderFilter = (gender: string | null) => {
-    setSelectedGender(gender);
-  };
-
-  return (
-    <section className="py-12 sm:py-16 lg:py-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-8 sm:mb-12"
-        >
-          {/* Gender Filter Buttons */}
-          <div className="flex justify-center space-x-2 sm:space-x-4 mb-6 sm:mb-8">
-            <Button 
-              variant={selectedGender === 'male' ? 'default' : 'outline'} 
-              className="filter-button-boys mobile-button"
-              onClick={() => handleGenderFilter('male')}
-            >
-              👦 Boys Fashion
-            </Button>
-            <Button 
-              variant={selectedGender === 'female' ? 'default' : 'outline'} 
-              className="filter-button-girls mobile-button"
-              onClick={() => handleGenderFilter('female')}
-            >
-              👧 Girls Fashion
-            </Button>
-            <Button 
-              variant={selectedGender === 'unisex' ? 'default' : 'outline'} 
-              className="filter-button-unisex mobile-button"
-              onClick={() => handleGenderFilter('unisex')}
-            >
-              👫 Unisex
-            </Button>
-            <Button 
-              variant={selectedGender === null ? 'default' : 'outline'} 
-              className="mobile-button"
-              onClick={() => handleGenderFilter(null)}
-            >
-              All Items
-            </Button>
+  if (loading || featuredLoading) {
+    return (
+      <section className="py-16 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
+              Featured Products
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Discover our most popular items
+            </p>
           </div>
-          
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
-            Featured Products from Kenya
-          </h2>
-          <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
-            Discover handpicked quality items for boys, girls, and everyone from verified traders across all 47 counties in Kenya
-          </p>
-        </motion.div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-          {loading && <p>Loading products...</p>}
-          {error && <p className="text-red-500">Error: {error}</p>}
-          {!loading && !error && filteredProducts.length === 0 && <p>No products found.</p>}
-          {!loading && !error && filteredProducts.map((product, index) => (
-            <motion.div
-              key={product.id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              // Add tilt effect
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-              style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-              whileHover={{ scale: 1.02 }} // Combine with existing hover scale
-            >
-              <Card className="group overflow-hidden transition-all duration-300 border border-transparent hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/20 bg-card/50 backdrop-blur-sm">
-                <Link href={`/products/${product.id}`} className="block">
-                  <div className="relative overflow-hidden cursor-pointer aspect-square"> {/* Added aspect-square here */}
-                    <Image
-                      src={product.images[0]}
-                      alt={product.name}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    
-                    {/* Overlay with subtle gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/0 to-black/0 group-hover:from-black/60 group-hover:to-black/20 transition-all duration-300" />
-                    
-                    {/* Quick actions */}
-                    <motion.div
-                      initial={{ opacity: 0, x: 10 }}
-                      animate={{ opacity: 0, x: 10 }} // Keep initial state for non-hover
-                      whileInView={{}} // No whileInView needed here
-                      whileHover={{ opacity: 1, x: 0 }} // Animate on hover
-                      transition={{ duration: 0.2, delay: 0.1 }}
-                      className="absolute top-3 right-3 flex flex-col space-y-2"
-                    >
-                      <Button 
-                        size="sm" 
-                        variant="secondary" 
-                        className="w-8 h-8 sm:w-10 sm:h-10 p-0 rounded-full glass-effect mobile-button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                      >
-                        <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="secondary" 
-                        className="w-8 h-8 sm:w-10 sm:h-10 p-0 rounded-full glass-effect mobile-button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                      >
-                        <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
-                      </Button>
-                    </motion.div>
-
-                    {/* Badges */}
-                    <div className="absolute top-3 left-3 space-y-2">
-                      <Badge variant="secondary" className="bg-primary text-primary-foreground text-xs">
-                        {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
-                      </Badge>
-                      <Badge variant="outline" className="bg-background/80 backdrop-blur-sm text-xs">
-                        {product.condition}
-                      </Badge>
-                      <Badge className={`text-xs gender-badge ${getGenderBadgeStyle(product.gender)}`}>
-                        {getGenderLabel(product.gender)}
-                      </Badge>
-                    </div>
-                  </div>
-                </Link>
-
-                <CardContent className="p-4 sm:p-6">
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div className="min-w-0 flex-1">
-                        <Badge variant="outline" className="text-xs mb-2">
-                          {product.category}
-                        </Badge>
-                        <Link href={`/products/${product.id}`}>
-                          <h3 className="font-semibold text-base sm:text-lg leading-tight group-hover:text-primary transition-colors line-clamp-2 cursor-pointer">
-                            {product.name}
-                          </h3>
-                        </Link>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <div className="flex items-center">
-                        <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-xs sm:text-sm font-medium ml-1">{product.rating}</span>
-                      </div>
-                      <span className="text-xs sm:text-sm text-muted-foreground">
-                        ({product.reviews} reviews)
-                      </span>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg sm:text-2xl font-bold text-primary">
-                          KSh {product.price.toLocaleString()}
-                        </span>
-                        <span className="text-xs sm:text-sm text-muted-foreground line-through">
-                          KSh {product.originalPrice.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="text-xs sm:text-sm text-muted-foreground">
-                        {product.size && `Size: ${product.size} • `}
-                        <span className="inline-flex items-center">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {product.location}
-                        </span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        by {product.trader.name}
-                      </div>
-                    </div>
-
-                    <Button 
-                      className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors h-10 sm:h-12 mobile-button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        addToCart(product, 1, isAuthenticated);
-                      }}
-                    >
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      Add to Cart
-                    </Button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[1, 2, 3, 4].map((item) => (
+              <Card key={item} className="overflow-hidden">
+                <div className="bg-gray-200 h-48 animate-pulse"></div>
+                <CardHeader className="pb-3">
+                  <div className="h-6 bg-gray-200 rounded animate-pulse mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2 mb-4"></div>
+                  <div className="flex items-center justify-between">
+                    <div className="h-6 bg-gray-200 rounded animate-pulse w-1/3"></div>
+                    <div className="h-8 bg-gray-200 rounded animate-pulse w-8"></div>
                   </div>
                 </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="py-16 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-foreground sm:text-4xl mb-4">
+              Featured Products
+            </h2>
+            <p className="text-lg text-muted-foreground mb-8">
+              {error}
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              Retry
+            </Button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="py-16 bg-muted/30">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
+            Featured Products
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground">
+            Discover our most popular items
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          {featuredProducts.map((product) => (
+            <motion.div
+              key={product.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              whileHover={{ y: -5 }}
+              className="h-full"
+            >
+              <Card className="overflow-hidden h-full flex flex-col">
+                <div className="relative">
+                  <div className="h-48 bg-gray-200 relative overflow-hidden">
+                    <img 
+                      src={product.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(product.name)}&background=random`} 
+                      alt={product.name} 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(product.name)}&background=random`;
+                      }}
+                    />
+                    {product.rating >= 4.5 && (
+                      <Badge className="absolute top-2 right-2 bg-red-500 text-white">
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        Trending
+                      </Badge>
+                    )}
+                  </div>
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    className="absolute top-2 left-2 rounded-full p-2"
+                    onClick={() => {
+                      // Add to wishlist functionality
+                      console.log('Added to wishlist:', product.id);
+                    }}
+                  >
+                    <Heart className="h-4 w-4" />
+                  </Button>
+                </div>
+                <CardHeader className="pb-3 flex-grow">
+                  <CardTitle className="text-lg">{product.name}</CardTitle>
+                  <CardDescription className="line-clamp-2">
+                    {product.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xl font-bold text-primary">
+                      KSh {product.price.toLocaleString()}
+                    </span>
+                    <div className="flex items-center">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
+                      <span className="text-sm">{product.rating.toFixed(1)}</span>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="mb-3">
+                    {product.category}
+                  </Badge>
+                </CardContent>
+                <CardFooter className="pt-0">
+                  <Button className="w-full" asChild>
+                    <Link href={`/products/${product.id}`}>
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      View Product
+                    </Link>
+                  </Button>
+                </CardFooter>
               </Card>
             </motion.div>
           ))}
         </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.5 }}
-          className="text-center mt-8 sm:mt-12"
-        >
-          <Button size="lg" variant="outline" className="group h-12 mobile-button">
-            View All Products in Kenya
-            <motion.div
-              className="ml-2"
-              whileHover={{ x: 5 }}
-              transition={{ type: "spring", stiffness: 400 }}
-            >
-              →
-            </motion.div>
+        <div className="text-center mt-12">
+          <Button size="lg" asChild>
+            <Link href="/marketplace">
+              <Package className="h-5 w-5 mr-2" />
+              Browse All Products
+            </Link>
           </Button>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

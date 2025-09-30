@@ -1,84 +1,5 @@
--- Create the profiles table
-CREATE TABLE IF NOT EXISTS public.profiles (
-  id UUID REFERENCES auth.users NOT NULL PRIMARY KEY,
-  full_name TEXT,
-  phone TEXT,
-  location TEXT,
-  avatar_url TEXT DEFAULT '',
-  role TEXT DEFAULT 'buyer',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Enable Row Level Security (RLS) on profiles table
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-
--- Create policies for the profiles table
-CREATE POLICY "Users can view own profile" ON public.profiles
-  FOR SELECT TO authenticated
-  USING (auth.uid() = id);
-
--- Allow service roles to view all profiles (for admin functions)
-CREATE POLICY "Service role can view all profiles" ON public.profiles
-  FOR SELECT TO service_role
-  USING (true);
-
-CREATE POLICY "Users can update own profile" ON public.profiles
-  FOR UPDATE TO authenticated
-  USING (auth.uid() = id)
-  WITH CHECK (
-    auth.uid() = id
-    AND (
-      -- Prevent changing the role field directly for security
-      (SELECT role FROM public.profiles WHERE id = old.id) = new.role
-      OR auth.role() = 'service_role'  -- Allow service role to change roles
-    )
-  );
-
--- Allow service role to update any profile (admin functions)
-CREATE POLICY "Service role can update any profile" ON public.profiles
-  FOR UPDATE TO service_role
-  USING (true)
-  WITH CHECK (true);
-
--- Create storage bucket for avatars if it doesn't exist
-INSERT INTO storage.buckets (id, name, public, avif_autodetection, file_size_limit, allowed_mime_types)
-VALUES ('avatars', 'avatars', true, false, 5242880, '{image/png,image/jpeg,image/jpg,image/webp}')
-ON CONFLICT (id) DO NOTHING;
-
--- Create policies for avatar storage
-CREATE POLICY "Avatar images are publicly accessible" ON storage.objects
-  FOR SELECT TO authenticated, anon
-  USING (bucket_id = 'avatars');
-
-CREATE POLICY "Users can upload avatar images" ON storage.objects
-  FOR INSERT TO authenticated
-  WITH CHECK (
-    bucket_id = 'avatars' 
-    AND (SELECT auth.uid()) = OWNER 
-    AND (SELECT lower((storage.foldername(name))[1])) = lower(auth.uid()::text)
-  );
-
-CREATE POLICY "Users can update own avatar images" ON storage.objects
-  FOR UPDATE TO authenticated
-  USING (
-    bucket_id = 'avatars' 
-    AND (SELECT auth.uid()) = OWNER 
-    AND (SELECT lower((storage.foldername(name))[1])) = lower(auth.uid()::text)
-  )
-  WITH CHECK (
-    bucket_id = 'avatars' 
-    AND (SELECT auth.uid()) = OWNER 
-    AND (SELECT lower((storage.foldername(name))[1])) = lower(auth.uid()::text)
-  );
-
-CREATE POLICY "Users can delete own avatar images" ON storage.objects
-  FOR DELETE TO authenticated
-  USING (
-    bucket_id = 'avatars' 
-    AND (SELECT auth.uid()) = OWNER 
-    AND (SELECT lower((storage.foldername(name))[1])) = lower(auth.uid()::text)
-  );
+-- COMPLETE SETUP SCRIPT
+-- Run this first to create all tables, then the population script
 
 -- Create products table
 CREATE TABLE IF NOT EXISTS public.products (
@@ -279,43 +200,120 @@ CREATE POLICY "Users can delete their own notifications" ON public.notifications
   FOR DELETE TO authenticated
   USING (auth.uid() = user_id);
 
--- Drop the old trigger and function to safely recreate them
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-DROP FUNCTION IF EXISTS public.handle_new_user();
+-- NOW POPULATE WITH SAMPLE DATA
+-- Use your actual user ID: eee0ebf6-34ed-4c47-ae54-0a146672858d
 
--- Create a new function that copies metadata to the profiles table
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $
-BEGIN
-  INSERT INTO public.profiles (id, full_name, phone, location, role)
-  VALUES (
-    NEW.id,
-    COALESCE(
-      NEW.raw_user_meta_data->>'full_name', 
-      NEW.raw_app_meta_data->>'full_name', 
-      ''
-    ),
-    COALESCE(
-      NEW.raw_user_meta_data->>'phone', 
-      NEW.raw_app_meta_data->>'phone', 
-      ''
-    ),
-    COALESCE(
-      NEW.raw_user_meta_data->>'location', 
-      NEW.raw_app_meta_data->>'location', 
-      ''
-    ),
-    COALESCE(
-      NEW.raw_user_meta_data->>'role', 
-      NEW.raw_app_meta_data->>'role', 
-      'buyer'
-    )
-  );
-  RETURN NEW;
-END;
-$ LANGUAGE plpgsql SECURITY DEFINER;
+-- Insert sample profile (will work even if it's a buyer - we're just using it for testing)
+INSERT INTO public.profiles (
+  id, 
+  full_name, 
+  phone, 
+  location, 
+  avatar_url, 
+  role
+) VALUES 
+(
+  'eee0ebf6-34ed-4c47-ae54-0a146672858d',  -- Your actual user ID
+  'Test User',
+  '+254712345678',
+  'Nairobi',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80',
+  'buyer'  -- It's okay to use buyer for testing
+)
+ON CONFLICT (id) DO NOTHING;
 
--- Recreate the trigger to use the new function
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+-- Insert sample products 
+INSERT INTO public.products (
+  trader_id, 
+  name, 
+  description, 
+  price, 
+  category, 
+  image_url, 
+  stock_quantity, 
+  rating
+) VALUES 
+(
+  'eee0ebf6-34ed-4c47-ae54-0a146672858d',  -- Using your actual user ID
+  'Nike Air Max 270',
+  'A premium running shoe with maximum air cushioning for comfort and style. Perfect for daily wear and running activities.',
+  12000.00,
+  'Footwear',
+  'https://images.unsplash.com/photo-1460353581641-37baddab0fa2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80',
+  50,
+  4.5
+),
+(
+  'eee0ebf6-34ed-4c47-ae54-0a146672858d',
+  'Adidas Ultraboost 22',
+  'Energy-returning BOOST midsole for maximum comfort and responsiveness. Ideal for running and everyday activities.',
+  15000.00,
+  'Footwear',
+  'https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80',
+  30,
+  4.7
+),
+(
+  'eee0ebf6-34ed-4c47-ae54-0a146672858d',
+  'Puma RS-X Reinvention',
+  'Bold and chunky design with premium materials for a statement look. Perfect for casual wear.',
+  8000.00,
+  'Footwear',
+  'https://images.unsplash.com/photo-1543508282-6319a3e2621f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80',
+  25,
+  4.3
+),
+(
+  'eee0ebf6-34ed-4c47-ae54-0a146672858d',
+  'New Balance 574 Core',
+  'Classic silhouette with modern comfort technology and all-day support. Timeless design.',
+  7500.00,
+  'Footwear',
+  'https://images.unsplash.com/photo-1600185365926-3a2ce3cdb89e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80',
+  40,
+  4.2
+),
+(
+  'eee0ebf6-34ed-4c47-ae54-0a146672858d',
+  'Converse Chuck Taylor All Star',
+  'Iconic canvas sneakers with timeless design and versatile style. Perfect for any outfit.',
+  5000.00,
+  'Footwear',
+  'https://images.unsplash.com/photo-1605408499393-6360c7281b90?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80',
+  60,
+  4.4
+),
+(
+  'eee0ebf6-34ed-4c47-ae54-0a146672858d',
+  'Vans Old Skool Classic',
+  'The original Vans high-top with signature side stripes. A timeless classic for skateboarders and casual wear.',
+  4500.00,
+  'Footwear',
+  'https://images.unsplash.com/photo-1583394838336-acd977736f90?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80',
+  35,
+  4.6
+),
+(
+  'eee0ebf6-34ed-4c47-ae54-0a146672858d',
+  'Jordan Retro 1',
+  'The iconic basketball shoe that started it all. Premium materials and timeless design.',
+  20000.00,
+  'Footwear',
+  'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80',
+  15,
+  4.8
+),
+(
+  'eee0ebf6-34ed-4c47-ae54-0a146672858d',
+  'Timberland Premium 6" Boots',
+  'Durable and waterproof boots perfect for all seasons. Iconic style and excellent quality.',
+  18000.00,
+  'Footwear',
+  'https://images.unsplash.com/photo-1549298916-b41d501d3772?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80',
+  20,
+  4.5
+);
+
+-- Verify the insertions
+SELECT * FROM public.profiles WHERE id = 'eee0ebf6-34ed-4c47-ae54-0a146672858d';
+SELECT * FROM public.products WHERE trader_id = 'eee0ebf6-34ed-4c47-ae54-0a146672858d' LIMIT 10;

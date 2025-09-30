@@ -1,228 +1,297 @@
-
 "use client";
+
+import React from 'react';
+import { createClient } from '@/lib/supabase/server';
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/components/auth/auth-provider';
+import { productService, Product } from '@/lib/productService';
+import { cartService } from '@/lib/cartService';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Slider } from "@/components/ui/slider"
-import { Checkbox } from "@/components/ui/checkbox"
-import { 
-  LayoutGrid, 
-  List, 
-  ChevronDown,
-  SlidersHorizontal,
-  X
-} from 'lucide-react';
-import { products as allProducts } from '@/lib/data';
-import { Product } from '@/types';
-import { CartItem } from '@/lib/cart';
-import { FeaturedProducts } from '@/components/sections/featured-products';
-import { getCartItems, removeFromCart, updateCartItemQuantity } from '@/lib/cart';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useRouter } from 'next/navigation';
+import { Package, MapPin, DollarSign, ShoppingCart, Star, Search, Heart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import Image from 'next/image';
+import { toast } from 'sonner';
 
 export default function MarketplacePage() {
+  const { user } = useAuth();
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<'buyer' | 'trader' | 'transporter' | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [cartCount, setCartCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [layout, setLayout] = useState<'grid' | 'list'>('grid');
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isClient, setIsClient] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
 
-  const categories = Array.from(new Set(allProducts.map(p => p.category)));
-  const maxPrice = Math.max(...allProducts.map(p => p.price));
+  // Handle user redirection if not logged in
+  useEffect(() => {
+    if (!user && !loading) { // Only redirect if not loading and user is null
+      router.push('/');
+    }
+  }, [user, loading, router]);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    if (!user) {
+      setLoading(false); // Ensure loading is false if no user, so redirect can happen
+      return;
+    }
+
+    const fetchData = async () => {
+      setLoading(true);
+      
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Get user's role from their profile
+        const supabase = (await import('@/lib/supabase/client')).createClient();
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          // Default to buyer if profile not found
+          setRole('buyer');
+        } else {
+          setRole(profile.role as 'buyer' | 'trader' | 'transporter');
+        }
+        
+        console.log('Fetching products...');
+        // Fetch all products
+        const allProducts = await productService.getAllProducts();
+        console.log('Fetched products count:', allProducts.length);
+        console.log('Fetched products:', allProducts);
         setProducts(allProducts);
-        setFilteredProducts(allProducts);
-        setLoading(false);
-      } catch (err) {
-        setError('Failed to fetch products.');
+        setError(null);
+        
+        // Get cart count
+        const count = await cartService.getCartCount(user.id);
+        setCartCount(count);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setError('Failed to load products. Please try again later.');
+        // Still try to get cart count even if products fail
+        try {
+          const count = await cartService.getCartCount(user.id);
+          setCartCount(count);
+        } catch (cartError) {
+          console.error('Error fetching cart count:', cartError);
+        }
+      } finally {
         setLoading(false);
       }
     };
-    fetchProducts();
-  }, []);
 
-  useEffect(() => {
-    let tempProducts = products;
+    fetchData();
+  }, [user, router]);
 
-    if (selectedCategories.length > 0) {
-      tempProducts = tempProducts.filter(p => selectedCategories.includes(p.category));
+  const addToCart = async (productId: string) => {
+    if (!user) {
+      router.push('/login');
+      return;
     }
+    
+    try {
+      const cartItem = await cartService.addToCart(user.id, productId, 1);
+      if (cartItem) {
+        toast.success(`${cartItem.product_name} added to cart!`);
+      } else {
+        toast.success('Added to cart!');
+      }
+      
+      // Update cart count
+      const count = await cartService.getCartCount(user.id);
+      setCartCount(count);
+      
+      // Also update the global cart count (if you have a global state)
+      window.dispatchEvent(new CustomEvent('cartUpdated'));
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error('Failed to add item to cart');
+    }
+  };
 
-    tempProducts = tempProducts.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
+  // Filter products based on search term
+  const filteredProducts = products.filter(product => {
+    // Add debug logging
+    console.log('Filtering product:', product);
+    
+    const matchesSearch = 
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.category.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return matchesSearch;
+  });
+  
+  console.log('Filtered products count:', filteredProducts.length);
+  console.log('All products count:', products.length);
 
-    setFilteredProducts(tempProducts);
-  }, [selectedCategories, priceRange, products]);
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading products...</div>;
+  }
 
-  useEffect(() => {
-    setIsClient(true);
-    setCartItems(getCartItems());
+  if (!user) {
+    return <div className="min-h-screen flex items-center justify-center">Redirecting to home page...</div>;
+  }
 
-    const handleCartUpdate = () => {
-      setCartItems(getCartItems());
-    };
-    window.addEventListener('cartUpdated', handleCartUpdate);
-    return () => {
-      window.removeEventListener('cartUpdated', handleCartUpdate);
-    };
-  }, []);
-
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategories(prev => 
-      prev.includes(category) 
-        ? prev.filter(c => c !== category) 
-        : [...prev, category]
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h2 className="text-xl font-bold mb-2">Error Loading Products</h2>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      </div>
     );
-  };
-
-  const handleRemoveFromCart = (productId: number) => {
-    removeFromCart(productId);
-    window.dispatchEvent(new Event('cartUpdated'));
-  };
-
-  const handleQuantityChange = (productId: number, quantity: number) => {
-    updateCartItemQuantity(productId, quantity);
-    window.dispatchEvent(new Event('cartUpdated'));
-  };
-
-  const cartTotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+  }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="lg:grid lg:grid-cols-4 lg:gap-8">
-          {/* Filters */}
-          <aside className="hidden lg:block lg:col-span-1">
-            <div className="sticky top-20 space-y-6">
-              <h2 className="text-lg font-semibold">Filters</h2>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold">Category</h3>
-                    <Button variant="ghost" size="sm" onClick={() => setSelectedCategories([])} className="text-xs">Clear all</Button>
-                  </div>
-                  <div className="space-y-2">
-                    {categories.map(category => (
-                      <div key={category} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={category}
-                          checked={selectedCategories.includes(category)}
-                          onCheckedChange={() => handleCategoryChange(category)}
+    <div className="min-h-screen bg-background py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold">
+                {role === 'trader' ? 'Your Products' : 'Marketplace'}
+              </h1>
+              <p className="text-muted-foreground">
+                {role === 'trader' 
+                  ? 'Manage your products' 
+                  : 'Browse products available for purchase'}
+              </p>
+            </div>
+            <div className="mt-4 md:mt-0 flex gap-2">
+              {role === 'trader' && (
+                <Button onClick={() => router.push('/products/create')}>
+                  Add New Product
+                </Button>
+              )}
+              <Button onClick={() => router.push('/cart')}>
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Cart ({cartCount})
+              </Button>
+            </div>
+          </div>
+
+          {/* Search Section */}
+          <div className="mb-6 flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <Package className="h-12 w-12 mx-auto text-muted-foreground" />
+              <h3 className="mt-4 text-xl font-semibold">No products available</h3>
+              <p className="text-muted-foreground mt-2">
+                {role === 'trader'
+                  ? 'You have not added any products yet.'
+                  : 'No products match your search. Check back later for new items!'}
+              </p>
+              {role === 'trader' ? (
+                <Button className="mt-4" onClick={() => router.push('/products/create')}>
+                  Add Your First Product
+                </Button>
+              ) : (
+                <div className="mt-6 space-y-3">
+                  <p className="text-muted-foreground">Try:</p>
+                  <ul className="text-muted-foreground space-y-1">
+                    <li>• Changing your search terms</li>
+                    <li>• Browsing different categories</li>
+                    <li>• Checking back later for new products</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredProducts.map((product) => (
+                <Card key={product.id} className="overflow-hidden group">
+                  <div className="relative">
+                    <div className="h-48 bg-gray-200 relative overflow-hidden">
+                      {product.image_url ? (
+                        <img 
+                          src={product.image_url} 
+                          alt={product.name} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
-                        <label htmlFor={category}>{category}</label>
+                      ) : (
+                        <div className="w-full h-full bg-muted flex items-center justify-center">
+                          <Package className="h-12 w-12 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="absolute top-2 right-2">
+                      <Button 
+                        size="sm" 
+                        variant="secondary" 
+                        className="rounded-full p-2"
+                        onClick={() => {
+                          // Add to wishlist functionality (not implemented yet)
+                          toast.info('Added to wishlist');
+                        }}
+                      >
+                        <Heart className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg h-12 overflow-hidden">{product.name}</CardTitle>
+                    <CardDescription className="h-12 overflow-hidden">
+                      {product.description.substring(0, 60)}...
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-xl font-bold text-primary">
+                        KSh {product.price.toFixed(2)}
+                      </span>
+                      <div className="flex items-center">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
+                        <span>{product.rating.toFixed(1)}</span>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold mb-4">Price Range</h3>
-                  <Slider 
-                    defaultValue={[0, maxPrice]} 
-                    max={maxPrice} 
-                    step={100} 
-                    onValueChange={(value) => setPriceRange(value as [number, number])}
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                    <span>KSh {priceRange[0]}</span>
-                    <span>KSh {priceRange[1]}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </aside>
-
-          {/* Main content */}
-          <main className="lg:col-span-2">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-bold">Marketplace</h1>
-              <div className="flex items-center space-x-2">
-                <Button variant="outline" size="icon" onClick={() => setLayout('grid')} className={layout === 'grid' ? 'bg-muted' : ''}>
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon" onClick={() => setLayout('list')} className={layout === 'list' ? 'bg-muted' : ''}>
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" className="lg:hidden" onClick={() => setIsFiltersOpen(true)}>
-                  <SlidersHorizontal className="h-4 w-4 mr-2" />
-                  Filters
-                </Button>
-              </div>
-            </div>
-
-            {/* Product Grid */}
-            <FeaturedProducts products={filteredProducts} loading={loading} error={error} />
-
-          </main>
-
-          {/* Cart */}
-          <aside className="hidden lg:block lg:col-span-1">
-            <div className="sticky top-20 space-y-6">
-              <Card>
-                <CardContent className="p-4">
-                  <h2 className="text-lg font-semibold mb-4">Your Cart</h2>
-                  <ScrollArea className="h-[400px]">
-                    {!isClient ? (
-                      <p className="text-muted-foreground text-center">Loading cart...</p>
-                    ) : cartItems.length === 0 ? (
-                      <p className="text-muted-foreground text-center">Your cart is empty</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {cartItems.map(item => (
-                          <div key={item.id} className="flex items-center space-x-3">
-                            <Image src={item.images[0]} alt={item.name} width={64} height={64} className="rounded-md" />
-                            <div className="flex-1">
-                              <p className="text-sm font-medium">{item.name}</p>
-                              <p className="text-xs text-muted-foreground">KSh {item.price.toLocaleString()}</p>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Input type="number" value={item.quantity} onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value))} className="w-16 h-8" />
-                              <Button variant="ghost" size="icon" onClick={() => handleRemoveFromCart(item.id)}>
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </ScrollArea>
-                  <Separator className="my-4" />
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <p className="text-muted-foreground">Subtotal</p>
-                      <p className="font-semibold">KSh {cartTotal.toLocaleString()}</p>
                     </div>
-                    <div className="flex justify-between">
-                      <p className="text-muted-foreground">Shipping</p>
-                      <p className="font-semibold">KSh 500</p>
+                    
+                    <div className="flex space-x-2">
+                      <Button 
+                        className="flex-1" 
+                        onClick={() => addToCart(product.id)}
+                      >
+                        <ShoppingCart className="h-4 w-4 mr-2" />
+                        Add to Cart
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => router.push(`/products/${product.id}`)}
+                      >
+                        View
+                      </Button>
                     </div>
-                    <Separator />
-                    <div className="flex justify-between text-lg font-bold">
-                      <p>Total</p>
-                      <p>KSh {(cartTotal + 500).toLocaleString()}</p>
-                    </div>
-                  </div>
-                  <Button className="w-full mt-4">Checkout</Button>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          </aside>
-        </div>
+          )}
+        </motion.div>
       </div>
     </div>
   );

@@ -1,155 +1,264 @@
-
-"use client"
+"use client";
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
-import Image from 'next/image';
+import { useAuth } from '@/components/auth/auth-provider';
+import { cartService, CartItem } from '@/lib/cartService';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Input } from '@/components/ui/input';
-import { ShoppingCart, Trash2, ArrowLeft } from 'lucide-react';
-import { getCartItems, removeFromCart, updateCartItemQuantity, clearCart } from '@/lib/cart';
-import { Product } from '@/types';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useRouter } from 'next/navigation';
+import { Minus, Plus, Trash2, ShoppingCart, Package, MapPin, CreditCard, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface CartItem extends Product {
-  quantity: number;
-}
-
 export default function CartPage() {
+  const { user } = useAuth();
+  const router = useRouter();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState<string | null>(null); // Track which item is being updated
 
   useEffect(() => {
-    setCartItems(getCartItems());
-  }, []);
+    if (!user) {
+      router.push('/');
+      return;
+    }
 
-  const handleRemoveItem = (productId: number) => {
-    removeFromCart(productId);
-    setCartItems(getCartItems());
-    toast.info('Item removed from cart.');
-  };
+    const fetchCartItems = async () => {
+      try {
+        setLoading(true);
+        const items = await cartService.getCartItems(user.id);
+        setCartItems(items);
+      } catch (error) {
+        console.error('Error fetching cart items:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleQuantityChange = (productId: number, newQuantity: number) => {
+    fetchCartItems();
+  }, [user, router]);
+
+  const updateQuantity = async (cartId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
-      handleRemoveItem(productId);
-    } else {
-      updateCartItemQuantity(productId, newQuantity);
-      setCartItems(getCartItems());
+      return removeFromCart(cartId);
+    }
+
+    setUpdating(cartId);
+    
+    try {
+      const updatedItem = await cartService.updateQuantity(cartId, newQuantity);
+      if (updatedItem) {
+        setCartItems(prev => 
+          prev.map(item => 
+            item.id === cartId ? updatedItem : item
+          )
+        );
+        
+        toast.success(`Quantity updated to ${newQuantity}`);
+      }
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+      toast.error('Failed to update quantity');
+    } finally {
+      setUpdating(null);
     }
   };
 
-  const handleClearCart = () => {
-    clearCart();
-    setCartItems([]);
-    toast.info('Cart cleared.');
+  const removeFromCart = async (cartId: string) => {
+    try {
+      const success = await cartService.removeFromCart(cartId);
+      if (success) {
+        setCartItems(prev => prev.filter(item => item.id !== cartId));
+        toast.success('Item removed from cart');
+      }
+    } catch (error) {
+      console.error('Error removing item:', error);
+      toast.error('Failed to remove item from cart');
+    }
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shippingCost = subtotal > 0 ? 250 : 0; // Example flat shipping fee
-  const total = subtotal + shippingCost;
+  const clearCart = async () => {
+    try {
+      const success = await cartService.clearCart(user?.id || '');
+      if (success) {
+        setCartItems([]);
+        toast.success('Cart cleared');
+      }
+    } catch (error) {
+      console.error('Error clearing cart:', error);
+      toast.error('Failed to clear cart');
+    }
+  };
+
+  const checkout = () => {
+    router.push('/checkout');
+  };
+
+  const totalAmount = cartItems.reduce((sum, item) => sum + ((item.product_price || 0) * item.quantity), 0);
+  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading cart...</div>;
+  }
+
+  if (!user) {
+    return <div className="min-h-screen flex items-center justify-center">Please log in to view your cart.</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background py-12">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-4xl mx-auto px-4"
-      >
-        <h1 className="text-3xl font-bold mb-8 text-center">Your Shopping Cart</h1>
-
-        {cartItems.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardContent className="space-y-4">
-              <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto" />
-              <p className="text-muted-foreground text-lg">Your cart is empty.</p>
-              <Link href="/">
-                <Button size="lg">
-                  <ArrowLeft className="h-5 w-5 mr-2" />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold flex items-center gap-2">
+                <ShoppingCart className="h-6 w-6" />
+                Your Shopping Cart
+              </h1>
+              <p className="text-muted-foreground">Review and manage your items</p>
+            </div>
+            {cartItems.length > 0 && (
+              <div className="mt-4 md:mt-0 flex gap-2">
+                <Button variant="outline" onClick={clearCart}>
+                  Clear Cart
+                </Button>
+                <Button onClick={() => router.push('/marketplace')}>
                   Continue Shopping
                 </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-4">
-              {cartItems.map((item) => (
-                <Card key={item.id}>
-                  <CardContent className="p-4 flex items-center space-x-4">
-                    <Image src={item.images[0]} alt={item.name} width={96} height={96} className="w-24 h-24 object-cover rounded-md flex-shrink-0" />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg">{item.name}</h3>
-                      <p className="text-muted-foreground text-sm">KSh {item.price.toLocaleString()}</p>
-                      <div className="flex items-center space-x-2 mt-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                        >
-                          -
-                        </Button>
-                        <Input
-                          type="number"
-                          value={item.quantity}
-                          onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value))}
-                          className="w-16 text-center"
-                          min="1"
+              </div>
+            )}
+          </div>
+
+          {cartItems.length === 0 ? (
+            <div className="text-center py-12">
+              <ShoppingCart className="h-16 w-16 mx-auto text-muted-foreground" />
+              <h3 className="mt-4 text-xl font-semibold">Your cart is empty</h3>
+              <p className="text-muted-foreground mt-2">
+                Looks like you haven't added any items to your cart yet.
+              </p>
+              <Button className="mt-6" onClick={() => router.push('/marketplace')}>
+                Start Shopping
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 space-y-4">
+                {cartItems.map((item) => (
+                  <Card key={item.id} className="flex items-center p-4">
+                    <div className="flex-shrink-0 w-20 h-20 bg-gray-200 rounded-md overflow-hidden">
+                      {item.product_image_url ? (
+                        <img 
+                          src={item.product_image_url} 
+                          alt={item.product_name} 
+                          className="w-full h-full object-cover"
                         />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                        >
-                          +
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveItem(item.id)}
-                          className="ml-auto"
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
+                      ) : (
+                        <div className="w-full h-full bg-muted flex items-center justify-center">
+                          <Package className="h-8 w-8 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="ml-4 flex-grow">
+                      <h3 className="font-semibold">{item.product_name}</h3>
+                      <p className="text-sm text-muted-foreground">KSh {(item.product_price || 0).toFixed(2)}</p>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        disabled={updating === item.id}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      
+                      <span className="w-10 text-center">
+                        {updating === item.id ? '...' : item.quantity}
+                      </span>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        disabled={updating === item.id}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="ml-4 w-24 text-right font-semibold">
+                      KSh {((item.product_price || 0) * item.quantity).toFixed(2)}
+                    </div>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="ml-4"
+                      onClick={() => removeFromCart(item.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </Card>
+                ))}
+              </div>
+              
+              <div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Order Summary</CardTitle>
+                    <CardDescription>
+                      Review your order details
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex justify-between">
+                        <span>Subtotal ({totalItems} items)</span>
+                        <span className="font-medium">KSh {(totalAmount || 0).toFixed(2)}</span>
                       </div>
+                      
+                      <div className="flex justify-between">
+                        <span>Shipping</span>
+                        <span className="font-medium">KSh {((totalAmount || 0) * 0.1).toFixed(2)}</span>
+                      </div>
+                      
+                      <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                        <span>Total</span>
+                        <span>KSh {((totalAmount || 0) + (totalAmount || 0) * 0.1).toFixed(2)}</span>
+                      </div>
+                      
+                      <Button 
+                        className="w-full mt-6" 
+                        onClick={checkout}
+                        size="lg"
+                      >
+                        <CreditCard className="h-5 w-5 mr-2" />
+                        Proceed to Checkout
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        className="w-full" 
+                        onClick={() => router.push('/marketplace')}
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Continue Shopping
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-              <Button variant="outline" onClick={handleClearCart} className="w-full">
-                Clear Cart
-              </Button>
+              </div>
             </div>
-
-            <Card className="lg:col-span-1 h-fit">
-              <CardContent className="p-6 space-y-4">
-                <h2 className="text-xl font-bold mb-4">Order Summary</h2>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Subtotal ({cartItems.length} items)</span>
-                  <span>KSh {subtotal.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Shipping</span>
-                  <span>KSh {shippingCost.toLocaleString()}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between font-bold text-lg">
-                  <span>Total</span>
-                  <span>KSh {total.toLocaleString()}</span>
-                </div>
-                <Link href="/payments">
-                  <Button size="lg" className="w-full african-gradient text-white" onClick={() => {
-                    localStorage.setItem('checkoutData', JSON.stringify({ cartItems, subtotal, shippingCost, total }));
-                  }}>
-                    Proceed to Checkout
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </motion.div>
+          )}
+        </motion.div>
+      </div>
     </div>
   );
 }

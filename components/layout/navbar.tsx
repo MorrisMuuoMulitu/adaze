@@ -20,7 +20,8 @@ import {
   Heart,
   ShoppingCart,
   Wallet,
-  MessageCircle
+  MessageCircle,
+  Package
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -33,10 +34,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { getCartItems } from '@/lib/cart';
+import { cartService } from '@/lib/cartService';
 import Link from 'next/link';
 import { useAuth } from '@/components/auth/auth-provider';
 import { createClient } from '@/lib/supabase/client';
+import { CartSidebar } from './cart-sidebar';
 
 interface NavbarProps {
   onAuthClick: (type: 'login' | 'register') => void;
@@ -50,23 +52,66 @@ export function Navbar({ onAuthClick }: NavbarProps) {
   const { user } = useAuth();
   const supabase = createClient();
 
+  // Fetch cart count when user logs in
+  useEffect(() => {
+    if (user) {
+      const fetchCartCount = async () => {
+        try {
+          const count = await cartService.getCartCount(user.id);
+          setCartItemCount(count);
+        } catch (error) {
+          console.error('Error fetching cart count:', error);
+        }
+      };
+
+      fetchCartCount();
+
+      // Set up listener for cart updates
+      const handleCartUpdate = async () => {
+        try {
+          const count = await cartService.getCartCount(user.id);
+          setCartItemCount(count);
+        } catch (error) {
+          console.error('Error updating cart count:', error);
+        }
+      };
+
+      window.addEventListener('cartUpdated', handleCartUpdate);
+
+      return () => {
+        window.removeEventListener('cartUpdated', handleCartUpdate);
+      };
+    } else {
+      setCartItemCount(0);
+    }
+  }, [user]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
 
   useEffect(() => {
-    setCartItemCount(getCartItems().length);
-
-    const handleCartUpdate = () => {
-      setCartItemCount(getCartItems().length);
-    };
-
-    window.addEventListener('cartUpdated', handleCartUpdate);
-
-    return () => {
-      window.removeEventListener('cartUpdated', handleCartUpdate);
-    };
-  }, []);
+    if (user) {
+      const fetchCartCount = async () => {
+        try {
+          const count = await cartService.getCartCount(user.id);
+          setCartItemCount(count);
+        } catch (error) {
+          console.error('Error fetching cart count:', error);
+        }
+      };
+      
+      fetchCartCount();
+      
+      // Set up a mechanism to update cart count when cart changes
+      // For now, we'll just refetch periodically
+      const interval = setInterval(fetchCartCount, 30000); // Every 30 seconds
+      
+      return () => {
+        clearInterval(interval);
+      };
+    }
+  }, [user]);
 
   const navItems = [
     { name: t('nav.marketplace'), href: '/marketplace', icon: ShoppingBag },
@@ -147,113 +192,119 @@ export function Navbar({ onAuthClick }: NavbarProps) {
 
           {/* Desktop Actions */}
           <div className="hidden lg:flex items-center space-x-2">
-            <ThemeToggle />
-            <LanguageToggle />
-            
-            {user ? (
-              <div className="flex items-center space-x-2">
-                {/* Quick Actions */}
-                <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button">
-                  <Heart className="h-4 w-4" />
-                  <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">3</Badge>
-                </Button>
-                
-                <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button" asChild>
-                  <Link href="/cart">
-                    <ShoppingCart className="h-4 w-4" />
-                    <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">{cartItemCount}</Badge>
-                  </Link>
-                </Button>
-                
-                <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button">
-                  <Bell className="h-4 w-4" />
-                  <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-red-500">5</Badge>
-                </Button>
+                  <ThemeToggle />
+                  <LanguageToggle />
+                  
+                  {user ? (
+                    <div className="flex items-center space-x-2">
+                      {/* Quick Actions */}
+                      <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button">
+                        <Heart className="h-4 w-4" />
+                        <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">3</Badge>
+                      </Button>
+                      
+                      <CartSidebar 
+                        cartCount={cartItemCount} 
+                        onCartUpdate={setCartItemCount} 
+                      />
+                      
+                      <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button">
+                        <Bell className="h-4 w-4" />
+                        <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-red-500">5</Badge>
+                      </Button>
 
-                <Button variant="ghost" size="sm" className="w-9 h-9 p-0 mobile-button">
-                  <MessageCircle className="h-4 w-4" />
-                </Button>
+                      <Button variant="ghost" size="sm" className="w-9 h-9 p-0 mobile-button">
+                        <MessageCircle className="h-4 w-4" />
+                      </Button>
 
-                {/* User Menu */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full mobile-button">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.user_metadata.avatar_url} alt={userName} />
-                        <AvatarFallback className={getRoleColor(userRole)}>
-                          {userName?.charAt(0) || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      {isVerified && (
-                        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
-                      )}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-64" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <p className="text-sm font-medium leading-none truncate">
-                            {userName}
-                          </p>
-                          {isVerified && (
-                            <Badge variant="secondary" className="text-xs">Verified</Badge>
-                          )}
-                        </div>
-                        <p className="text-xs leading-none text-muted-foreground truncate">
-                          {user.email}
-                        </p>
-                        <div className="flex items-center space-x-2">
-                          <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                            {getRoleIcon(userRole)}
-                            <span className="capitalize">{userRole}</span>
-                          </div>
-                          <span className="text-xs text-muted-foreground">•</span>
-                          <span className="text-xs text-muted-foreground">{user.user_metadata.location}</span>
-                        </div>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile">
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Settings</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Wallet className="mr-2 h-4 w-4" />
-                      <span>Wallet</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => onAuthClick('login')}
-                  className="mobile-button"
-                >
-                  {t('nav.login')}
-                </Button>
-                <Button 
-                  onClick={() => onAuthClick('register')}
-                  className="african-gradient text-white hover:opacity-90 mobile-button"
-                >
-                  {t('nav.get_started')}
-                </Button>
-              </div>
-            )}
-          </div>
+                      {/* User Menu */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="relative h-8 w-8 rounded-full mobile-button">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={user.user_metadata.avatar_url} alt={userName} />
+                              <AvatarFallback className={getRoleColor(userRole)}>
+                                {userName?.charAt(0) || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                            {isVerified && (
+                              <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
+                            )}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-64" align="end" forceMount>
+                          <DropdownMenuLabel className="font-normal">
+                            <div className="flex flex-col space-y-2">
+                              <div className="flex items-center space-x-2">
+                                <p className="text-sm font-medium leading-none truncate">
+                                  {userName}
+                                </p>
+                                {isVerified && (
+                                  <Badge variant="secondary" className="text-xs">Verified</Badge>
+                                )}
+                              </div>
+                              <p className="text-xs leading-none text-muted-foreground truncate">
+                                {user.email}
+                              </p>
+                              <div className="flex items-center space-x-2">
+                                <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                                  {getRoleIcon(userRole)}
+                                  <span className="capitalize">{userRole}</span>
+                                </div>
+                                <span className="text-xs text-muted-foreground">•</span>
+                                <span className="text-xs text-muted-foreground">{user.user_metadata.location}</span>
+                              </div>
+                            </div>
+                          </DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem asChild>
+                            <Link href="/profile">
+                              <User className="mr-2 h-4 w-4" />
+                              <span>Profile</span>
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link href="/orders">
+                              <Package className="mr-2 h-4 w-4" />
+                              <span>My Orders</span>
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link href="/settings">
+                              <Settings className="mr-2 h-4 w-4" />
+                              <span>Settings</span>
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Wallet className="mr-2 h-4 w-4" />
+                            <span>Wallet</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Log out</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <Button 
+                        variant="ghost" 
+                        onClick={() => onAuthClick('login')}
+                        className="mobile-button"
+                      >
+                        {t('nav.login')}
+                      </Button>
+                      <Button 
+                        onClick={() => onAuthClick('register')}
+                        className="african-gradient text-white hover:opacity-90 mobile-button"
+                      >
+                        {t('nav.get_started')}
+                      </Button>
+                    </div>
+                  )}
+                </div>
 
           {/* Mobile Actions */}
           <div className="flex lg:hidden items-center space-x-2">

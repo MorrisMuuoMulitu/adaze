@@ -34,6 +34,7 @@ export function UserDashboard({ user, products, loading, error }: UserDashboardP
   const cartItems = getCartItems();
   const cartTotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   
+  // These would come from real database queries in a full implementation
   const stats = [
     {
       title: 'Cart Items',
@@ -44,14 +45,14 @@ export function UserDashboard({ user, products, loading, error }: UserDashboardP
     },
     {
       title: 'Wishlist',
-      value: 8,
+      value: 0, // This would be retrieved from the database
       icon: Heart,
       color: 'text-pink-500',
       bgColor: 'bg-pink-100 dark:bg-pink-900/20'
     },
     {
       title: 'Orders',
-      value: 12,
+      value: 0, // This would be retrieved from the database
       icon: Package,
       color: 'text-purple-500',
       bgColor: 'bg-purple-100 dark:bg-purple-900/20'
@@ -63,7 +64,7 @@ export function UserDashboard({ user, products, loading, error }: UserDashboardP
       title: 'Continue Shopping',
       description: 'Browse more products',
       icon: ShoppingBag,
-      href: '/products',
+      href: '/marketplace',
       color: 'text-blue-500'
     },
     {
@@ -152,7 +153,7 @@ export function UserDashboard({ user, products, loading, error }: UserDashboardP
                         {stat.title}
                       </p>
                       <p className="text-2xl font-bold">
-                        {stat.format ? stat.format(stat.value) : stat.value}
+                        {stat.value}
                       </p>
                     </div>
                     <div className={`p-3 rounded-full ${stat.bgColor}`}>
@@ -214,28 +215,15 @@ export function UserDashboard({ user, products, loading, error }: UserDashboardP
               <CardDescription>Your latest interactions</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {[
-                  { action: 'Added to cart', item: 'Nike Air Max', time: '2 hours ago' },
-                  { action: 'Liked', item: 'Adidas Ultraboost', time: '5 hours ago' },
-                  { action: 'Purchased', item: 'Puma RS-X', time: '1 day ago' },
-                  { action: 'Reviewed', item: 'Converse Chuck Taylor', time: '2 days ago' }
-                ].map((activity, index) => (
-                  <div key={index} className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-primary rounded-full"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">
-                      {activity.action} <span className="text-primary">{activity.item}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
-                    </div>
-                  </div>
-                ))}
+              <div className="text-center py-8 text-muted-foreground">
+                <Heart className="h-12 w-12 mx-auto mb-3" />
+                <p>No recent activity yet</p>
+                <p className="text-sm mt-1">Your recent purchases and interactions will appear here</p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Quick Stats */}
+          {/* Account Overview */}
           <Card>
             <CardHeader>
               <CardTitle>Account Overview</CardTitle>
@@ -245,22 +233,23 @@ export function UserDashboard({ user, products, loading, error }: UserDashboardP
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Member since</span>
-                  <span className="font-medium">Jan 2024</span>
+                  <span className="font-medium">
+                    {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Total orders</span>
+                  <span className="font-medium">0</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Total spent</span>
-                  <span className="font-medium">KSh 12,450</span>
+                  <span className="font-medium">KSh 0</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Items purchased</span>
-                  <span className="font-medium">8</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Account rating</span>
-                  <div className="flex items-center">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                    <span className="font-medium">4.8/5</span>
-                  </div>
+                  <span className="text-sm text-muted-foreground">Verified</span>
+                  <span className="font-medium">
+                    {user.email_confirmed_at ? 'Yes' : 'No'}
+                  </span>
                 </div>
               </div>
             </CardContent>

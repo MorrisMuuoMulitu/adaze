@@ -37,3 +37,6 @@ next-env.d.ts
 
 # Local environment variables
 .env.local
+
+# Backup files
+app/error.tsx.bak

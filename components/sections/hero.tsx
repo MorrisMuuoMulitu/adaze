@@ -1,10 +1,23 @@
 "use client"
 
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/components/language-provider';
-import { ArrowRight, Play, ShoppingBag, Users, Truck, Sparkles, Zap, MapPin } from 'lucide-react';
+import Link from 'next/link';
+import { 
+  ArrowRight, 
+  ShoppingBag, 
+  Users, 
+  TrendingUp, 
+  MapPin,
+  Star,
+  Shield,
+  Zap,
+  Sparkles,
+  Truck
+} from 'lucide-react';
 
 interface HeroProps {
   onGetStarted: () => void;
@@ -155,9 +168,11 @@ export function Hero({ onGetStarted }: HeroProps) {
                 size="lg" 
                 variant="outline" 
                 className="group text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 h-12 sm:h-auto border-2 hover:bg-muted/50 mobile-button"
+                asChild
               >
-                <Play className="mr-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform" />
-                Watch Demo
+                <Link href="/marketplace">
+                  Browse Products
+                </Link>
               </Button>
             </motion.div>
 

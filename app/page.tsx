@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/navbar';
 import { Hero } from '@/components/sections/hero';
 import { FeaturedProducts } from '@/components/sections/featured-products';
@@ -16,16 +17,18 @@ import { OnboardingTour } from '@/components/onboarding/onboarding-tour';
 import { PWAPrompt } from '@/components/pwa/pwa-prompt';
 import { LiveChat } from '@/components/chat/live-chat';
 import { NotificationCenter } from '@/components/notifications/notification-center';
-import { User, Product } from '@/types';
+import { User } from '@/types';
+import { Product as DBProduct } from '@/lib/productService';
 import { UserDashboard } from '@/components/sections/user-dashboard';
 import { useAuth } from '@/components/auth/auth-provider';
 
 export default function Home() {
+  const router = useRouter();
   const [authModal, setAuthModal] = useState<'login' | 'register' | null>(null);
   const { user } = useAuth(); // New useAuth hook
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<DBProduct[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState<string | null>(null);
 
@@ -42,6 +45,17 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [user]);
 
+  // Redirect logged-in users to marketplace
+  useEffect(() => {
+    if (user) {
+      const redirectTimer = setTimeout(() => {
+        router.push('/marketplace');
+      }, 2000); // Redirect after 2 seconds to show welcome message
+
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [user, router]);
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -49,7 +63,7 @@ export default function Home() {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data: Product[] = await response.json();
+        const data: DBProduct[] = await response.json();
         setProducts(data);
       } catch (error) {
         setProductsError('Failed to fetch products.');
@@ -114,9 +128,7 @@ export default function Home() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        {user ? (
-          <UserDashboard user={user} products={products} loading={productsLoading} error={productsError} />
-        ) : (
+        {!user ? (
           <>
             <Hero onGetStarted={() => setAuthModal('register')} />
             <Stats />
@@ -126,6 +138,29 @@ export default function Home() {
             <Testimonials />
             <CTA />
           </>
+        ) : (
+          // Show a welcome message before redirecting
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center max-w-md">
+              <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+              <h2 className="text-2xl font-bold mb-2">
+                Welcome back, {user.user_metadata.full_name || (user.email ? user.email.split('@')[0] : 'User')}!
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                Redirecting to the marketplace...
+              </p>
+              <p className="text-sm text-muted-foreground">
+                You'll be redirected automatically, or{' '}
+                <button 
+                  onClick={() => router.push('/marketplace')}
+                  className="text-primary hover:underline"
+                >
+                  click here
+                </button>{' '}
+                to continue
+              </p>
+            </div>
+          </div>
         )}
       </motion.main>
 

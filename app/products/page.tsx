@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { Product } from '@/types';
+import { Product as DBProduct } from '@/lib/productService';
 import { FeaturedProducts } from '@/components/sections/featured-products';
 import Link from 'next/link'; // Import Link for navigation
 import { Button } from '@/components/ui/button'; // Import styled Button
 import { ArrowLeft } from 'lucide-react'; // Import arrow icon
 
 export default function MarketplacePage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<DBProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,7 +26,7 @@ export default function MarketplacePage() {
           throw new Error(errorMsg);
         }
         
-        const data: Product[] = await response.json();
+        const data: DBProduct[] = await response.json();
         console.log('MarketplacePage: Products data received', data.length, 'products');
         setProducts(data);
       } catch (err: unknown) {

@@ -149,7 +149,8 @@ export function AuthModal({ type, isOpen, onClose, onSuccess }: AuthModalProps) 
         toast.success('Karibu tena!', {
           description: 'Great to see you again.'
         });
-        window.location.reload(); // Reload to update UI
+        // Redirect to marketplace after successful login
+        window.location.href = '/marketplace';
       } else {
         toast.error('Authentication failed', {
           description: result.message || 'Please check your credentials and try again.'
@@ -180,6 +181,8 @@ export function AuthModal({ type, isOpen, onClose, onSuccess }: AuthModalProps) 
         toast.success('Account created successfully!', {
           description: result.message || 'Please check your email to confirm your account.'
         });
+        // Redirect to marketplace after successful registration
+        window.location.href = '/marketplace';
       } else {
         toast.error('Authentication failed', {
           description: result.message || 'Please check your credentials and try again.'
