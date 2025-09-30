@@ -20,7 +20,10 @@ interface CartItem {
   quantity: number;
   created_at: string;
   updated_at: string;
-  products: Product; // Joined product data
+  // Additional product info
+  product_name: string;
+  product_price: number;
+  product_image_url: string | null;
 }
 
 export default function CartPage() {
@@ -105,7 +108,7 @@ export default function CartPage() {
     }
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.products.price * item.quantity, 0);
+  const subtotal = cartItems.reduce((sum, item) => sum + item.product_price * item.quantity, 0);
 
   if (loading) {
     return (
@@ -201,10 +204,10 @@ export default function CartPage() {
                     <Card key={item.id}>
                       <CardContent className="p-4 flex items-center space-x-4">
                         <div className="relative w-24 h-24 flex-shrink-0">
-                          {item.products.image_url ? (
+                          {item.product_image_url ? (
                             <img 
-                              src={item.products.image_url} 
-                              alt={item.products.name} 
+                              src={item.product_image_url} 
+                              alt={item.product_name} 
                               className="w-full h-full object-cover rounded-md"
                             />
                           ) : (
@@ -214,8 +217,8 @@ export default function CartPage() {
                           )}
                         </div>
                         <div className="flex-1">
-                          <h2 className="text-lg font-semibold">{item.products.name}</h2>
-                          <p className="text-muted-foreground text-sm">KSh {item.products.price.toFixed(2)}</p>
+                          <h2 className="text-lg font-semibold">{item.product_name}</h2>
+                          <p className="text-muted-foreground text-sm">KSh {item.product_price.toFixed(2)}</p>
                           <div className="flex items-center mt-2">
                             <Button 
                               variant="outline" 
