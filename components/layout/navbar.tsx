@@ -67,7 +67,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
           const wishlistCount = await wishlistService.getWishlistCount(user.id); // Fetch actual wishlist count
           setWishlistItemCount(wishlistCount);
 
-          const unreadNotifications = await notificationService.getUnreadNotificationCount(user.id);
+          const unreadNotifications = (await notificationService.getUnreadNotifications(user.id)).length;
           setNotificationCount(unreadNotifications);
         } catch (error) {
           console.error('Error fetching counts:', error);
