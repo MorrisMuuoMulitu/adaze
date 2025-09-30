@@ -12,6 +12,7 @@ import { Package, Heart, ShoppingCart as ShoppingCartIcon, X } from 'lucide-reac
 import { toast } from 'sonner';
 import { Navbar } from '@/components/layout/navbar';
 import { AuthModal } from '@/components/auth/auth-modal';
+import { cartService } from '@/lib/cartService'; // Import cartService
 
 interface WishlistItem {
   id: string;
@@ -76,6 +77,21 @@ export default function WishlistPage() {
     } catch (err) {
       console.error('Error removing from wishlist:', err);
       toast.error('Failed to remove item from wishlist.');
+    }
+  };
+
+  const handleAddToCart = async (productId: string) => {
+    if (!user) {
+      toast.error('Please log in to add items to your cart.');
+      return;
+    }
+    try {
+      await cartService.addToCart(user.id, productId, 1);
+      toast.success('Item added to cart!');
+      window.dispatchEvent(new CustomEvent('cartUpdated')); // Notify Navbar
+    } catch (err) {
+      console.error('Error adding to cart:', err);
+      toast.error('Failed to add item to cart.');
     }
   };
 
@@ -210,10 +226,7 @@ export default function WishlistPage() {
                       <div className="flex space-x-2">
                         <Button 
                           className="flex-1" 
-                          onClick={() => {
-                            // Add to cart functionality (not implemented yet)
-                            toast.info('Add to cart functionality coming soon!');
-                          }}
+                          onClick={() => handleAddToCart(item.product_id)}
                         >
                           <ShoppingCartIcon className="h-4 w-4 mr-2" />
                           Add to Cart
