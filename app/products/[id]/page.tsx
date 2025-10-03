@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/components/auth/auth-provider';
 import { productService, Product } from '@/lib/productService';
@@ -73,17 +74,17 @@ export default function ProductDetailPage() {
     };
 
     fetchProduct();
-  }, [productId, router]);
+  }, [productId, router, user]);
 
   useEffect(() => {
+    if (!user) return;
+    
     const fetchCartCount = async () => {
-      if (user) {
-        try {
-          const count = await cartService.getCartCount(user.id);
-          setCartCount(count);
-        } catch (error) {
-          console.error('Error fetching cart count:', error);
-        }
+      try {
+        const count = await cartService.getCartCount(user.id);
+        setCartCount(count);
+      } catch (error) {
+        console.error('Error fetching cart count:', error);
       }
     };
 
@@ -177,9 +178,11 @@ export default function ProductDetailPage() {
             <div className="flex flex-col items-center">
               <div className="w-full h-96 bg-gray-200 rounded-xl overflow-hidden">
                 {product.image_url ? (
-                  <img 
+                  <Image 
                     src={product.image_url} 
-                    alt={product.name} 
+                    alt={product.name}
+                    width={600}
+                    height={600}
                     className="w-full h-full object-cover"
                   />
                 ) : (

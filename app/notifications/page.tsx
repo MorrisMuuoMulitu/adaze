@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/components/auth/auth-provider';
 import { notificationService, Notification } from '@/lib/notificationService';
@@ -29,16 +29,7 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/'); // Redirect to home if not logged in
-      return;
-    }
-
-    fetchNotifications();
-  }, [user, router, activeTab]);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -59,7 +50,16 @@ export default function NotificationsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, activeTab]);
+
+  useEffect(() => {
+    if (!user) {
+      router.push('/'); // Redirect to home if not logged in
+      return;
+    }
+
+    fetchNotifications();
+  }, [user, router, fetchNotifications]);
 
   const markAsRead = async (id: string) => {
     try {

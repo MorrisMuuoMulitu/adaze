@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/components/auth/auth-provider';
 import { orderService, Order } from '@/lib/orderService';
@@ -11,7 +11,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Package, MapPin, DollarSign, Calendar, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function PaymentPage() {
+function PaymentPageContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -219,5 +219,13 @@ export default function PaymentPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <PaymentPageContent />
+    </Suspense>
   );
 }

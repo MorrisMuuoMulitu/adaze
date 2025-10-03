@@ -266,7 +266,7 @@ export default function TransporterDashboard() {
                 <Truck className="h-12 w-12 mx-auto text-muted-foreground" />
                 <h3 className="mt-4 text-xl font-semibold">No active deliveries</h3>
                 <p className="text-muted-foreground mt-2">
-                  You don't have any orders in transit right now.
+                  You don&apos;t have any orders in transit right now.
                 </p>
               </div>
             ) : (
@@ -347,7 +347,7 @@ export default function TransporterDashboard() {
                 <Package className="h-12 w-12 mx-auto text-muted-foreground" />
                 <h3 className="mt-4 text-xl font-semibold">No completed deliveries</h3>
                 <p className="text-muted-foreground mt-2">
-                  You haven't completed any deliveries yet.
+                  You haven&apos;t completed any deliveries yet.
                 </p>
               </div>
             ) : (

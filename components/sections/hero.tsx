@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/components/language-provider';
@@ -16,7 +16,12 @@ import {
   Shield,
   Zap,
   Sparkles,
-  Truck
+  Truck,
+  CheckCircle,
+  Crown,
+  Rocket,
+  Heart,
+  Globe
 } from 'lucide-react';
 
 interface HeroProps {
@@ -25,47 +30,71 @@ interface HeroProps {
 
 export function Hero({ onGetStarted }: HeroProps) {
   const { t } = useLanguage();
+  const { scrollYProgress } = useScroll();
+  const y = useTransform(scrollYProgress, [0, 1], [0, -50]);
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+
+  const stats = [
+    { icon: Users, value: "10K+", label: "Active Users" },
+    { icon: ShoppingBag, value: "50K+", label: "Products Listed" },
+    { icon: Star, value: "4.9", label: "Average Rating" },
+    { icon: Truck, value: "24/7", label: "Fast Delivery" }
+  ];
 
   return (
-    <section className="relative overflow-hidden bg-background min-h-screen flex items-center">
-      {/* Animated background elements */}
-      <div className="absolute inset-0">
+    <section className="relative overflow-hidden bg-gradient-to-b from-background via-background to-muted/20 min-h-screen flex items-center pt-20 pb-16">
+      {/* Epic Animated background */}
+      <div className="absolute inset-0 -z-10">
+        {/* Gradient Orbs */}
         <motion.div
           animate={{
-            y: ["-15%", "15%", "-15%"], // More vertical movement
-            x: ["-10%", "10%", "-10%"], // More horizontal movement
-            rotate: [0, 360],
-            scale: [1, 1.2, 1], // Add subtle scaling
+            scale: [1, 1.2, 1],
+            rotate: [0, 90, 0],
+            x: [0, 100, 0],
+            y: [0, -50, 0],
           }}
           transition={{
-            duration: 15, // Slower animation
+            duration: 20,
             repeat: Infinity,
-            ease: "easeInOut", // Smoother easing
+            ease: "easeInOut",
           }}
-          className="absolute top-20 left-10 w-48 h-48 sm:w-72 sm:h-72 bg-primary/15 rounded-full blur-3xl" // Slightly more opaque primary color
-        ></motion.div>
+          className="absolute top-10 -left-20 w-96 h-96 bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent rounded-full blur-3xl"
+        />
         <motion.div
           animate={{
-            y: ["15%", "-15%", "15%"], // More vertical movement
-            x: ["10%", "-10%", "10%"], // More horizontal movement
-            rotate: [360, 0],
-            scale: [1, 0.8, 1], // Add subtle scaling
+            scale: [1, 1.3, 1],
+            rotate: [0, -90, 0],
+            x: [0, -100, 0],
+            y: [0, 50, 0],
           }}
           transition={{
-            duration: 18, // Slower animation
+            duration: 25,
             repeat: Infinity,
-            ease: "easeInOut", // Smoother easing
-            delay: 3, // Slightly increased delay
+            ease: "easeInOut",
+            delay: 2,
           }}
-          className="absolute bottom-20 right-10 w-64 h-64 sm:w-96 sm:h-96 bg-accent/15 rounded-full blur-3xl" // Slightly more opaque accent color
-        ></motion.div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] sm:w-[800px] sm:h-[800px] bg-gradient-to-r from-primary/5 to-accent/5 rounded-full blur-3xl"></div>
-      </div>
-
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10"> {/* Reduced opacity for subtlety */}
-        {/* Consider adding a subtle pattern image here, e.g., bg-[url('/patterns/subtle-pattern.png')] bg-repeat */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-background/50 via-transparent to-transparent"></div> {/* Subtle radial gradient overlay */}
+          className="absolute top-40 -right-20 w-[500px] h-[500px] bg-gradient-to-bl from-blue-500/30 via-cyan-500/20 to-transparent rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.1, 1],
+            opacity: [0.3, 0.5, 0.3],
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute bottom-20 left-1/3 w-[600px] h-[600px] bg-gradient-to-tr from-green-500/20 via-emerald-500/15 to-transparent rounded-full blur-3xl"
+        />
+        
+        {/* Grid Pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+        
+        {/* Noise Texture */}
+        <div className="absolute inset-0 opacity-20 mix-blend-overlay">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxwYXRoIGQ9Ik0wIDBoMzAwdjMwMEgweiIgZmlsdGVyPSJ1cmwoI2EpIiBvcGFjaXR5PSIuMDUiLz48L3N2Zz4=')]"></div>
+        </div>
       </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-12 sm:pb-16 relative z-10">

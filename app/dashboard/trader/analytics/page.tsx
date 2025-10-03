@@ -105,7 +105,7 @@ export default function TraderAnalyticsPage() {
     }; // Closing brace for fetchAnalytics
 
     fetchAnalytics();
-  }, [user, supabase]); // Closing parenthesis and brace for useEffect
+  }, [user, supabase, router]); // Closing parenthesis and brace for useEffect
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading analytics...</div>;

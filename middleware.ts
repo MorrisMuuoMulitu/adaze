@@ -2,6 +2,17 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Skip middleware for static files, API routes, and Next.js internals
+  if (
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/api/') ||
+    pathname.includes('.') // Files with extensions (images, fonts, etc.)
+  ) {
+    return NextResponse.next();
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -72,21 +83,24 @@ export async function middleware(request: NextRequest) {
     userRole = profile?.role || null;
   }
 
-  const { pathname } = request.nextUrl;
-
   // Define role-based access rules
   const protectedRoutes: { [key: string]: string[] } = {
     '/dashboard/buyer': ['buyer'],
     '/dashboard/trader': ['trader'],
     '/dashboard/transporter': ['transporter'],
+    '/marketplace': ['buyer'], // Only buyers can access marketplace
     '/products/add': ['trader'],
     '/products/manage': ['trader'],
     '/products/edit': ['trader'], // This will match /products/edit/:id
     '/orders/received': ['trader'],
+    '/orders/create': ['buyer'],
     '/cart': ['buyer'],
     '/checkout': ['buyer'],
     '/payment': ['buyer'],
+    '/wishlist': ['buyer'],
     '/orders': ['buyer'], // Buyer's order history
+    '/transporter/available-deliveries': ['transporter'],
+    '/transporter/my-deliveries': ['transporter'],
   };
 
   // Check if the requested path is a protected route

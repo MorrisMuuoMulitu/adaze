@@ -44,7 +44,7 @@ export default function TransporterPerformancePage() {
     };
 
     fetchPerformance();
-  }, [user, supabase]);
+  }, [user, supabase, router]);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading performance data...</div>;

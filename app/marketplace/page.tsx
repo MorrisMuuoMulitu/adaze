@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/components/auth/auth-provider';
 import { productService, Product } from '@/lib/productService';
@@ -233,9 +234,11 @@ export default function MarketplacePage() {
                       <div className="relative">
                         <div className="h-48 bg-gray-200 relative overflow-hidden">
                           {product.image_url ? (
-                            <img 
+                            <Image 
                               src={product.image_url} 
-                              alt={product.name} 
+                              alt={product.name}
+                              width={400}
+                              height={300}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
                           ) : (

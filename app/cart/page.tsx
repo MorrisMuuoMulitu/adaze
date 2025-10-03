@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/components/auth/auth-provider';
 import { cartService } from '@/lib/cartService';
@@ -192,7 +193,7 @@ export default function CartPage() {
                   <ShoppingCartIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <h2 className="text-xl font-semibold mb-2">Your Cart is Empty</h2>
                   <p className="text-muted-foreground mb-6">
-                    Looks like you haven't added any items to your cart yet.
+                    Looks like you haven&apos;t added any items to your cart yet.
                   </p>
                   <Button onClick={() => router.push('/marketplace')}>Start Shopping</Button>
                 </CardContent>
@@ -205,9 +206,11 @@ export default function CartPage() {
                       <CardContent className="p-4 flex items-center space-x-4">
                         <div className="relative w-24 h-24 flex-shrink-0">
                           {item.product_image_url ? (
-                            <img 
+                            <Image 
                               src={item.product_image_url} 
-                              alt={item.product_name} 
+                              alt={item.product_name}
+                              width={96}
+                              height={96}
                               className="w-full h-full object-cover rounded-md"
                             />
                           ) : (

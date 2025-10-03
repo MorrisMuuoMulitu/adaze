@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -206,14 +207,13 @@ export function FeaturedProducts({ products, loading, error }: FeaturedProductsP
               <Card className="overflow-hidden h-full flex flex-col">
                 <div className="relative">
                   <div className="h-48 bg-gray-200 relative overflow-hidden">
-                    <img 
+                    <Image 
                       src={product.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(product.name)}&background=random`} 
-                      alt={product.name} 
+                      alt={product.name}
+                      width={400}
+                      height={300}
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(product.name)}&background=random`;
-                      }}
+                      unoptimized={!product.image_url}
                     />
                     {product.rating >= 4.5 && (
                       <Badge className="absolute top-2 right-2 bg-red-500 text-white">

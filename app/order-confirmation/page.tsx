@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/components/auth/auth-provider';
 import { orderService, Order } from '@/lib/orderService';
@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Package, MapPin, CreditCard, CheckCircle, Home, Clock } from 'lucide-react';
 
-export default function OrderConfirmationPage() {
+function OrderConfirmationContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -168,5 +168,13 @@ export default function OrderConfirmationPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+export default function OrderConfirmationPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <OrderConfirmationContent />
+    </Suspense>
   );
 }

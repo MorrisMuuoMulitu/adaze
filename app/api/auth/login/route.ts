@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Missing email, password, or role' }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // 1. Sign in the user
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({

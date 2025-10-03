@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/components/auth/auth-provider';
 import { wishlistService } from '@/lib/wishlistService';
@@ -177,7 +178,7 @@ export default function WishlistPage() {
                   <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <h2 className="text-xl font-semibold mb-2">Your Wishlist is Empty</h2>
                   <p className="text-muted-foreground mb-6">
-                    Looks like you haven't added any items to your wishlist yet.
+                    Looks like you haven&apos;t added any items to your wishlist yet.
                   </p>
                   <Button onClick={() => router.push('/marketplace')}>Start Browsing</Button>
                 </CardContent>
@@ -189,9 +190,11 @@ export default function WishlistPage() {
                     <div className="relative">
                       <div className="h-48 bg-gray-200 relative overflow-hidden">
                         {item.products[0]?.image_url ? (
-                          <img 
+                          <Image 
                             src={item.products[0]?.image_url} 
-                            alt={item.products[0]?.name} 
+                            alt={item.products[0]?.name || 'Product'}
+                            width={400}
+                            height={300}
                             className="w-full h-full object-cover"
                           />
                         ) : (

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/components/auth/auth-provider';
 import { cartService, CartItem } from '@/lib/cartService';
 import { Button } from '@/components/ui/button';
@@ -21,11 +22,26 @@ export function CartSidebar({ cartCount, onCartUpdate }: CartSidebarProps) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const fetchCartItems = useCallback(async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      const items = await cartService.getCartItems(user.id);
+      setCartItems(items);
+    } catch (error) {
+      console.error('Error fetching cart items:', error);
+      toast.error('Failed to load cart items');
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (isOpen && user) {
       fetchCartItems();
     }
-  }, [isOpen, user]);
+  }, [isOpen, user, fetchCartItems]);
 
   useEffect(() => {
     // Listen for cart updates
@@ -40,22 +56,7 @@ export function CartSidebar({ cartCount, onCartUpdate }: CartSidebarProps) {
     return () => {
       window.removeEventListener('cartUpdated', handleCartUpdate);
     };
-  }, [user]);
-
-  const fetchCartItems = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    try {
-      const items = await cartService.getCartItems(user.id);
-      setCartItems(items);
-    } catch (error) {
-      console.error('Error fetching cart items:', error);
-      toast.error('Failed to load cart items');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [user, fetchCartItems]);
 
   const updateQuantity = async (cartId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
@@ -146,7 +147,7 @@ export function CartSidebar({ cartCount, onCartUpdate }: CartSidebarProps) {
               <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
               <h3 className="text-xl font-semibold mb-2">Your cart is empty</h3>
               <p className="text-muted-foreground mb-6">
-                Add some items to your cart and they'll appear here
+                Add some items to your cart and they&apos;ll appear here
               </p>
               <Button onClick={() => setIsOpen(false)} asChild>
                 <Link href="/marketplace">
@@ -162,9 +163,11 @@ export function CartSidebar({ cartCount, onCartUpdate }: CartSidebarProps) {
                     <div key={item.id} className="flex items-center p-4 border rounded-lg">
                       <div className="flex-shrink-0 w-16 h-16 bg-gray-200 rounded-md overflow-hidden">
                         {item.product_image_url ? (
-                          <img 
+                          <Image 
                             src={item.product_image_url} 
-                            alt={item.product_name} 
+                            alt={item.product_name}
+                            width={64}
+                            height={64}
                             className="w-full h-full object-cover"
                           />
                         ) : (

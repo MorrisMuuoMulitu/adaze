@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/auth/auth-provider';
 import { notificationService, Notification } from '@/lib/notificationService';
 import { Button } from '@/components/ui/button';
@@ -33,17 +33,7 @@ export default function NotificationBell({ showCount = true }: NotificationBellP
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  useEffect(() => {
-    if (user) {
-      fetchNotifications();
-      
-      // Set up polling to refresh notifications periodically
-      const interval = setInterval(fetchNotifications, 30000); // every 30 seconds
-      return () => clearInterval(interval);
-    }
-  }, [user]);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -58,7 +48,17 @@ export default function NotificationBell({ showCount = true }: NotificationBellP
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+      
+      // Set up polling to refresh notifications periodically
+      const interval = setInterval(fetchNotifications, 30000); // every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [user, fetchNotifications]);
 
   const markAsRead = async (id: string) => {
     try {

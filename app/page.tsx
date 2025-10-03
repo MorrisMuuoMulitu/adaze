@@ -14,6 +14,8 @@ import { CTA } from '@/components/sections/cta';
 import { Footer } from '@/components/layout/footer';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { OnboardingTour } from '@/components/onboarding/onboarding-tour';
+import { OnboardingTourEnhanced } from '@/components/onboarding-tour-enhanced';
+import { KeyboardShortcuts } from '@/components/keyboard-shortcuts';
 import { PWAPrompt } from '@/components/pwa/pwa-prompt';
 import { LiveChat } from '@/components/chat/live-chat';
 import { NotificationCenter } from '@/components/notifications/notification-center';
@@ -35,24 +37,31 @@ export default function Home() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
-      const hasVisited = localStorage.getItem('adaze-visited');
-      if (!hasVisited && !user) {
+      const hasCompletedOnboarding = localStorage.getItem('adaze-onboarding-completed');
+      if (!hasCompletedOnboarding && !user) {
         setShowOnboarding(true);
-        localStorage.setItem('adaze-visited', 'true');
       }
     }, 1000);
 
     return () => clearTimeout(timer);
   }, [user]);
 
-  // Redirect logged-in users to marketplace
+  // Redirect logged-in users based on role
   useEffect(() => {
     if (user) {
-      const redirectTimer = setTimeout(() => {
+      // Get user role from metadata
+      const role = user.user_metadata?.role;
+      
+      if (role === 'buyer') {
+        // Buyers go directly to marketplace
         router.push('/marketplace');
-      }, 2000); // Redirect after 2 seconds to show welcome message
-
-      return () => clearTimeout(redirectTimer);
+      } else if (role === 'trader') {
+        // Traders go to their dashboard
+        router.push('/dashboard/trader');
+      } else if (role === 'transporter') {
+        // Transporters go to their dashboard
+        router.push('/dashboard/transporter');
+      }
     }
   }, [user, router]);
 
@@ -150,7 +159,7 @@ export default function Home() {
                 Redirecting to the marketplace...
               </p>
               <p className="text-sm text-muted-foreground">
-                You'll be redirected automatically, or{' '}
+                You&apos;ll be redirected automatically, or{' '}
                 <button 
                   onClick={() => router.push('/marketplace')}
                   className="text-primary hover:underline"
@@ -175,12 +184,13 @@ export default function Home() {
       />
       
       {showOnboarding && (
-        <OnboardingTour 
-          isOpen={showOnboarding}
-          onComplete={handleOnboardingComplete}
-          userRole={user?.user_metadata.role}
+        <OnboardingTourEnhanced 
+          onComplete={() => setShowOnboarding(false)}
         />
       )}
+      
+      {/* Keyboard Shortcuts (for logged in users) */}
+      {user && <KeyboardShortcuts />}
       
       <PWAPrompt />
       
