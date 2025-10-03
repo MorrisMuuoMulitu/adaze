@@ -34,6 +34,38 @@ export default function Home() {
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState<string | null>(null);
 
+  // Handle OAuth callback on homepage (fallback)
+  useEffect(() => {
+    const handleOAuthCallback = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      
+      if (code) {
+        try {
+          const { createClient } = await import('@/lib/supabase/client');
+          const supabase = createClient();
+          
+          // Exchange code for session
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (error) {
+            console.error('OAuth error:', error);
+            router.push('/?error=auth_failed');
+          } else {
+            // Clear the code from URL
+            window.history.replaceState({}, '', '/');
+            // Refresh to get user data
+            window.location.reload();
+          }
+        } catch (error) {
+          console.error('OAuth callback error:', error);
+        }
+      }
+    };
+    
+    handleOAuthCallback();
+  }, [router]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
