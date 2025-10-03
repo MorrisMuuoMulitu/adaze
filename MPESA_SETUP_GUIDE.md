@@ -79,21 +79,37 @@ This creates the `mpesa_transactions` table.
 
 ### **STEP 3: Configure Environment Variables** (3 minutes)
 
-Create `.env.local` file in your project root (if not exists):
+#### **A. For Local Development** (`.env.local`):
 
 ```env
-# M-Pesa Sandbox (for testing)
+# M-Pesa Sandbox (for local testing)
 NEXT_PUBLIC_MPESA_CONSUMER_KEY=your_consumer_key_here
 MPESA_CONSUMER_SECRET=your_consumer_secret_here
-MPESA_PASSKEY=your_passkey_here
+MPESA_PASSKEY=bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919
 NEXT_PUBLIC_MPESA_SHORTCODE=174379
 NEXT_PUBLIC_MPESA_ENV=sandbox
-NEXT_PUBLIC_MPESA_CALLBACK_URL=http://localhost:3000/api/mpesa/callback
 
-# For production, change to:
-# NEXT_PUBLIC_MPESA_SHORTCODE=your_paybill_number
-# NEXT_PUBLIC_MPESA_ENV=production
+# For local testing with callbacks, use ngrok (see below)
+# NEXT_PUBLIC_MPESA_CALLBACK_URL=https://xxxx.ngrok.io/api/mpesa/callback
+```
+
+#### **B. For Production** (Netlify/Vercel):
+
+```env
+# M-Pesa Production
+NEXT_PUBLIC_MPESA_CONSUMER_KEY=your_production_key
+MPESA_CONSUMER_SECRET=your_production_secret
+MPESA_PASSKEY=your_production_passkey
+NEXT_PUBLIC_MPESA_SHORTCODE=your_paybill_number
+NEXT_PUBLIC_MPESA_ENV=production
+
+# Callback URL (public HTTPS)
+NEXT_PUBLIC_MPESA_CALLBACK_URL=https://adaze.netlify.app/api/mpesa/callback
+# OR if you have custom domain:
 # NEXT_PUBLIC_MPESA_CALLBACK_URL=https://adaze.com/api/mpesa/callback
+
+# Site URL (auto-detected on Netlify/Vercel, but can set manually)
+NEXT_PUBLIC_SITE_URL=https://adaze.netlify.app
 ```
 
 **Sandbox Test Credentials:**
@@ -107,9 +123,22 @@ NEXT_PUBLIC_MPESA_CALLBACK_URL=http://localhost:3000/api/mpesa/callback
 1. Go to: https://app.netlify.com
 2. Select your **ADAZE** site
 3. Go to **Site settings** → **Environment variables**
-4. Add each variable from above
+4. Add these variables:
+
+```
+NEXT_PUBLIC_MPESA_CONSUMER_KEY = your_key_here
+MPESA_CONSUMER_SECRET = your_secret_here
+MPESA_PASSKEY = your_passkey_here
+NEXT_PUBLIC_MPESA_SHORTCODE = 174379 (sandbox) or your_paybill (production)
+NEXT_PUBLIC_MPESA_ENV = sandbox (or production)
+NEXT_PUBLIC_MPESA_CALLBACK_URL = https://adaze.netlify.app/api/mpesa/callback
+NEXT_PUBLIC_SITE_URL = https://adaze.netlify.app
+```
+
 5. Click **Save**
-6. Redeploy your site
+6. **IMPORTANT:** Redeploy your site for changes to take effect
+
+**Note:** Replace `adaze.netlify.app` with your actual domain!
 
 ---
 
@@ -378,3 +407,164 @@ supabase-mpesa.sql                    - Database schema
 **Your ADAZE marketplace now has M-Pesa!** 💰🇰🇪
 
 Kenyans can pay instantly with their mobile money. Start processing real transactions today! ✨
+
+---
+
+## 🌐 **CALLBACK URL GUIDE:**
+
+### **What is a Callback URL?**
+After payment, Safaricom sends confirmation to this URL. It MUST be:
+- ✅ Public (not localhost)
+- ✅ HTTPS (not HTTP)
+- ✅ Accessible from internet
+
+### **Different Environments:**
+
+#### **1. Local Development (Localhost)**
+❌ **Problem:** `http://localhost:3000` - Safaricom can't reach your computer!
+
+✅ **Solution:** Use **ngrok** to create public tunnel:
+
+```bash
+# Install ngrok (if not installed)
+brew install ngrok  # Mac
+# or download from https://ngrok.com
+
+# Start ngrok tunnel
+ngrok http 3000
+
+# You'll get URL like: https://abc123.ngrok.io
+```
+
+Then in `.env.local`:
+```env
+NEXT_PUBLIC_MPESA_CALLBACK_URL=https://abc123.ngrok.io/api/mpesa/callback
+```
+
+**Note:** Free ngrok URLs change each time. For persistent URLs, upgrade to paid plan.
+
+---
+
+#### **2. Netlify Deployment**
+✅ **Automatic:** Netlify provides `URL` environment variable
+✅ **Manual:** Set `NEXT_PUBLIC_MPESA_CALLBACK_URL`
+
+**Option A - Auto (Recommended):**
+```env
+# Netlify auto-sets: URL=https://adaze.netlify.app
+# Code will auto-use: ${URL}/api/mpesa/callback
+```
+
+**Option B - Manual:**
+```env
+NEXT_PUBLIC_MPESA_CALLBACK_URL=https://adaze.netlify.app/api/mpesa/callback
+```
+
+**Custom Domain:**
+```env
+NEXT_PUBLIC_MPESA_CALLBACK_URL=https://adaze.com/api/mpesa/callback
+```
+
+---
+
+#### **3. Vercel Deployment**
+✅ **Automatic:** Vercel provides `VERCEL_URL`
+✅ **Manual:** Set `NEXT_PUBLIC_MPESA_CALLBACK_URL`
+
+**Option A - Auto:**
+```env
+# Vercel auto-sets: VERCEL_URL=adaze.vercel.app
+# Code will auto-use: https://${VERCEL_URL}/api/mpesa/callback
+```
+
+**Option B - Manual:**
+```env
+NEXT_PUBLIC_MPESA_CALLBACK_URL=https://adaze.vercel.app/api/mpesa/callback
+```
+
+---
+
+### **Testing Callbacks Locally:**
+
+**Problem:** Sandbox payments auto-confirm, but you want to test callback handler?
+
+**Solution - Use ngrok:**
+
+```bash
+# Terminal 1: Start your app
+npm run dev
+
+# Terminal 2: Start ngrok
+ngrok http 3000
+# Copy the HTTPS URL (e.g., https://abc123.ngrok.io)
+
+# Update .env.local:
+NEXT_PUBLIC_MPESA_CALLBACK_URL=https://abc123.ngrok.io/api/mpesa/callback
+
+# Restart your app
+# Now Safaricom can reach your local callback!
+```
+
+**View Callbacks:**
+- Go to: http://localhost:4040 (ngrok web interface)
+- See all requests to your callback
+- Debug incoming data
+
+---
+
+### **Callback URL Checklist:**
+
+**For Local Testing:**
+- [ ] Using ngrok? Update callback URL
+- [ ] ngrok running? Check http://localhost:4040
+- [ ] Restart app after changing URL
+
+**For Production:**
+- [ ] Using HTTPS? (Required!)
+- [ ] URL publicly accessible?
+- [ ] Correct domain (netlify.app or custom)?
+- [ ] Updated in Netlify environment variables?
+- [ ] Redeployed after changes?
+
+---
+
+### **Common Callback URL Mistakes:**
+
+❌ **WRONG:**
+```
+http://localhost:3000/api/mpesa/callback  ← Not public!
+http://adaze.com/api/mpesa/callback       ← Not HTTPS!
+https://adaze.com/callback                ← Wrong path!
+https://adaze.netlify.app/api/callback    ← Wrong path!
+```
+
+✅ **CORRECT:**
+```
+https://adaze.netlify.app/api/mpesa/callback  ✅
+https://adaze.com/api/mpesa/callback          ✅
+https://xxxx.ngrok.io/api/mpesa/callback      ✅ (for local testing)
+```
+
+---
+
+### **How to Verify Callback URL:**
+
+**Test it manually:**
+```bash
+# Should return: {"message":"M-Pesa callback endpoint"}
+curl https://your-domain.com/api/mpesa/callback
+
+# If 404, your deployment has issues
+# If 200, callback endpoint is working!
+```
+
+**Check in code:**
+The service automatically detects and uses:
+1. `NEXT_PUBLIC_MPESA_CALLBACK_URL` (if set)
+2. `${NEXT_PUBLIC_SITE_URL}/api/mpesa/callback`
+3. `https://${VERCEL_URL}/api/mpesa/callback` (Vercel)
+4. `${URL}/api/mpesa/callback` (Netlify)
+5. Fallback: `http://localhost:3000/api/mpesa/callback`
+
+---
+

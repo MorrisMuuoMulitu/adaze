@@ -52,18 +52,43 @@ class MpesaService {
 
   constructor() {
     // Get config from environment variables
+    const callbackUrl = process.env.NEXT_PUBLIC_MPESA_CALLBACK_URL || 
+                       process.env.MPESA_CALLBACK_URL ||
+                       this.getDefaultCallbackUrl();
+    
     this.config = {
       consumerKey: process.env.NEXT_PUBLIC_MPESA_CONSUMER_KEY || '',
       consumerSecret: process.env.MPESA_CONSUMER_SECRET || '',
       passkey: process.env.MPESA_PASSKEY || '',
       shortcode: process.env.NEXT_PUBLIC_MPESA_SHORTCODE || '174379', // Sandbox default
-      callbackUrl: process.env.NEXT_PUBLIC_MPESA_CALLBACK_URL || `${typeof window !== 'undefined' ? window.location.origin : ''}/api/mpesa/callback`,
+      callbackUrl,
       environment: (process.env.NEXT_PUBLIC_MPESA_ENV as 'sandbox' | 'production') || 'sandbox',
     };
 
     this.baseUrl = this.config.environment === 'production'
       ? 'https://api.safaricom.co.ke'
       : 'https://sandbox.safaricom.co.ke';
+  }
+
+  /**
+   * Get default callback URL based on environment
+   */
+  private getDefaultCallbackUrl(): string {
+    // For deployed production
+    if (process.env.NEXT_PUBLIC_SITE_URL) {
+      return `${process.env.NEXT_PUBLIC_SITE_URL}/api/mpesa/callback`;
+    }
+    
+    // For Vercel/Netlify (auto-detected)
+    if (process.env.VERCEL_URL) {
+      return `https://${process.env.VERCEL_URL}/api/mpesa/callback`;
+    }
+    if (process.env.URL) {
+      return `${process.env.URL}/api/mpesa/callback`;
+    }
+    
+    // Fallback to localhost for development
+    return 'http://localhost:3000/api/mpesa/callback';
   }
 
   /**
