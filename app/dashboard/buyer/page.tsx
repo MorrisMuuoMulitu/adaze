@@ -238,6 +238,46 @@ export default function BuyerDashboardPage() {
     fetchPreviousStats();
   }, [user, supabase, dateFrom, dateTo]);
 
+  // Helper functions (defined before useMemo)
+  const getOrderAction = (status: string) => {
+    switch (status) {
+      case 'pending': return 'Order Placed';
+      case 'confirmed': return 'Order Confirmed';
+      case 'shipped': return 'Order Shipped';
+      case 'delivered': return 'Order Delivered';
+      case 'cancelled': return 'Order Cancelled';
+      default: return 'Order Updated';
+    }
+  };
+
+  const getOrderActivityStatus = (status: string): 'success' | 'pending' | 'error' | 'info' => {
+    switch (status) {
+      case 'delivered': return 'success';
+      case 'cancelled': return 'error';
+      case 'pending': return 'pending';
+      default: return 'info';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'delivered': return 'bg-green-500';
+      case 'shipped': return 'bg-blue-500';
+      case 'confirmed': return 'bg-yellow-500';
+      case 'pending': return 'bg-orange-500';
+      case 'cancelled': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'delivered': return <CheckCircle className="h-4 w-4" />;
+      case 'shipped': return <Package className="h-4 w-4" />;
+      default: return <Clock className="h-4 w-4" />;
+    }
+  };
+
   // Apply filters to orders
   const filteredOrders = useMemo(() => {
     let result = recentOrders;
@@ -277,45 +317,6 @@ export default function BuyerDashboardPage() {
       amount: order.amount
     }));
   }, [filteredOrders]);
-
-  const getOrderAction = (status: string) => {
-    switch (status) {
-      case 'pending': return 'Order Placed';
-      case 'confirmed': return 'Order Confirmed';
-      case 'shipped': return 'Order Shipped';
-      case 'delivered': return 'Order Delivered';
-      case 'cancelled': return 'Order Cancelled';
-      default: return 'Order Updated';
-    }
-  };
-
-  const getOrderActivityStatus = (status: string): 'success' | 'pending' | 'error' | 'info' => {
-    switch (status) {
-      case 'delivered': return 'success';
-      case 'cancelled': return 'error';
-      case 'pending': return 'pending';
-      default: return 'info';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'delivered': return 'bg-green-500';
-      case 'shipped': return 'bg-blue-500';
-      case 'confirmed': return 'bg-yellow-500';
-      case 'pending': return 'bg-orange-500';
-      case 'cancelled': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'delivered': return <CheckCircle className="h-4 w-4" />;
-      case 'shipped': return <Package className="h-4 w-4" />;
-      default: return <Clock className="h-4 w-4" />;
-    }
-  };
 
   const handleApplyFilters = (newFilters: FilterValues) => {
     setFilters(newFilters);
