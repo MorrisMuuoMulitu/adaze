@@ -9,18 +9,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/auth/auth-provider';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { PRODUCT_CATEGORIES } from '@/lib/categories';
 
 const productSchema = z.object({
   name: z.string().min(1, { message: "Product name is required" }),
   description: z.string().optional(),
   price: z.coerce.number().min(0, { message: "Price must be a positive number" }),
-  category: z.string().optional(),
-  image_url: z.string().url({ message: "Please enter a valid URL" }).optional(),
+  category: z.string().min(1, { message: "Please select a category" }),
+  image_url: z.string().url({ message: "Please enter a valid URL" }).optional().or(z.literal("")),
   stock_quantity: z.coerce.number().int().min(0, { message: "Stock must be a positive integer" }),
 });
 
@@ -144,10 +146,24 @@ export default function AddProductPage() {
                   name="category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Category</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Apparel" {...field} />
-                      </FormControl>
+                      <FormLabel>Category *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="max-h-[300px]">
+                          {PRODUCT_CATEGORIES.map((cat) => (
+                            <SelectItem key={cat.value} value={cat.value}>
+                              {cat.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Choose the category that best describes your product
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

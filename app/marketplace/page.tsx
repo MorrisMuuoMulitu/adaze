@@ -42,16 +42,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Slider } from '@/components/ui/slider';
-
-// Static categories as fallback
-const STATIC_CATEGORIES = [
-  "Men's Clothing",
-  "Women's Clothing", 
-  "Kids' Clothing",
-  'Accessories',
-  'Shoes',
-  'Bags',
-];
+import { PRODUCT_CATEGORIES } from '@/lib/categories';
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest First' },
@@ -217,24 +208,17 @@ export default function MarketplacePage() {
     return categoriesArray;
   }, [products]);
 
-  // Build category options (use actual product categories or fallback to static)
+  // Build category options (use predefined categories)
   const categoryOptions = useMemo(() => {
     const options = [{ value: 'all', label: 'All Categories' }];
     
-    // Use actual categories from products if available
-    if (availableCategories.length > 0) {
-      availableCategories.forEach(cat => {
-        options.push({ value: cat, label: cat });
-      });
-    } else {
-      // Fallback to static categories
-      STATIC_CATEGORIES.forEach(cat => {
-        options.push({ value: cat, label: cat });
-      });
-    }
+    // Add all predefined categories
+    PRODUCT_CATEGORIES.forEach(cat => {
+      options.push({ value: cat.value, label: cat.label });
+    });
     
     return options;
-  }, [availableCategories]);
+  }, []);
 
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
