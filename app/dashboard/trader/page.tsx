@@ -88,7 +88,7 @@ export default function TraderDashboardPage() {
         // Fetch total revenue (sum of completed orders)
         const { data: revenueData } = await supabase
           .from('orders')
-          .select('amount')
+          .select('amount, created_at')
           .eq('trader_id', user.id)
           .eq('status', 'delivered');
 
@@ -221,7 +221,8 @@ export default function TraderDashboardPage() {
   }
 
   if (!user || !profile) {
-    return <div className="min-h-screen flex items-center justify-center">Profile not found or not logged in.</div>;
+    router.push('/');
+    return null;
   }
 
   return (

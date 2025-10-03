@@ -188,7 +188,8 @@ export default function BuyerDashboardPage() {
   }
 
   if (!user || !profile) {
-    return <div className="min-h-screen flex items-center justify-center">Profile not found or not logged in.</div>;
+    router.push('/');
+    return null;
   }
 
   return (

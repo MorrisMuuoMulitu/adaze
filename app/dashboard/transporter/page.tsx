@@ -89,7 +89,7 @@ export default function TransporterDashboardPage() {
         // Calculate earnings (assuming delivery fee is 10% of order amount)
         const { data: earningsData } = await supabase
           .from('orders')
-          .select('amount')
+          .select('amount, created_at')
           .eq('transporter_id', user.id)
           .eq('status', 'delivered');
 
@@ -175,7 +175,8 @@ export default function TransporterDashboardPage() {
   }
 
   if (!user || !profile) {
-    return <div className="min-h-screen flex items-center justify-center">Profile not found or not logged in.</div>;
+    router.push('/');
+    return null;
   }
 
   return (
