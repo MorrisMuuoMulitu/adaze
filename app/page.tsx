@@ -143,7 +143,7 @@ export default function Home() {
             <Stats />
             <FeaturedProducts products={products} loading={productsLoading} error={productsError} />
             <HowItWorks />
-            <CTA />
+            <CTA onAuthClick={() => setAuthModal('register')} />
           </>
         ) : (
           // Show a welcome message before redirecting

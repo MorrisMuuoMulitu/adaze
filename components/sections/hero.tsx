@@ -188,6 +188,7 @@ export function Hero({ onGetStarted }: HeroProps) {
                 size="lg" 
                 onClick={onGetStarted}
                 className="african-gradient text-white hover:opacity-90 transition-all duration-300 group text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 h-12 sm:h-auto mobile-button"
+                aria-label="Start shopping - Sign up or login"
               >
                 Start Shopping in Kenya
                 <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
@@ -197,11 +198,10 @@ export function Hero({ onGetStarted }: HeroProps) {
                 size="lg" 
                 variant="outline" 
                 className="group text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 h-12 sm:h-auto border-2 hover:bg-muted/50 mobile-button"
-                asChild
+                onClick={onGetStarted}
+                aria-label="Browse products - Sign up or login required"
               >
-                <Link href="/marketplace">
-                  Browse Products
-                </Link>
+                Browse Products
               </Button>
             </motion.div>
 
