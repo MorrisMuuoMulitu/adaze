@@ -43,14 +43,14 @@ import {
 } from "@/components/ui/dialog";
 import { Slider } from '@/components/ui/slider';
 
-const CATEGORIES = [
-  { value: 'all', label: 'All Categories' },
-  { value: "Men's Clothing", label: "Men's Clothing" },
-  { value: "Women's Clothing", label: "Women's Clothing" },
-  { value: "Kids' Clothing", label: "Kids' Clothing" },
-  { value: 'Accessories', label: 'Accessories' },
-  { value: 'Shoes', label: 'Shoes' },
-  { value: 'Bags', label: 'Bags' },
+// Static categories as fallback
+const STATIC_CATEGORIES = [
+  "Men's Clothing",
+  "Women's Clothing", 
+  "Kids' Clothing",
+  'Accessories',
+  'Shoes',
+  'Bags',
 ];
 
 const SORT_OPTIONS = [
@@ -209,11 +209,32 @@ export default function MarketplacePage() {
     }
   };
 
-  // Get unique categories from products
+  // Get unique categories from products (dynamic)
   const availableCategories = useMemo(() => {
     const cats = new Set(products.map(p => p.category).filter(Boolean));
-    return Array.from(cats);
+    const categoriesArray = Array.from(cats);
+    console.log('Available categories in products:', categoriesArray);
+    return categoriesArray;
   }, [products]);
+
+  // Build category options (use actual product categories or fallback to static)
+  const categoryOptions = useMemo(() => {
+    const options = [{ value: 'all', label: 'All Categories' }];
+    
+    // Use actual categories from products if available
+    if (availableCategories.length > 0) {
+      availableCategories.forEach(cat => {
+        options.push({ value: cat, label: cat });
+      });
+    } else {
+      // Fallback to static categories
+      STATIC_CATEGORIES.forEach(cat => {
+        options.push({ value: cat, label: cat });
+      });
+    }
+    
+    return options;
+  }, [availableCategories]);
 
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
@@ -406,7 +427,7 @@ export default function MarketplacePage() {
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map(cat => (
+                    {categoryOptions.map(cat => (
                       <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                     ))}
                   </SelectContent>
@@ -467,7 +488,7 @@ export default function MarketplacePage() {
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                           <SelectContent>
-                            {CATEGORIES.map(cat => (
+                            {categoryOptions.map(cat => (
                               <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                             ))}
                           </SelectContent>
@@ -490,7 +511,7 @@ export default function MarketplacePage() {
                   <span className="text-sm text-muted-foreground">Active filters:</span>
                   {selectedCategory !== 'all' && (
                     <Badge variant="secondary" className="gap-1">
-                      {CATEGORIES.find(c => c.value === selectedCategory)?.label}
+                      {categoryOptions.find(c => c.value === selectedCategory)?.label}
                       <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedCategory('all')} />
                     </Badge>
                   )}
