@@ -142,9 +142,7 @@ export default function Home() {
             <Hero onGetStarted={() => setAuthModal('register')} />
             <Stats />
             <FeaturedProducts products={products} loading={productsLoading} error={productsError} />
-            <WhyChooseUs />
             <HowItWorks />
-            <Testimonials />
             <CTA />
           </>
         ) : (

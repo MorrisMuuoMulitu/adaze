@@ -51,12 +51,12 @@ export function FeaturedProducts({ products, loading, error }: FeaturedProductsP
         setFeaturedLoading(true);
         const supabase = createClient();
         
-        // Fetch random featured products from the database
+        // Fetch latest 5 products from the database
         const { data, error } = await supabase
           .from('products')
           .select('*')
-          .limit(4)
-          .order('rating', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(5);
 
         if (error) {
           throw error;
@@ -134,14 +134,14 @@ export function FeaturedProducts({ products, loading, error }: FeaturedProductsP
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
-              Featured Products
+              Latest Products
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Discover our most popular items
+              Fresh arrivals from verified traders
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[1, 2, 3, 4].map((item) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+            {[1, 2, 3, 4, 5].map((item) => (
               <Card key={item} className="overflow-hidden">
                 <div className="bg-gray-200 h-48 animate-pulse"></div>
                 <CardHeader className="pb-3">
@@ -188,13 +188,13 @@ export function FeaturedProducts({ products, loading, error }: FeaturedProductsP
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
-            Featured Products
+            Latest Products
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Discover our most popular items
+            Fresh arrivals from verified traders
           </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
           {featuredProducts.map((product) => (
             <motion.div
               key={product.id}

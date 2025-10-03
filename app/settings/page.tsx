@@ -34,6 +34,8 @@ import {
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
+import QRCode from 'qrcode';
+import Image from 'next/image';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -65,12 +67,31 @@ export default function SettingsPage() {
   const [twoFactorSecret, setTwoFactorSecret] = useState('');
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [showTwoFactorQR, setShowTwoFactorQR] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
 
   // Password change
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPasswords, setShowPasswords] = useState(false);
+
+  // Generate QR code when 2FA secret changes
+  useEffect(() => {
+    const generateQRCode = async () => {
+      if (twoFactorSecret && showTwoFactorQR) {
+        try {
+          const otpauth = `otpauth://totp/ADAZE:${user?.email}?secret=${twoFactorSecret}&issuer=ADAZE`;
+          const qrDataUrl = await QRCode.toDataURL(otpauth);
+          setQrCodeUrl(qrDataUrl);
+        } catch (error) {
+          console.error('Error generating QR code:', error);
+          toast.error('Failed to generate QR code');
+        }
+      }
+    };
+    
+    generateQRCode();
+  }, [twoFactorSecret, showTwoFactorQR, user?.email]);
 
   useEffect(() => {
     if (!user) {
@@ -524,15 +545,23 @@ export default function SettingsPage() {
                       <p className="text-sm text-muted-foreground">
                         Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
                       </p>
-                      <div className="flex justify-center p-4 bg-white rounded-lg">
-                        {/* QR Code placeholder - in real app, generate actual QR */}
-                        <div className="w-48 h-48 bg-muted flex items-center justify-center rounded border-2 border-dashed">
-                          <div className="text-center">
-                            <Shield className="h-12 w-12 mx-auto mb-2 text-green-600" />
-                            <p className="text-xs text-muted-foreground">QR Code</p>
-                            <p className="text-xs text-muted-foreground">Would appear here</p>
+                      <div className="flex justify-center p-4 bg-white dark:bg-muted rounded-lg">
+                        {qrCodeUrl ? (
+                          <Image 
+                            src={qrCodeUrl} 
+                            alt="2FA QR Code" 
+                            width={200} 
+                            height={200}
+                            className="rounded"
+                          />
+                        ) : (
+                          <div className="w-48 h-48 bg-muted flex items-center justify-center rounded border-2 border-dashed">
+                            <div className="text-center">
+                              <Shield className="h-12 w-12 mx-auto mb-2 text-green-600 animate-pulse" />
+                              <p className="text-xs text-muted-foreground">Generating QR Code...</p>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                       <div className="bg-muted p-3 rounded text-center">
                         <p className="text-xs text-muted-foreground mb-1">Or enter this code manually:</p>
