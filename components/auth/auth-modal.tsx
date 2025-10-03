@@ -79,9 +79,11 @@ const kenyanCounties = [
 ];
 
 export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: AuthModalProps) {
-  const [authType, setAuthType] = useState(initialType || type || 'login'); // Use initialType or type
+  const [authType, setAuthType] = useState<'login' | 'register'>(type || initialType || 'login');
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
@@ -214,18 +216,85 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
       <DialogContent className="sm:max-w-md max-w-[95vw] max-h-[95vh] overflow-y-auto">
         <DialogHeader className="space-y-3">
           <DialogTitle className="text-center text-xl sm:text-2xl">
-            {type === 'login' ? 'Karibu Back to ADAZE' : 'Join ADAZE Kenya'}
+            {showForgotPassword ? 'Reset Your Password' : authType === 'login' ? 'Karibu Back to ADAZE' : 'Join ADAZE Kenya'}
           </DialogTitle>
           <DialogDescription className="text-center text-sm sm:text-base">
-            {type === 'login' 
-              ? 'Sign in to your account to continue shopping in Kenya'
-              : 'Create your account and start your mitumba journey across Kenya'
+            {showForgotPassword 
+              ? 'Enter your email and we\'ll send you a link to reset your password'
+              : authType === 'login' 
+                ? 'Sign in to your account to continue shopping in Kenya'
+                : 'Create your account and start your mitumba journey across Kenya'
             }
           </DialogDescription>
         </DialogHeader>
 
         <AnimatePresence mode="wait">
-          {type === 'login' ? (
+          {showForgotPassword ? (
+            <motion.div
+              key="forgot-password"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="space-y-4"
+            >
+              <div className="space-y-2">
+                <Label htmlFor="reset-email">Email Address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    className="pl-10 h-12"
+                  />
+                </div>
+              </div>
+
+              <Button
+                className="w-full african-gradient text-white hover:opacity-90 h-12"
+                disabled={loading || !resetEmail}
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    const supabase = await import('@/lib/supabase/client').then(m => m.createClient());
+                    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+                      redirectTo: `${window.location.origin}/auth/reset-password`,
+                    });
+                    
+                    if (error) throw error;
+                    
+                    toast.success('Check your email!', {
+                      description: 'We\'ve sent you a password reset link'
+                    });
+                    setShowForgotPassword(false);
+                    setResetEmail('');
+                  } catch (error: any) {
+                    toast.error('Failed to send reset email', {
+                      description: error.message
+                    });
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+              >
+                {loading ? 'Sending...' : 'Send Reset Link'}
+              </Button>
+
+              <Button
+                variant="ghost"
+                className="w-full"
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setResetEmail('');
+                }}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Login
+              </Button>
+            </motion.div>
+          ) : authType === 'login' ? (
             <Form {...loginForm}>
               <motion.form
                 key="login"
@@ -308,7 +377,13 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
                     <Checkbox id="remember" className="focus-ring" />
                     <Label htmlFor="remember" className="text-sm">Remember me</Label>
                   </div>
-                  <Button variant="link" size="sm" className="p-0 h-auto text-primary hover:text-primary/80">
+                  <Button 
+                    type="button"
+                    variant="link" 
+                    size="sm" 
+                    className="p-0 h-auto text-primary hover:text-primary/80"
+                    onClick={() => setShowForgotPassword(true)}
+                  >
                     Forgot password?
                   </Button>
                 </div>
@@ -333,19 +408,13 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
                 <p className="text-center text-sm text-muted-foreground">
                   Don&apos;t have an account?{' '}
                   <Button 
+                    type="button"
                     variant="link" 
                     size="sm" 
                     className="p-0 h-auto text-primary hover:text-primary/80"
                     onClick={() => {
                       resetForm();
-                      // A bit of a hack to switch to register view
-                      onClose();
-                      setTimeout(() => {
-                        const getStartedButton = document.querySelector('#get-started-button');
-                        if (getStartedButton) {
-                          (getStartedButton as HTMLButtonElement).click();
-                        }
-                      }, 100);
+                      setAuthType('register');
                     }}
                   >
                     Sign up
@@ -627,11 +696,13 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
                     <p className="text-center text-sm text-muted-foreground">
                       Already have an account?{' '}
                       <Button 
+                        type="button"
                         variant="link" 
                         size="sm" 
                         className="p-0 h-auto text-primary hover:text-primary/80"
                         onClick={() => {
                           resetForm();
+                          setAuthType('login');
                         }}
                       >
                         Sign in

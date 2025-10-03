@@ -13,6 +13,11 @@ import { Package, ShoppingCart, User, MapPin, TrendingUp, Clock, CheckCircle, He
 import { LogoutButton } from '@/components/LogoutButton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { DateRangePicker } from '@/components/date-range-picker';
+import { ComparisonMetric } from '@/components/comparison-metric';
+import { ExportDataButton } from '@/components/export-data-button';
+import { AdvancedFilters, FilterValues } from '@/components/advanced-filters';
+import { ActivityFeed } from '@/components/activity-feed';
 
 interface Profile {
   id: string;
@@ -39,6 +44,11 @@ export default function BuyerDashboardPage() {
   });
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [spendingData, setSpendingData] = useState<any[]>([]);
+  const [dateFrom, setDateFrom] = useState(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+  const [dateTo, setDateTo] = useState(new Date());
+  const [filters, setFilters] = useState<FilterValues>({});
+  const [activeFilterCount, setActiveFilterCount] = useState(0);
+  const [previousStats, setPreviousStats] = useState({ totalSpending: 0, orders: 0 });
 
   useEffect(() => {
     if (!user) {
