@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/components/auth/auth-provider';
 import { createClient } from '@/lib/supabase/client';
@@ -14,6 +13,11 @@ import { reviewService } from '@/lib/reviewService';
 import { LogoutButton } from '@/components/LogoutButton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
+import { DateRangePicker } from '@/components/date-range-picker';
+import { ComparisonMetric } from '@/components/comparison-metric';
+import { ExportDataButton } from '@/components/export-data-button';
+import { AdvancedFilters, FilterValues } from '@/components/advanced-filters';
+import { ActivityFeed } from '@/components/activity-feed';
 
 interface Profile {
   id: string;
@@ -31,6 +35,15 @@ export default function TraderDashboardPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [averageRating, setAverageRating] = useState<number | null>(null);
+  
+  // Date range state
+  const [dateFrom, setDateFrom] = useState<Date>(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+  const [dateTo, setDateTo] = useState<Date>(new Date());
+  
+  // Filters state
+  const [filters, setFilters] = useState<FilterValues>({});
+  const [activeFilterCount, setActiveFilterCount] = useState(0);
+
   const [stats, setStats] = useState({
     totalProducts: 0,
     activeListings: 0,
@@ -43,9 +56,17 @@ export default function TraderDashboardPage() {
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [topProducts, setTopProducts] = useState<any[]>([]);
 
+  // Previous period state
+  const [prevStats, setPrevStats] = useState({
+    totalProducts: 0,
+    activeListings: 0,
+    receivedOrders: 0,
+    totalRevenue: 0,
+  });
+
   useEffect(() => {
     if (!user) {
-      router.push('/'); // Redirect to home if not logged in
+      router.push('/');
       return;
     }
 
@@ -53,7 +74,7 @@ export default function TraderDashboardPage() {
       setLoading(true);
       try {
         // Fetch profile
-        const { data: profileData, error: profileError } = await supabase
+        const { data: profileData, error: profileError} = await supabase
           .from('profiles')
           .select('id, full_name, phone, location, avatar_url, role')
           .eq('id', user.id)
@@ -79,20 +100,55 @@ export default function TraderDashboardPage() {
           .eq('trader_id', user.id)
           .eq('status', 'active');
 
-        // Fetch received orders
-        const { count: ordersCount } = await supabase
+        // Fetch received orders within date range
+        const { count: ordersCount, data: ordersData } = await supabase
           .from('orders')
-          .select('*', { count: 'exact', head: true })
-          .eq('trader_id', user.id);
+          .select('*, id, amount, status, created_at', { count: 'exact' })
+          .eq('trader_id', user.id)
+          .gte('created_at', dateFrom.toISOString())
+          .lte('created_at', dateTo.toISOString())
+          .order('created_at', { ascending: false });
 
         // Fetch total revenue (sum of completed orders)
         const { data: revenueData } = await supabase
           .from('orders')
           .select('amount, created_at')
           .eq('trader_id', user.id)
-          .eq('status', 'delivered');
+          .eq('status', 'delivered')
+          .gte('created_at', dateFrom.toISOString())
+          .lte('created_at', dateTo.toISOString());
 
         const totalRevenue = revenueData?.reduce((sum, order) => sum + (order.amount || 0), 0) || 0;
+
+        // Calculate previous period
+        const periodLength = dateTo.getTime() - dateFrom.getTime();
+        const prevFrom = new Date(dateFrom.getTime() - periodLength);
+        const prevTo = new Date(dateTo.getTime() - periodLength);
+
+        // Fetch previous period data
+        const { count: prevOrdersCount } = await supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('trader_id', user.id)
+          .gte('created_at', prevFrom.toISOString())
+          .lte('created_at', prevTo.toISOString());
+
+        const { data: prevRevenueData } = await supabase
+          .from('orders')
+          .select('amount')
+          .eq('trader_id', user.id)
+          .eq('status', 'delivered')
+          .gte('created_at', prevFrom.toISOString())
+          .lte('created_at', prevTo.toISOString());
+
+        const prevTotalRevenue = prevRevenueData?.reduce((sum, order) => sum + (order.amount || 0), 0) || 0;
+
+        setPrevStats({
+          totalProducts: productsCount || 0,
+          activeListings: activeCount || 0,
+          receivedOrders: prevOrdersCount || 0,
+          totalRevenue: prevTotalRevenue,
+        });
 
         // Calculate weekly revenue (last 7 days)
         const weekAgo = new Date();
@@ -106,14 +162,15 @@ export default function TraderDashboardPage() {
           ? totalRevenue / revenueData.length 
           : 0;
 
-        // Generate revenue chart data (last 7 days)
-        const last7Days = Array.from({ length: 7 }, (_, i) => {
-          const date = new Date();
-          date.setDate(date.getDate() - (6 - i));
+        // Generate revenue chart data
+        const daysDiff = Math.ceil((dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24));
+        const days = Array.from({ length: Math.min(daysDiff, 30) }, (_, i) => {
+          const date = new Date(dateFrom);
+          date.setDate(dateFrom.getDate() + i);
           return date;
         });
 
-        const chartData = last7Days.map(date => {
+        const chartData = days.map(date => {
           const dayOrders = revenueData?.filter(order => {
             const orderDate = new Date(order.created_at);
             return orderDate.toDateString() === date.toDateString();
@@ -175,15 +232,6 @@ export default function TraderDashboardPage() {
 
         setRevenueData(chartData);
         setTopProducts(sortedProducts);
-
-        // Fetch recent orders
-        const { data: ordersData } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('trader_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(5);
-
         setRecentOrders(ordersData || []);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -193,7 +241,51 @@ export default function TraderDashboardPage() {
     };
 
     fetchDashboardData();
-  }, [user, router, supabase]);
+  }, [user, router, supabase, dateFrom, dateTo]);
+
+  // Filter orders based on filters
+  const filteredOrders = useMemo(() => {
+    let result = recentOrders;
+    
+    if (filters.status) {
+      result = result.filter(o => o.status === filters.status);
+    }
+    
+    if (filters.minAmount !== undefined) {
+      result = result.filter(o => o.amount >= filters.minAmount!);
+    }
+    
+    if (filters.maxAmount !== undefined) {
+      result = result.filter(o => o.amount <= filters.maxAmount!);
+    }
+    
+    if (filters.search) {
+      result = result.filter(o => 
+        o.id.toLowerCase().includes(filters.search!.toLowerCase())
+      );
+    }
+    
+    return result;
+  }, [recentOrders, filters]);
+
+  const handleApplyFilters = (newFilters: FilterValues) => {
+    setFilters(newFilters);
+    const count = Object.keys(newFilters).filter(k => newFilters[k as keyof FilterValues]).length;
+    setActiveFilterCount(count);
+  };
+
+  // Transform orders to activities
+  const activities = useMemo(() => {
+    return filteredOrders.slice(0, 10).map(order => ({
+      id: order.id,
+      type: 'order' as const,
+      action: `Order ${order.status}`,
+      description: `Order #${order.id.substring(0, 8)} - KSh ${order.amount?.toLocaleString()}`,
+      timestamp: new Date(order.created_at),
+      status: (order.status === 'delivered' ? 'success' : order.status === 'cancelled' ? 'error' : 'pending') as 'success' | 'pending' | 'error' | 'info',
+      amount: order.amount,
+    }));
+  }, [filteredOrders]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -227,7 +319,7 @@ export default function TraderDashboardPage() {
 
   return (
     <div className="min-h-screen bg-background py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -252,104 +344,111 @@ export default function TraderDashboardPage() {
             </div>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <List className="h-5 w-5" />
-                  Total Products
-                </CardTitle>
-                <CardDescription>All your listings</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold">{stats.totalProducts}</p>
-                <p className="text-sm text-muted-foreground">Products listed</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
-                  Active Listings
-                </CardTitle>
-                <CardDescription>Currently available</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold">{stats.activeListings}</p>
-                <p className="text-sm text-muted-foreground">Available for purchase</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ClipboardList className="h-5 w-5" />
-                  Received Orders
-                </CardTitle>
-                <CardDescription>Total orders</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold">{stats.receivedOrders}</p>
-                <p className="text-sm text-muted-foreground">All time orders</p>
-                <Button onClick={() => router.push('/orders/received')} variant="outline" className="mt-4 w-full">View Orders</Button>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  Total Revenue
-                </CardTitle>
-                <CardDescription>Completed sales</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold">KSh {stats.totalRevenue.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground">From delivered orders</p>
-                <Button onClick={() => router.push('/dashboard/trader/analytics')} variant="outline" className="mt-4 w-full">View Analytics</Button>
-              </CardContent>
-            </Card>
+          {/* Toolbar with DateRangePicker, Filters, and Export */}
+          <div className="flex flex-wrap items-center gap-3 mb-6">
+            <DateRangePicker
+              from={dateFrom}
+              to={dateTo}
+              onDateChange={(from, to) => {
+                setDateFrom(from);
+                setDateTo(to);
+              }}
+            />
+            <AdvancedFilters
+              onApply={handleApplyFilters}
+              statusOptions={[
+                { value: 'pending', label: 'Pending' },
+                { value: 'confirmed', label: 'Confirmed' },
+                { value: 'shipped', label: 'Shipped' },
+                { value: 'delivered', label: 'Delivered' },
+                { value: 'cancelled', label: 'Cancelled' }
+              ]}
+              activeFiltersCount={activeFilterCount}
+            />
+            <ExportDataButton
+              data={filteredOrders}
+              filename={`trader-orders-${new Date().toISOString().split('T')[0]}`}
+              columns={['id', 'created_at', 'amount', 'status']}
+            />
           </div>
 
-          {/* Performance Card */}
-          <div className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Star className="h-5 w-5" />
-                  Your Performance
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Average Rating</p>
-                    <p className="text-2xl font-bold">{averageRating !== null ? averageRating.toFixed(1) : 'N/A'} ⭐</p>
-                    <p className="text-xs text-muted-foreground">Based on customer reviews</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Service Area</p>
-                    <p className="text-lg font-semibold">{profile?.location || 'Not set'}</p>
-                    <Button onClick={() => router.push('/profile')} variant="link" className="p-0 h-auto text-xs">Update location</Button>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Success Rate</p>
-                    <p className="text-2xl font-bold">
-                      {stats.receivedOrders > 0 
-                        ? Math.round((stats.totalRevenue / stats.receivedOrders) * 100) / 100
-                        : 0}%
-                    </p>
-                    <p className="text-xs text-muted-foreground">Order completion</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* 3-Column Grid Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left: Stats and Charts (2 columns) */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <List className="h-5 w-5" />
+                      Total Products
+                    </CardTitle>
+                    <CardDescription>All your listings</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-3xl font-bold mb-2">{stats.totalProducts}</p>
+                    <ComparisonMetric
+                      current={stats.totalProducts}
+                      previous={prevStats.totalProducts}
+                    />
+                  </CardContent>
+                </Card>
 
-          {/* Revenue Overview & Top Products Grid */}
-          <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Revenue Chart - 2 columns */}
-            <div className="lg:col-span-2">
-              <Card className="border-l-4 border-l-green-500 h-full">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Globe className="h-5 w-5" />
+                      Active Listings
+                    </CardTitle>
+                    <CardDescription>Currently available</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-3xl font-bold mb-2">{stats.activeListings}</p>
+                    <ComparisonMetric
+                      current={stats.activeListings}
+                      previous={prevStats.activeListings}
+                    />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <ClipboardList className="h-5 w-5" />
+                      Received Orders
+                    </CardTitle>
+                    <CardDescription>In selected period</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-3xl font-bold mb-2">{stats.receivedOrders}</p>
+                    <ComparisonMetric
+                      current={stats.receivedOrders}
+                      previous={prevStats.receivedOrders}
+                    />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5" />
+                      Total Revenue
+                    </CardTitle>
+                    <CardDescription>Completed sales</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-3xl font-bold mb-2">KSh {stats.totalRevenue.toLocaleString()}</p>
+                    <ComparisonMetric
+                      current={stats.totalRevenue}
+                      previous={prevStats.totalRevenue}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Revenue Chart */}
+              <Card className="border-l-4 border-l-green-500">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
@@ -357,20 +456,14 @@ export default function TraderDashboardPage() {
                         <DollarSign className="h-5 w-5 text-green-600" />
                         Revenue Trends
                       </CardTitle>
-                      <CardDescription>Your earnings over the last 7 days</CardDescription>
+                      <CardDescription>Your earnings in selected period</CardDescription>
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold text-green-600">KSh {stats.totalRevenue.toLocaleString()}</p>
-                      <div className="flex items-center gap-1 text-sm">
-                        {stats.weeklyRevenue > 0 ? (
-                          <>
-                            <TrendingUp className="h-4 w-4 text-green-600" />
-                            <span className="text-green-600 font-medium">+KSh {stats.weeklyRevenue.toLocaleString()} this week</span>
-                          </>
-                        ) : (
-                          <span className="text-muted-foreground">No revenue this week</span>
-                        )}
-                      </div>
+                      <ComparisonMetric
+                        current={stats.totalRevenue}
+                        previous={prevStats.totalRevenue}
+                      />
                     </div>
                   </div>
                 </CardHeader>
@@ -428,11 +521,9 @@ export default function TraderDashboardPage() {
                   </div>
                 </CardContent>
               </Card>
-            </div>
 
-            {/* Top Products - 1 column */}
-            <div>
-              <Card className="border-l-4 border-l-amber-500 h-full">
+              {/* Top Products */}
+              <Card className="border-l-4 border-l-amber-500">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Award className="h-5 w-5 text-amber-600" />
@@ -468,81 +559,33 @@ export default function TraderDashboardPage() {
                   )}
                 </CardContent>
               </Card>
-            </div>
-          </div>
 
-          {/* Quick Actions */}
-          <div className="mt-8">
-            <h2 className="text-2xl font-bold mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button onClick={() => router.push('/products/add')} size="lg" className="h-20">
-                <PlusCircle className="h-5 w-5 mr-2" />
-                List New Product
-              </Button>
-              <Button onClick={() => router.push('/products/manage')} size="lg" variant="outline" className="h-20">
-                <List className="h-5 w-5 mr-2" />
-                Manage Listings
-              </Button>
-              <Button onClick={() => router.push('/orders/received')} size="lg" variant="outline" className="h-20">
-                <ClipboardList className="h-5 w-5 mr-2" />
-                View Orders
-              </Button>
-            </div>
-          </div>
-
-          {/* Recent Orders */}
-          <div className="mt-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold">Recent Orders</h2>
-              <Button onClick={() => router.push('/orders/received')} variant="ghost" size="sm">
-                View All
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-            {recentOrders.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Package className="h-16 w-16 text-muted-foreground mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">No orders yet</h3>
-                  <p className="text-muted-foreground mb-6 text-center">
-                    Orders from buyers will appear here
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-4">
-                {recentOrders.map((order) => (
-                  <Card key={order.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/orders/received')}>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4 flex-1">
-                          <div className={`p-3 rounded-full ${getStatusColor(order.status)} bg-opacity-10`}>
-                            <CheckCircle className="h-5 w-5" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold">Order #{order.id.substring(0, 8)}</h3>
-                              <Badge variant="secondary" className="capitalize">{order.status}</Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(order.created_at).toLocaleDateString('en-US', { 
-                                month: 'short', 
-                                day: 'numeric',
-                                year: 'numeric'
-                              })}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold">KSh {order.amount?.toLocaleString() || '0'}</p>
-                          <p className="text-sm text-muted-foreground">Total</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+              {/* Quick Actions */}
+              <div>
+                <h2 className="text-xl font-bold mb-4">Quick Actions</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button onClick={() => router.push('/products/add')} size="lg" className="h-16">
+                    <PlusCircle className="h-5 w-5 mr-2" />
+                    List New Product
+                  </Button>
+                  <Button onClick={() => router.push('/products/manage')} size="lg" variant="outline" className="h-16">
+                    <List className="h-5 w-5 mr-2" />
+                    Manage Listings
+                  </Button>
+                  <Button onClick={() => router.push('/orders/received')} size="lg" variant="outline" className="h-16">
+                    <ClipboardList className="h-5 w-5 mr-2" />
+                    View Orders
+                  </Button>
+                </div>
               </div>
-            )}
+            </div>
+
+            {/* Right: Activity Feed (1 column) */}
+            <div>
+              <ActivityFeed
+                activities={activities}
+              />
+            </div>
           </div>
         </motion.div>
       </div>
