@@ -209,6 +209,12 @@ export default function MarketplacePage() {
     }
   };
 
+  // Get unique categories from products
+  const availableCategories = useMemo(() => {
+    const cats = new Set(products.map(p => p.category).filter(Boolean));
+    return Array.from(cats);
+  }, [products]);
+
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = products;
@@ -222,9 +228,14 @@ export default function MarketplacePage() {
       );
     }
 
-    // Category filter
+    // Category filter (case-insensitive and handles variations)
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(product => product.category === selectedCategory);
+      filtered = filtered.filter(product => {
+        if (!product.category) return false;
+        const productCat = product.category.toLowerCase().trim();
+        const selectedCat = selectedCategory.toLowerCase().trim();
+        return productCat === selectedCat || productCat.includes(selectedCat) || selectedCat.includes(productCat);
+      });
     }
 
     // Price range filter
