@@ -71,6 +71,10 @@ export default function CheckoutPage() {
   const total = cartItems.reduce((sum, item) => sum + (item.product_price * item.quantity), 0);
 
   const handleCreateOrder = async () => {
+    if (!user) {
+      toast.error('Please log in');
+      return;
+    }
     if (!deliveryAddress.trim()) {
       toast.error('Please enter delivery address');
       return;
@@ -165,7 +169,7 @@ export default function CheckoutPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
+        <Navbar onAuthClick={() => {}} />
         <div className="container mx-auto px-4 py-8">
           <p className="text-center">Loading...</p>
         </div>
@@ -175,7 +179,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <Navbar onAuthClick={() => {}} />
       <main className="container mx-auto px-4 py-8 max-w-6xl">
         <Button
           variant="ghost"
