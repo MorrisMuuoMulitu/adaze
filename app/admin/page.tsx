@@ -6,11 +6,12 @@ import { useAuth } from '@/components/auth/auth-provider';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, ShoppingBag, Package, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
+import { Users, ShoppingBag, Package, DollarSign, TrendingUp, AlertCircle, BarChart3 } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar';
 import { UserManagement } from '@/components/admin/user-management';
 import { ProductManagement } from '@/components/admin/product-management';
 import { OrderManagement } from '@/components/admin/order-management';
+import { AnalyticsDashboard } from '@/components/admin/analytics-dashboard';
 
 interface DashboardStats {
   totalUsers: number;
@@ -280,6 +281,10 @@ export default function AdminDashboard() {
                 </Card>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <AnalyticsDashboard />
           </TabsContent>
 
           <TabsContent value="users">
