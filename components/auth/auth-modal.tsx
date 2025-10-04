@@ -172,14 +172,19 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
     // Create a logs array to save in localStorage
     const logs: string[] = [];
     const addLog = (message: string, data?: any) => {
-      const logEntry = data ? `${message} ${JSON.stringify(data)}` : message;
-      console.log(message, data || '');
-      logs.push(logEntry);
-      // Save to localStorage immediately
-      localStorage.setItem('registration_debug_logs', JSON.stringify(logs));
+      try {
+        const logEntry = data ? `${message} ${JSON.stringify(data)}` : message;
+        console.log(message, data || '');
+        logs.push(logEntry);
+        // Save to localStorage immediately
+        localStorage.setItem('registration_debug_logs', JSON.stringify(logs));
+      } catch (err) {
+        console.error('Error in addLog:', err);
+      }
     };
 
     addLog('🎯 [AUTH MODAL] Registration form submitted');
+    addLog('🛑 [DEBUG] Preventing any page refresh or navigation on error');
     addLog('📋 [AUTH MODAL] Form data:', {
       email: data.email,
       firstName: data.firstName,
@@ -247,6 +252,11 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
         console.error('📋 Full error details:', result);
         console.error('💾 Logs saved to localStorage - Type: localStorage.getItem("registration_debug_logs")');
         
+        // CRITICAL: Do NOT call any navigation, onSuccess, onClose, or window.location
+        // This prevents page refresh
+        console.error('🛑 [DEBUG] NOT calling onClose, onSuccess, or any navigation');
+        console.error('🛑 [DEBUG] NOT setting loading to false yet to prevent any re-render issues');
+        
         // Show error toast but DON'T close modal or redirect
         toast.error('❌ Registration failed - Check console logs!', {
           description: result.message || 'Please check your credentials and try again.',
@@ -257,32 +267,51 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
         console.error('🛑 [AUTH MODAL] Modal staying open so you can copy the error logs above');
         console.error('🛑 [AUTH MODAL] Logs are also saved - Open console and type:');
         console.error('    JSON.parse(localStorage.getItem("registration_debug_logs"))');
+        
+        // Explicitly prevent any further execution
+        setLoading(false);
+        return; // STOP HERE - don't continue to finally block
       }
     } catch (error: any) {
       // EXCEPTION CASE - Save logs
-      const errorLog = {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      };
-      logs.push(`💥 [AUTH MODAL] Registration error: ${JSON.stringify(errorLog)}`);
-      localStorage.setItem('registration_debug_logs', JSON.stringify(logs));
-      
-      console.error('💥 [AUTH MODAL] Registration error:', errorLog);
-      console.error('⚠️⚠️⚠️ UNEXPECTED ERROR - MODAL STAYING OPEN SO YOU CAN COPY LOGS ⚠️⚠️⚠️');
-      console.error('💾 Logs saved to localStorage - Type: localStorage.getItem("registration_debug_logs")');
-      
-      toast.error('❌ An error occurred - Check console logs!', {
-        description: 'Please try again later.',
-        duration: 10000
-      });
-      
-      console.error('🛑 [AUTH MODAL] Modal staying open so you can copy the error logs above');
-      console.error('🛑 [AUTH MODAL] Logs are also saved - Open console and type:');
-      console.error('    JSON.parse(localStorage.getItem("registration_debug_logs"))');
+      try {
+        const errorLog = {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        };
+        logs.push(`💥 [AUTH MODAL] Registration error: ${JSON.stringify(errorLog)}`);
+        localStorage.setItem('registration_debug_logs', JSON.stringify(logs));
+        
+        console.error('💥 [AUTH MODAL] Registration error:', errorLog);
+        console.error('⚠️⚠️⚠️ UNEXPECTED ERROR - MODAL STAYING OPEN SO YOU CAN COPY LOGS ⚠️⚠️⚠️');
+        console.error('💾 Logs saved to localStorage - Type: localStorage.getItem("registration_debug_logs")');
+        
+        // CRITICAL: Do NOT call any navigation, onSuccess, onClose, or window.location
+        console.error('🛑 [DEBUG] NOT calling onClose, onSuccess, or any navigation');
+        
+        toast.error('❌ An error occurred - Check console logs!', {
+          description: error.message || 'Please try again later.',
+          duration: 10000
+        });
+        
+        console.error('🛑 [AUTH MODAL] Modal staying open so you can copy the error logs above');
+        console.error('🛑 [AUTH MODAL] Logs are also saved - Open console and type:');
+        console.error('    JSON.parse(localStorage.getItem("registration_debug_logs"))');
+        
+        // Set loading false and STOP
+        setLoading(false);
+        return; // STOP HERE - prevent finally block from running
+      } catch (loggingError) {
+        // If even logging fails, at least show something
+        console.error('CRITICAL ERROR - Even logging failed:', loggingError);
+        console.error('Original error:', error);
+        setLoading(false);
+        return;
+      }
     } finally {
-      console.log('🏁 [AUTH MODAL] Registration process completed, loading=false');
-      setLoading(false);
+      // This should only run on success now
+      console.log('🏁 [AUTH MODAL] Finally block - this should only run on success');
     }
   };
 
@@ -702,7 +731,14 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
                 )}
 
                 {step === 2 && (
-                  <motion.form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+                  <motion.form 
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      registerForm.handleSubmit(onRegisterSubmit)(e);
+                    }} 
+                    className="space-y-4"
+                  >
                     <div className="flex items-center space-x-2 mb-6">
                       <Button
                         type="button"
