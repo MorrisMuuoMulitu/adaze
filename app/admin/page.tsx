@@ -143,7 +143,7 @@ export default function AdminDashboard() {
               <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
                 <Users className="h-6 w-6" />
               </div>
-              <h1 className="text-4xl font-bold">Admin Dashboard</h1>
+              <h1 className="text-4xl font-bold">Adaze Admin Dashboard</h1>
             </div>
             <p className="text-blue-100 text-lg">Manage your platform with superpowers 👑</p>
           </div>

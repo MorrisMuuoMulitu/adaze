@@ -215,22 +215,47 @@ export function ProductManagement() {
 
   const handleDeleteProduct = async (productId: string) => {
     try {
-      // First, remove product from all carts
-      await supabase.from('cart').delete().eq('product_id', productId);
-      
-      // Remove from all wishlists
-      await supabase.from('wishlist').delete().eq('product_id', productId);
-      
-      // Note: Don't delete from order_items (keep order history)
-      // Just delete the product itself
-      const { error } = await supabase.from('products').delete().eq('id', productId);
+      // Check if product is in any orders
+      const { data: orderItems } = await supabase
+        .from('order_items')
+        .select('id')
+        .eq('product_id', productId)
+        .limit(1);
 
-      if (error) throw error;
+      if (orderItems && orderItems.length > 0) {
+        // Product is in orders - can't delete (preserve history)
+        // Instead, set status to rejected to hide it
+        const { error } = await supabase
+          .from('products')
+          .update({ 
+            status: 'rejected',
+            rejection_reason: 'Product removed by admin'
+          })
+          .eq('id', productId);
 
-      toast({
-        title: 'Success',
-        description: 'Product deleted successfully (removed from carts/wishlists)',
-      });
+        if (error) throw error;
+
+        toast({
+          title: 'Product Hidden',
+          description: 'Product is in existing orders, so it was hidden instead of deleted. It will no longer appear in marketplace.',
+          duration: 5000,
+        });
+      } else {
+        // Product not in orders - safe to delete
+        // First, remove from carts and wishlists
+        await supabase.from('cart').delete().eq('product_id', productId);
+        await supabase.from('wishlist').delete().eq('product_id', productId);
+        
+        // Now delete the product
+        const { error } = await supabase.from('products').delete().eq('id', productId);
+
+        if (error) throw error;
+
+        toast({
+          title: 'Success',
+          description: 'Product deleted permanently',
+        });
+      }
 
       setDeleteDialog({ open: false, productId: null });
       fetchProducts();
@@ -238,7 +263,7 @@ export function ProductManagement() {
       console.error('Error deleting product:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete product. It may be part of existing orders.',
+        description: 'Failed to delete product',
         variant: 'destructive',
       });
     }
