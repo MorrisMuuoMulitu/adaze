@@ -117,7 +117,15 @@ export function Navbar({ onAuthClick }: NavbarProps) {
   }, [user]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+      // Always redirect to landing page after logout
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error logging out:', error);
+      // Even on error, redirect to landing page
+      window.location.href = '/';
+    }
   };
 
   const userRole = user?.user_metadata.role || 'buyer';
