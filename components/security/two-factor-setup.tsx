@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import QRCode from 'qrcode';
 import {
   Lock,
   Unlock,
@@ -93,13 +94,21 @@ export function TwoFactorSetup() {
       const newSecret = generateSecret();
       setSecret(newSecret);
 
-      // In production, you would use a library like 'qrcode' to generate actual QR codes
-      // For now, we'll show the secret
+      // Generate OTPAuth URL
       const issuer = 'Adaze Marketplace';
       const otpauthUrl = `otpauth://totp/${issuer}:${user.email}?secret=${newSecret}&issuer=${issuer}`;
       
-      // This would normally generate a QR code image
-      setQrCode(otpauthUrl);
+      // Generate QR code as data URL
+      const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl, {
+        width: 256,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#ffffff',
+        },
+      });
+      
+      setQrCode(qrCodeDataUrl);
 
       toast({
         title: 'Setup Started',
@@ -329,13 +338,23 @@ export function TwoFactorSetup() {
               </div>
               <div className="ml-10 space-y-3">
                 <div className="p-6 bg-white border-2 border-dashed rounded-lg text-center">
-                  <p className="text-sm text-muted-foreground mb-2">
-                    QR Code would appear here
+                  {qrCode && (
+                    <div className="mb-4">
+                      <img 
+                        src={qrCode} 
+                        alt="QR Code for 2FA" 
+                        className="mx-auto"
+                        style={{ width: '256px', height: '256px' }}
+                      />
+                    </div>
+                  )}
+                  <p className="text-sm font-medium mb-2">
+                    Scan with your authenticator app
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground mb-3">
                     Or enter this secret manually:
                   </p>
-                  <div className="mt-3 flex items-center gap-2 justify-center">
+                  <div className="flex items-center gap-2 justify-center">
                     <code className="px-4 py-2 bg-gray-100 rounded text-sm font-mono">
                       {secret}
                     </code>
