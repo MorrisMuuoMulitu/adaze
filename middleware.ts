@@ -71,15 +71,20 @@ export async function middleware(request: NextRequest) {
   if (user) {
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('role')
+      .select('*')
       .eq('id', user.id)
       .single();
 
     if (error) {
-      console.error('Error fetching user role in middleware:', error);
-      // Optionally redirect to an error page or home
-      return NextResponse.redirect(new URL('/', request.url));
+      console.error('Middleware - Error fetching user role:', error);
+      console.error('Middleware - User ID:', user.id);
     }
+    
+    console.log('Middleware - User ID:', user.id);
+    console.log('Middleware - Profile:', profile);
+    console.log('Middleware - Role:', profile?.role);
+    console.log('Middleware - Path:', pathname);
+    
     userRole = profile?.role || null;
   }
 
