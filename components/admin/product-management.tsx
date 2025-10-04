@@ -226,12 +226,22 @@ export function ProductManagement() {
 
   const handleDeleteProduct = async (productId: string) => {
     try {
+      console.log('Attempting to delete product:', productId);
+      
       // Check if product is in any orders
-      const { data: orderItems } = await supabase
+      const { data: orderItems, error: orderCheckError } = await supabase
         .from('order_items')
         .select('id')
         .eq('product_id', productId)
         .limit(1);
+
+      console.log('Order items check:', { orderItems, orderCheckError });
+
+      if (orderCheckError) {
+        console.error('Error checking order items:', orderCheckError);
+        // If we can't check orders, just try to delete anyway
+        // This handles RLS permission issues
+      }
 
       if (orderItems && orderItems.length > 0) {
         // Product is in orders - can't delete (preserve history)
@@ -244,7 +254,10 @@ export function ProductManagement() {
           })
           .eq('id', productId);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error hiding product:', error);
+          throw error;
+        }
 
         toast({
           title: 'Product Hidden',
@@ -252,29 +265,62 @@ export function ProductManagement() {
           duration: 5000,
         });
       } else {
-        // Product not in orders - safe to delete
-        // First, remove from carts and wishlists
-        await supabase.from('cart').delete().eq('product_id', productId);
-        await supabase.from('wishlist').delete().eq('product_id', productId);
+        // Product not in orders - try to delete
+        console.log('Product not in orders, attempting delete...');
+        
+        // First, remove from carts and wishlists (ignore errors)
+        try {
+          await supabase.from('cart').delete().eq('product_id', productId);
+          await supabase.from('wishlist').delete().eq('product_id', productId);
+        } catch (cleanupError) {
+          console.log('Cleanup error (non-critical):', cleanupError);
+        }
         
         // Now delete the product
-        const { error } = await supabase.from('products').delete().eq('id', productId);
+        const { error: deleteError } = await supabase
+          .from('products')
+          .delete()
+          .eq('id', productId);
 
-        if (error) throw error;
+        if (deleteError) {
+          console.error('Error deleting product:', deleteError);
+          
+          // If delete fails due to foreign key, hide it instead
+          if (deleteError.code === '23503') {
+            console.log('Foreign key constraint, hiding product instead...');
+            const { error: hideError } = await supabase
+              .from('products')
+              .update({ 
+                status: 'rejected',
+                rejection_reason: 'Product removed by admin'
+              })
+              .eq('id', productId);
 
-        toast({
-          title: 'Success',
-          description: 'Product deleted permanently',
-        });
+            if (hideError) throw hideError;
+
+            toast({
+              title: 'Product Hidden',
+              description: 'Product has dependencies, so it was hidden instead. It will no longer appear in marketplace.',
+              duration: 5000,
+            });
+          } else {
+            throw deleteError;
+          }
+        } else {
+          toast({
+            title: 'Success',
+            description: 'Product deleted permanently',
+          });
+        }
       }
 
       setDeleteDialog({ open: false, productId: null });
       fetchProducts();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting product:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete product',
+        description: error.message || 'Failed to delete product',
         variant: 'destructive',
       });
     }
