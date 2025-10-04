@@ -29,6 +29,18 @@ USING (
   )
 );
 
+-- Allow admins to delete any order
+CREATE POLICY "admin_delete_all_orders"
+ON orders FOR DELETE
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM profiles
+    WHERE id = auth.uid()
+    AND role = 'admin'
+  )
+);
+
 -- Allow users to read their own orders (as buyer)
 CREATE POLICY "users_read_own_orders"
 ON orders FOR SELECT

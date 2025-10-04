@@ -104,6 +104,13 @@ export function OrderManagement() {
     currentStatus: null,
     newStatus: null,
   });
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    orderId: string | null;
+  }>({
+    open: false,
+    orderId: null,
+  });
 
   const supabase = createClient();
   const { toast } = useToast();
@@ -201,6 +208,33 @@ export function OrderManagement() {
       toast({
         title: 'Error',
         description: 'Failed to change order status',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    try {
+      // First delete order items
+      await supabase.from('order_items').delete().eq('order_id', orderId);
+      
+      // Then delete the order
+      const { error } = await supabase.from('orders').delete().eq('id', orderId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Order deleted successfully',
+      });
+
+      setDeleteDialog({ open: false, orderId: null });
+      fetchOrders();
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete order',
         variant: 'destructive',
       });
     }
@@ -393,6 +427,16 @@ export function OrderManagement() {
                             <Edit className="mr-2 h-4 w-4" />
                             Change Status
                           </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() =>
+                              setDeleteDialog({ open: true, orderId: order.id })
+                            }
+                          >
+                            <MoreVertical className="mr-2 h-4 w-4" />
+                            Delete Order
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -403,6 +447,30 @@ export function OrderManagement() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete Order Dialog */}
+      <AlertDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Order?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this order and all its items. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteDialog.orderId && handleDeleteOrder(deleteDialog.orderId)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete Order
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* View Order Dialog */}
       <Dialog
