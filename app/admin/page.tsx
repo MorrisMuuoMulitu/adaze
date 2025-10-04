@@ -95,12 +95,13 @@ export default function AdminDashboard() {
       const pendingOrders = orders?.filter(o => o.status === 'pending').length || 0;
       const completedOrders = orders?.filter(o => o.status === 'delivered').length || 0;
       
-      // Calculate revenue
-      const totalRevenue = orders?.reduce((sum, order) => sum + Number(order.amount), 0) || 0;
+      // Calculate revenue (only from delivered orders)
+      const deliveredOrders = orders?.filter(o => o.status === 'delivered') || [];
+      const totalRevenue = deliveredOrders.reduce((sum, order) => sum + Number(order.amount), 0);
       const today = new Date().toISOString().split('T')[0];
-      const todayRevenue = orders
-        ?.filter(o => o.created_at?.startsWith(today))
-        .reduce((sum, order) => sum + Number(order.amount), 0) || 0;
+      const todayRevenue = deliveredOrders
+        .filter(o => o.created_at?.startsWith(today))
+        .reduce((sum, order) => sum + Number(order.amount), 0);
 
       setStats({
         totalUsers: allUsers?.length || 0,
