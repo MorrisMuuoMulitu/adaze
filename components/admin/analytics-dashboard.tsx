@@ -36,6 +36,9 @@ interface AnalyticsData {
   userGrowth: Array<{ date: string; buyers: number; traders: number; transporters: number }>;
   categoryData: Array<{ name: string; value: number; revenue: number }>;
   topProducts: Array<{ name: string; sales: number; revenue: number }>;
+  topTraders: Array<{ name: string; revenue: number; orders: number }>;
+  ordersByStatus: { pending: number; confirmed: number; in_transit: number; delivered: number; cancelled: number };
+  usersByRole: { buyers: number; traders: number; transporters: number };
   metrics: {
     totalRevenue: number;
     revenueGrowth: number;
@@ -58,6 +61,9 @@ export function AnalyticsDashboard() {
     userGrowth: [],
     categoryData: [],
     topProducts: [],
+    topTraders: [],
+    ordersByStatus: { pending: 0, confirmed: 0, in_transit: 0, delivered: 0, cancelled: 0 },
+    usersByRole: { buyers: 0, traders: 0, transporters: 0 },
     metrics: {
       totalRevenue: 0,
       revenueGrowth: 0,
@@ -108,7 +114,8 @@ export function AnalyticsDashboard() {
           products (
             id,
             name,
-            image_url
+            image_url,
+            trader_id
           ),
           orders!inner (
             status,
@@ -128,6 +135,21 @@ export function AnalyticsDashboard() {
         .from('profiles')
         .select('created_at, role')
         .gte('created_at', startDate.toISOString());
+
+      // Fetch all users for total count
+      const { data: allUsers } = await supabase
+        .from('profiles')
+        .select('id, role');
+
+      // Fetch traders with product counts for top traders
+      const { data: traderStats } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          full_name,
+          email
+        `)
+        .eq('role', 'trader');
 
       // Process revenue data by date (only delivered orders)
       const revenueByDate: Record<string, { revenue: number; orders: number }> = {};
@@ -231,18 +253,56 @@ export function AnalyticsDashboard() {
       const oldOrders = (orders || []).filter(o => new Date(o.created_at) < midPoint);
       const ordersGrowth = oldOrders.length > 0 ? ((recentOrders.length - oldOrders.length) / oldOrders.length) * 100 : 0;
 
-      // User growth
-      const { data: allUsers } = await supabase.from('profiles').select('id');
+      // User growth and breakdown
       const totalUsers = allUsers?.length || 0;
+      const usersByRole = {
+        buyers: allUsers?.filter(u => u.role === 'buyer').length || 0,
+        traders: allUsers?.filter(u => u.role === 'trader').length || 0,
+        transporters: allUsers?.filter(u => u.role === 'transporter').length || 0,
+      };
       const recentUsers = (users || []).filter(u => new Date(u.created_at) >= midPoint);
       const oldUsers = (users || []).filter(u => new Date(u.created_at) < midPoint);
       const usersGrowth = oldUsers.length > 0 ? ((recentUsers.length - oldUsers.length) / oldUsers.length) * 100 : 0;
+
+      // Top traders by revenue
+      const traderRevenue: Record<string, { name: string; revenue: number; orders: number }> = {};
+      (orderItems || []).forEach((item: any) => {
+        // Get trader from product
+        const traderId = item.products?.trader_id;
+        if (traderId && traderStats) {
+          const trader = traderStats.find(t => t.id === traderId);
+          const traderName = trader?.full_name || trader?.email || 'Unknown Trader';
+          
+          if (!traderRevenue[traderId]) {
+            traderRevenue[traderId] = { name: traderName, revenue: 0, orders: 0 };
+          }
+          
+          traderRevenue[traderId].revenue += Number(item.price) * item.quantity;
+          traderRevenue[traderId].orders += 1;
+        }
+      });
+
+      const topTraders = Object.values(traderRevenue)
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 5);
+
+      // Order status breakdown
+      const ordersByStatus = {
+        pending: (orders || []).filter(o => o.status === 'pending').length,
+        confirmed: (orders || []).filter(o => o.status === 'confirmed').length,
+        in_transit: (orders || []).filter(o => o.status === 'in_transit').length,
+        delivered: deliveredOrders.length,
+        cancelled: (orders || []).filter(o => o.status === 'cancelled').length,
+      };
 
       setAnalytics({
         revenueData,
         userGrowth,
         categoryData,
         topProducts,
+        topTraders,
+        ordersByStatus,
+        usersByRole,
         metrics: {
           totalRevenue,
           revenueGrowth,
@@ -477,7 +537,7 @@ export function AnalyticsDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5 text-orange-600" />
-              Sales by Category
+              Products by Category
             </CardTitle>
             <CardDescription>Product distribution across categories</CardDescription>
           </CardHeader>
@@ -512,38 +572,172 @@ export function AnalyticsDashboard() {
         </Card>
       </div>
 
-      {/* Top Products */}
-      <Card className="border-0 shadow-lg">
-        <CardHeader>
-          <CardTitle>Top Performing Products</CardTitle>
-          <CardDescription>Best selling products by revenue</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={analytics.topProducts} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis type="number" stroke="#6b7280" fontSize={12} />
-              <YAxis dataKey="name" type="category" stroke="#6b7280" fontSize={12} width={100} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                }}
-              />
-              <Bar dataKey="revenue" fill="url(#colorBar)" radius={[0, 8, 8, 0]}>
-                <defs>
-                  <linearGradient id="colorBar" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.8} />
-                  </linearGradient>
-                </defs>
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      {/* Additional Insights Grid */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Top Products */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle>Top Performing Products</CardTitle>
+            <CardDescription>Best selling products by revenue</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={analytics.topProducts} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis type="number" stroke="#6b7280" fontSize={12} />
+                <YAxis dataKey="name" type="category" stroke="#6b7280" fontSize={12} width={120} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                  }}
+                />
+                <Bar dataKey="revenue" fill="url(#colorBar)" radius={[0, 8, 8, 0]}>
+                  <defs>
+                    <linearGradient id="colorBar" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.8} />
+                    </linearGradient>
+                  </defs>
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Top Traders */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle>Top Performing Traders</CardTitle>
+            <CardDescription>Highest earning traders by revenue</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={analytics.topTraders} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis type="number" stroke="#6b7280" fontSize={12} />
+                <YAxis dataKey="name" type="category" stroke="#6b7280" fontSize={12} width={120} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                  }}
+                />
+                <Bar dataKey="revenue" fill="url(#colorBar2)" radius={[0, 8, 8, 0]}>
+                  <defs>
+                    <linearGradient id="colorBar2" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.8} />
+                    </linearGradient>
+                  </defs>
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Order Status & User Breakdown */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Order Status Breakdown */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle>Order Status Distribution</CardTitle>
+            <CardDescription>Current order pipeline</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
+                  <span className="text-sm font-medium">Pending</span>
+                </div>
+                <span className="text-2xl font-bold">{analytics.ordersByStatus.pending}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-blue-500"></div>
+                  <span className="text-sm font-medium">Confirmed</span>
+                </div>
+                <span className="text-2xl font-bold">{analytics.ordersByStatus.confirmed}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-purple-500"></div>
+                  <span className="text-sm font-medium">In Transit</span>
+                </div>
+                <span className="text-2xl font-bold">{analytics.ordersByStatus.in_transit}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                  <span className="text-sm font-medium">Delivered</span>
+                </div>
+                <span className="text-2xl font-bold">{analytics.ordersByStatus.delivered}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-red-500"></div>
+                  <span className="text-sm font-medium">Cancelled</span>
+                </div>
+                <span className="text-2xl font-bold">{analytics.ordersByStatus.cancelled}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* User Role Breakdown */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle>User Role Distribution</CardTitle>
+            <CardDescription>Platform users by role</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-blue-500"></div>
+                  <span className="text-sm font-medium">Buyers</span>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold">{analytics.usersByRole.buyers}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {((analytics.usersByRole.buyers / analytics.metrics.totalUsers) * 100).toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                  <span className="text-sm font-medium">Traders</span>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold">{analytics.usersByRole.traders}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {((analytics.usersByRole.traders / analytics.metrics.totalUsers) * 100).toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-orange-500"></div>
+                  <span className="text-sm font-medium">Transporters</span>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold">{analytics.usersByRole.transporters}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {((analytics.usersByRole.transporters / analytics.metrics.totalUsers) * 100).toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
