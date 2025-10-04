@@ -80,11 +80,22 @@ export default function Home() {
 
   // Redirect logged-in users based on role
   useEffect(() => {
-    if (user) {
-      // Get user role from metadata
-      const role = user.user_metadata?.role;
+    const checkRoleAndRedirect = async () => {
+      if (!user) return;
+
+      // Get role from profiles table (not metadata!)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      const role = profile?.role;
       
-      if (role === 'buyer') {
+      if (role === 'admin') {
+        // Admins go to admin dashboard
+        router.push('/admin');
+      } else if (role === 'buyer') {
         // Buyers go directly to marketplace
         router.push('/marketplace');
       } else if (role === 'trader') {
@@ -94,8 +105,10 @@ export default function Home() {
         // Transporters go to their dashboard
         router.push('/dashboard/transporter');
       }
-    }
-  }, [user, router]);
+    };
+
+    checkRoleAndRedirect();
+  }, [user, router, supabase]);
 
   useEffect(() => {
     const fetchProducts = async () => {

@@ -19,10 +19,19 @@ export async function GET(request: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (user) {
-      const role = user.user_metadata?.role || 'buyer';
+      // Get role from profiles table
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      const role = profile?.role || 'buyer';
       
       // Redirect based on role
-      if (role === 'buyer') {
+      if (role === 'admin') {
+        return NextResponse.redirect(`${origin}/admin`);
+      } else if (role === 'buyer') {
         return NextResponse.redirect(`${origin}/marketplace`);
       } else if (role === 'trader') {
         return NextResponse.redirect(`${origin}/dashboard/trader`);
@@ -33,5 +42,5 @@ export async function GET(request: Request) {
   }
 
   // Default redirect
-  return NextResponse.redirect(`${origin}/marketplace`);
+  return NextResponse.redirect(`${origin}`);
 }
