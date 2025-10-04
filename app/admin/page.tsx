@@ -1,0 +1,285 @@
+"use client";
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/components/auth/auth-provider';
+import { createClient } from '@/lib/supabase/client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Users, ShoppingBag, Package, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
+import { Navbar } from '@/components/layout/navbar';
+
+interface DashboardStats {
+  totalUsers: number;
+  totalBuyers: number;
+  totalTraders: number;
+  totalTransporters: number;
+  totalProducts: number;
+  activeProducts: number;
+  pendingProducts: number;
+  totalOrders: number;
+  pendingOrders: number;
+  completedOrders: number;
+  totalRevenue: number;
+  todayRevenue: number;
+}
+
+export default function AdminDashboard() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const supabase = createClient();
+  
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalUsers: 0,
+    totalBuyers: 0,
+    totalTraders: 0,
+    totalTransporters: 0,
+    totalProducts: 0,
+    activeProducts: 0,
+    pendingProducts: 0,
+    totalOrders: 0,
+    pendingOrders: 0,
+    completedOrders: 0,
+    totalRevenue: 0,
+    todayRevenue: 0,
+  });
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdminAndFetchStats = async () => {
+      if (!user) {
+        router.push('/');
+        return;
+      }
+
+      // Check if user is admin
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.role !== 'admin') {
+        router.push('/dashboard');
+        return;
+      }
+
+      setIsAdmin(true);
+      await fetchStats();
+    };
+
+    checkAdminAndFetchStats();
+  }, [user, router, supabase]);
+
+  const fetchStats = async () => {
+    setLoading(true);
+    try {
+      // Fetch user stats
+      const { data: allUsers } = await supabase.from('profiles').select('role');
+      const buyers = allUsers?.filter(u => u.role === 'buyer').length || 0;
+      const traders = allUsers?.filter(u => u.role === 'trader').length || 0;
+      const transporters = allUsers?.filter(u => u.role === 'transporter').length || 0;
+
+      // Fetch product stats
+      const { data: products } = await supabase.from('products').select('id, status');
+      const activeProducts = products?.filter(p => p.status === 'active').length || 0;
+      const pendingProducts = products?.filter(p => p.status === 'pending').length || 0;
+
+      // Fetch order stats
+      const { data: orders } = await supabase.from('orders').select('id, status, amount, created_at');
+      const pendingOrders = orders?.filter(o => o.status === 'pending').length || 0;
+      const completedOrders = orders?.filter(o => o.status === 'delivered').length || 0;
+      
+      // Calculate revenue
+      const totalRevenue = orders?.reduce((sum, order) => sum + Number(order.amount), 0) || 0;
+      const today = new Date().toISOString().split('T')[0];
+      const todayRevenue = orders
+        ?.filter(o => o.created_at?.startsWith(today))
+        .reduce((sum, order) => sum + Number(order.amount), 0) || 0;
+
+      setStats({
+        totalUsers: allUsers?.length || 0,
+        totalBuyers: buyers,
+        totalTraders: traders,
+        totalTransporters: transporters,
+        totalProducts: products?.length || 0,
+        activeProducts,
+        pendingProducts,
+        totalOrders: orders?.length || 0,
+        pendingOrders,
+        completedOrders,
+        totalRevenue,
+        todayRevenue,
+      });
+    } catch (error) {
+      console.error('Error fetching admin stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isAdmin || loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar onAuthClick={() => {}} />
+        <div className="container mx-auto px-4 py-8">
+          <p className="text-center">{loading ? 'Loading...' : 'Access Denied'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar onAuthClick={() => {}} />
+      <main className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <p className="text-muted-foreground">Manage your marketplace platform</p>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalUsers}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.totalBuyers} buyers, {stats.totalTraders} traders
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalProducts}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.activeProducts} active, {stats.pendingProducts} pending
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalOrders}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.pendingOrders} pending, {stats.completedOrders} completed
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">KSh {stats.totalRevenue.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">
+                KSh {stats.todayRevenue.toLocaleString()} today
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tabs for different sections */}
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="orders">Orders</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Platform Overview</CardTitle>
+                <CardDescription>Quick stats and recent activity</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <TrendingUp className="h-8 w-8 text-green-500" />
+                    <div>
+                      <p className="text-sm font-medium">Platform Growth</p>
+                      <p className="text-xs text-muted-foreground">
+                        {stats.totalUsers} users | {stats.totalProducts} products | {stats.totalOrders} orders
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {stats.pendingProducts > 0 && (
+                    <div className="flex items-center gap-4">
+                      <AlertCircle className="h-8 w-8 text-amber-500" />
+                      <div>
+                        <p className="text-sm font-medium">Pending Approvals</p>
+                        <p className="text-xs text-muted-foreground">
+                          {stats.pendingProducts} products awaiting approval
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="users">
+            <Card>
+              <CardHeader>
+                <CardTitle>User Management</CardTitle>
+                <CardDescription>Manage platform users</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  User management features coming soon...
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="products">
+            <Card>
+              <CardHeader>
+                <CardTitle>Product Management</CardTitle>
+                <CardDescription>Approve, reject, or remove products</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Product management features coming soon...
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="orders">
+            <Card>
+              <CardHeader>
+                <CardTitle>Order Management</CardTitle>
+                <CardDescription>View and manage all orders</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Order management features coming soon...
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </main>
+    </div>
+  );
+}
