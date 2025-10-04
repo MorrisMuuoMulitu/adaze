@@ -140,7 +140,7 @@ export default function CheckoutPage() {
               order_id: order.id,
               product_id: item.product_id,
               quantity: item.quantity,
-              price: item.product_price,
+              price_at_time: item.product_price,
             });
 
           if (itemError) throw itemError;
