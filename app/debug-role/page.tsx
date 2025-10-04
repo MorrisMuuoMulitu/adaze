@@ -18,14 +18,27 @@ export default function DebugRolePage() {
         return;
       }
 
+      console.log('Fetching for user ID:', user.id);
+
+      // Try different queries
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('role, full_name, email')
+        .select('*')
         .eq('id', user.id)
         .single();
 
       console.log('Profile data:', profile);
       console.log('Profile error:', error);
+      console.log('Profile role:', profile?.role);
+      
+      // Also try without single()
+      const { data: profiles2, error: error2 } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id);
+
+      console.log('Profiles (array):', profiles2);
+      console.log('Error2:', error2);
       
       setProfileRole(profile?.role || null);
       setLoading(false);
