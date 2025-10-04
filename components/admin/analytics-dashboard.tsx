@@ -91,11 +91,32 @@ export function AnalyticsDashboard() {
 
       const startDate = ranges[timeRange];
 
-      // Fetch orders for revenue data
+      // Fetch orders for revenue data (only delivered orders for revenue)
       const { data: orders } = await supabase
         .from('orders')
         .select('created_at, amount, status')
         .gte('created_at', startDate.toISOString());
+
+      // Fetch order items with products for top products
+      const { data: orderItems } = await supabase
+        .from('order_items')
+        .select(`
+          quantity,
+          price,
+          product_id,
+          order_id,
+          products (
+            id,
+            name,
+            image_url
+          ),
+          orders!inner (
+            status,
+            created_at
+          )
+        `)
+        .gte('orders.created_at', startDate.toISOString())
+        .eq('orders.status', 'delivered'); // Only delivered orders
 
       // Fetch products for category data
       const { data: products } = await supabase
@@ -108,15 +129,18 @@ export function AnalyticsDashboard() {
         .select('created_at, role')
         .gte('created_at', startDate.toISOString());
 
-      // Process revenue data by date
+      // Process revenue data by date (only delivered orders)
       const revenueByDate: Record<string, { revenue: number; orders: number }> = {};
       (orders || []).forEach((order) => {
-        const date = new Date(order.created_at).toLocaleDateString();
-        if (!revenueByDate[date]) {
-          revenueByDate[date] = { revenue: 0, orders: 0 };
+        // Only count delivered orders for revenue
+        if (order.status === 'delivered') {
+          const date = new Date(order.created_at).toLocaleDateString();
+          if (!revenueByDate[date]) {
+            revenueByDate[date] = { revenue: 0, orders: 0 };
+          }
+          revenueByDate[date].revenue += Number(order.amount);
+          revenueByDate[date].orders += 1;
         }
-        revenueByDate[date].revenue += Number(order.amount);
-        revenueByDate[date].orders += 1;
       });
 
       const revenueData = Object.entries(revenueByDate).map(([date, data]) => ({
@@ -164,29 +188,47 @@ export function AnalyticsDashboard() {
         .sort((a, b) => b.value - a.value)
         .slice(0, 8);
 
-      // Top products (mock data for now - would need order_items join)
-      const topProducts = [
-        { name: 'Product A', sales: 45, revenue: 45000 },
-        { name: 'Product B', sales: 38, revenue: 38000 },
-        { name: 'Product C', sales: 32, revenue: 32000 },
-        { name: 'Product D', sales: 28, revenue: 28000 },
-        { name: 'Product E', sales: 24, revenue: 24000 },
-      ];
+      // Top products (real data from order_items)
+      const productStats: Record<string, { name: string; sales: number; revenue: number }> = {};
+      (orderItems || []).forEach((item: any) => {
+        const productId = item.product_id;
+        const productName = item.products?.name || 'Unknown Product';
+        
+        if (!productStats[productId]) {
+          productStats[productId] = {
+            name: productName,
+            sales: 0,
+            revenue: 0,
+          };
+        }
+        
+        productStats[productId].sales += item.quantity;
+        productStats[productId].revenue += Number(item.price) * item.quantity;
+      });
 
-      // Calculate metrics
-      const totalRevenue = (orders || []).reduce((sum, o) => sum + Number(o.amount), 0);
+      const topProducts = Object.values(productStats)
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 5);
+
+      // Calculate metrics (only delivered orders for revenue)
+      const deliveredOrders = (orders || []).filter(o => o.status === 'delivered');
+      const totalRevenue = deliveredOrders.reduce((sum, o) => sum + Number(o.amount), 0);
       const totalOrders = orders?.length || 0;
-      const completedOrders = (orders || []).filter(o => o.status === 'delivered').length;
+      const completedOrders = deliveredOrders.length;
       const completionRate = totalOrders > 0 ? (completedOrders / totalOrders) * 100 : 0;
-      const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+      const avgOrderValue = completedOrders > 0 ? totalRevenue / completedOrders : 0;
 
-      // Calculate growth (comparing first half vs second half of period)
+      // Calculate growth (comparing first half vs second half of period - only delivered)
       const midPoint = new Date((now.getTime() + startDate.getTime()) / 2);
+      const recentDelivered = deliveredOrders.filter(o => new Date(o.created_at) >= midPoint);
+      const oldDelivered = deliveredOrders.filter(o => new Date(o.created_at) < midPoint);
+      const recentRevenue = recentDelivered.reduce((sum, o) => sum + Number(o.amount), 0);
+      const oldRevenue = oldDelivered.reduce((sum, o) => sum + Number(o.amount), 0);
+      const revenueGrowth = oldRevenue > 0 ? ((recentRevenue - oldRevenue) / oldRevenue) * 100 : 0;
+      
+      // Orders growth (all orders, not just delivered)
       const recentOrders = (orders || []).filter(o => new Date(o.created_at) >= midPoint);
       const oldOrders = (orders || []).filter(o => new Date(o.created_at) < midPoint);
-      const recentRevenue = recentOrders.reduce((sum, o) => sum + Number(o.amount), 0);
-      const oldRevenue = oldOrders.reduce((sum, o) => sum + Number(o.amount), 0);
-      const revenueGrowth = oldRevenue > 0 ? ((recentRevenue - oldRevenue) / oldRevenue) * 100 : 0;
       const ordersGrowth = oldOrders.length > 0 ? ((recentOrders.length - oldOrders.length) / oldOrders.length) * 100 : 0;
 
       // User growth
@@ -273,7 +315,7 @@ export function AnalyticsDashboard() {
           <CardContent>
             <div className="text-3xl font-bold">KSh {analytics.metrics.totalRevenue.toLocaleString()}</div>
             <div className="mt-2 flex items-center justify-between">
-              <span className="text-xs text-purple-100">vs previous period</span>
+              <span className="text-xs text-purple-100">Delivered orders only</span>
               <TrendIndicator value={analytics.metrics.revenueGrowth} />
             </div>
           </CardContent>
