@@ -132,14 +132,21 @@ export function AdminSettings() {
     try {
       setSaving(true);
 
+      console.log('Saving settings:', settings);
+
       // Upsert settings to database
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('platform_settings')
         .upsert({
           id: 1, // Single row for all settings
           ...settings,
           updated_at: new Date().toISOString(),
-        });
+        }, {
+          onConflict: 'id'
+        })
+        .select();
+
+      console.log('Save result:', { data, error });
 
       if (error) throw error;
 
@@ -147,11 +154,14 @@ export function AdminSettings() {
         title: 'Success',
         description: 'Settings saved successfully',
       });
+
+      // Refresh to see changes
+      fetchSettings();
     } catch (error: any) {
       console.error('Error saving settings:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to save settings',
+        description: error.message || 'Failed to save settings. Make sure you have run the platform_settings SQL migration.',
         variant: 'destructive',
       });
     } finally {
