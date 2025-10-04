@@ -15,6 +15,8 @@ import { useAuth } from '@/components/auth/auth-provider';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { Product } from '@/lib/productService';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 const productSchema = z.object({
   name: z.string().min(1, { message: "Product name is required" }),
@@ -111,6 +113,16 @@ export default function EditProductPage() {
   return (
     <div className="min-h-screen bg-background py-12">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Back Navigation */}
+        <div className="mb-6">
+          <Link href="/products/manage">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Products
+            </Button>
+          </Link>
+        </div>
+
         <Card>
           <CardHeader>
             <CardTitle>Edit Product</CardTitle>
@@ -196,9 +208,14 @@ export default function EditProductPage() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" disabled={loading}>
-                  {loading ? 'Updating Product...' : 'Update Product'}
-                </Button>
+                <div className="flex gap-3">
+                  <Button type="button" variant="outline" onClick={() => router.push('/products/manage')} disabled={loading}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={loading}>
+                    {loading ? 'Updating Product...' : 'Update Product'}
+                  </Button>
+                </div>
               </form>
             </Form>
           </CardContent>

@@ -226,21 +226,23 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                   
                   {user ? (
                     <div className="flex items-center space-x-2">
-                      {/* Quick Actions */}
-                      <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button" asChild>
-                        <Link href="/wishlist">
-                          <Heart className="h-4 w-4" />
-                          {wishlistItemCount > 0 && (
-                            <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">{wishlistItemCount}</Badge>
-                          )}
-                        </Link>
-                      </Button>
-                      
+                      {/* Quick Actions - Only show for buyers */}
                       {userRole === 'buyer' && (
-                        <CartSidebar 
-                          cartCount={cartItemCount} 
-                          onCartUpdate={setCartItemCount} 
-                        />
+                        <>
+                          <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button" asChild>
+                            <Link href="/wishlist">
+                              <Heart className="h-4 w-4" />
+                              {wishlistItemCount > 0 && (
+                                <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">{wishlistItemCount}</Badge>
+                              )}
+                            </Link>
+                          </Button>
+                          
+                          <CartSidebar 
+                            cartCount={cartItemCount} 
+                            onCartUpdate={setCartItemCount} 
+                          />
+                        </>
                       )}
                       
                       <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button">
@@ -306,19 +308,21 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                               <span>Profile</span>
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href="/wishlist">
-                              <Heart className="mr-2 h-4 w-4" />
-                              <span>Wishlist</span>
-                            </Link>
-                          </DropdownMenuItem>
                           {userRole === 'buyer' && (
-                            <DropdownMenuItem asChild>
-                              <Link href="/orders">
-                                <Package className="mr-2 h-4 w-4" />
-                                <span>My Orders</span>
-                              </Link>
-                            </DropdownMenuItem>
+                            <>
+                              <DropdownMenuItem asChild>
+                                <Link href="/wishlist">
+                                  <Heart className="mr-2 h-4 w-4" />
+                                  <span>Wishlist</span>
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link href="/orders">
+                                  <Package className="mr-2 h-4 w-4" />
+                                  <span>My Orders</span>
+                                </Link>
+                              </DropdownMenuItem>
+                            </>
                           )}
                           <DropdownMenuItem asChild>
                             <Link href="/settings">
