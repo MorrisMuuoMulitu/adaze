@@ -95,6 +95,17 @@ export function ProductManagement() {
     open: false,
     product: null,
   });
+  const [statusChangeDialog, setStatusChangeDialog] = useState<{
+    open: boolean;
+    productId: string | null;
+    currentStatus: string | null;
+    newStatus: string | null;
+  }>({
+    open: false,
+    productId: null,
+    currentStatus: null,
+    newStatus: null,
+  });
 
   const supabase = createClient();
   const { toast } = useToast();
@@ -294,6 +305,41 @@ export function ProductManagement() {
     }
   };
 
+  const handleChangeStatus = async () => {
+    if (!statusChangeDialog.productId || !statusChangeDialog.newStatus) return;
+
+    try {
+      const updateData: any = { status: statusChangeDialog.newStatus };
+      
+      // If changing to active, clear rejection reason
+      if (statusChangeDialog.newStatus === 'active') {
+        updateData.rejection_reason = null;
+      }
+
+      const { error } = await supabase
+        .from('products')
+        .update(updateData)
+        .eq('id', statusChangeDialog.productId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: `Product status changed to ${statusChangeDialog.newStatus}`,
+      });
+
+      setStatusChangeDialog({ open: false, productId: null, currentStatus: null, newStatus: null });
+      fetchProducts();
+    } catch (error) {
+      console.error('Error changing status:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to change product status',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case 'active':
@@ -424,13 +470,27 @@ export function ProductManagement() {
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() =>
+                              setStatusChangeDialog({
+                                open: true,
+                                productId: product.id,
+                                currentStatus: product.status,
+                                newStatus: null,
+                              })
+                            }
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Change Status
+                          </DropdownMenuItem>
                           {product.status === 'pending' && (
                             <>
                               <DropdownMenuItem
                                 onClick={() => handleApproveProduct(product.id)}
                               >
                                 <Check className="mr-2 h-4 w-4 text-green-600" />
-                                Approve
+                                Quick Approve
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() =>
@@ -442,7 +502,7 @@ export function ProductManagement() {
                                 }
                               >
                                 <X className="mr-2 h-4 w-4 text-red-600" />
-                                Reject
+                                Quick Reject
                               </DropdownMenuItem>
                             </>
                           )}
@@ -594,6 +654,66 @@ export function ProductManagement() {
               className="bg-red-600 hover:bg-red-700"
             >
               Reject Product
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Change Status Dialog */}
+      <AlertDialog
+        open={statusChangeDialog.open}
+        onOpenChange={(open) =>
+          setStatusChangeDialog({ ...statusChangeDialog, open })
+        }
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change Product Status</AlertDialogTitle>
+            <AlertDialogDescription>
+              Current status: <strong className="capitalize">{statusChangeDialog.currentStatus}</strong>
+              <br />
+              Select new status to hide/show product in marketplace
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Select
+              value={statusChangeDialog.newStatus || ''}
+              onValueChange={(value) =>
+                setStatusChangeDialog({ ...statusChangeDialog, newStatus: value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select new status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    Active (Visible in marketplace)
+                  </div>
+                </SelectItem>
+                <SelectItem value="pending">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                    Pending (Hidden from marketplace)
+                  </div>
+                </SelectItem>
+                <SelectItem value="rejected">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                    Rejected (Hidden from marketplace)
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-2">
+              Only "Active" products are visible in the marketplace
+            </p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleChangeStatus}>
+              Change Status
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
