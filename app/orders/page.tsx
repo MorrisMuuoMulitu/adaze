@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { Package, MapPin, DollarSign, Calendar, User, CheckCircle, Truck, Clock, XCircle, ShoppingCart } from 'lucide-react';
 import { ReviewModal } from '@/components/reviews/review-modal';
+import { RetryPaymentButton } from '@/components/retry-payment-button';
 import { toast } from 'sonner';
 
 export default function OrdersPage() {
@@ -210,6 +211,22 @@ export default function OrdersPage() {
                         <Calendar className="h-4 w-4 mr-2" />
                         <span>{new Date(order.created_at).toLocaleDateString()}</span>
                       </div>
+
+                      {/* Retry Payment Button for Pending Payments */}
+                      {order.status === 'pending' && (
+                        <div className="mt-4">
+                          <RetryPaymentButton
+                            orderId={order.id}
+                            amount={order.amount}
+                            orderStatus={order.status}
+                            paymentStatus="pending"
+                            onPaymentSuccess={() => {
+                              // Refresh orders after payment
+                              window.location.reload();
+                            }}
+                          />
+                        </div>
+                      )}
 
                       {order.status === 'delivered' && (
                         <Button 
