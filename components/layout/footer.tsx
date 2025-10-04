@@ -19,21 +19,21 @@ const footerSections = [
   {
     title: 'For Traders',
     links: [
-      { name: 'Start Selling', href: '/sell' },
-      { name: 'Seller Dashboard', href: '/dashboard/seller' },
-      { name: 'Pricing Guide', href: '/guide/pricing' },
-      { name: 'Best Practices', href: '/guide/selling' },
-      { name: 'Success Stories', href: '/stories' }
+      { name: 'Start Selling', href: '/marketplace' },
+      { name: 'Trader Dashboard', href: '/dashboard/trader' },
+      { name: 'Manage Products', href: '/products/manage' },
+      { name: 'Add Product', href: '/products/add' },
+      { name: 'Help Center', href: '/help' }
     ]
   },
   {
     title: 'For Transporters',
     links: [
-      { name: 'Join Network', href: '/transport/join' },
-      { name: 'Driver Dashboard', href: '/dashboard/driver' },
-      { name: 'Delivery Guide', href: '/guide/delivery' },
-      { name: 'Earnings', href: '/transport/earnings' },
-      { name: 'Requirements', href: '/transport/requirements' }
+      { name: 'Join Network', href: '/marketplace' },
+      { name: 'Transporter Dashboard', href: '/dashboard/transporter' },
+      { name: 'Available Deliveries', href: '/transporter/available-deliveries' },
+      { name: 'My Deliveries', href: '/transporter/my-deliveries' },
+      { name: 'Help Center', href: '/help' }
     ]
   },
   {
@@ -43,16 +43,16 @@ const footerSections = [
       { name: 'Contact Support', href: '/contact' },
       { name: 'Privacy Policy', href: '/privacy' },
       { name: 'Terms of Service', href: '/terms' },
-      { name: 'Community Guidelines', href: '/guidelines' }
+      { name: 'Guidelines', href: '/guidelines' }
     ]
   }
 ];
 
 const socialLinks = [
-  { icon: Facebook, href: '#', name: 'Facebook' },
-  { icon: Twitter, href: '#', name: 'Twitter' },
-  { icon: Instagram, href: '#', name: 'Instagram' },
-  { icon: Linkedin, href: '#', name: 'LinkedIn' }
+  { icon: Facebook, href: 'https://facebook.com/adaze', name: 'Facebook' },
+  { icon: Twitter, href: 'https://twitter.com/adaze', name: 'Twitter' },
+  { icon: Instagram, href: 'https://instagram.com/adaze', name: 'Instagram' },
+  { icon: Linkedin, href: 'https://linkedin.com/company/adaze', name: 'LinkedIn' }
 ];
 
 const kenyanCities = [
@@ -218,7 +218,7 @@ export function Footer() {
             <div className="flex items-center space-x-4 sm:space-x-6 text-xs sm:text-sm text-muted-foreground">
               <a href="/privacy" className="hover:text-primary transition-colors py-1 mobile-button">Privacy</a>
               <a href="/terms" className="hover:text-primary transition-colors py-1 mobile-button">Terms</a>
-              <a href="/cookies" className="hover:text-primary transition-colors py-1 mobile-button">Cookies</a>
+              <a href="/help" className="hover:text-primary transition-colors py-1 mobile-button">Help</a>
             </div>
           </div>
         </div>
