@@ -281,24 +281,45 @@ export function ProductManagement() {
         
         // First, remove from carts and wishlists (ignore errors)
         try {
-          await supabase.from('cart').delete().eq('product_id', productId);
-          await supabase.from('wishlist').delete().eq('product_id', productId);
+          console.log('Deleting from cart...');
+          const { data: cartData, error: cartError } = await supabase
+            .from('cart')
+            .delete()
+            .eq('product_id', productId);
+          console.log('Cart delete result:', { cartData, cartError });
+
+          console.log('Deleting from wishlist...');
+          const { data: wishlistData, error: wishlistError } = await supabase
+            .from('wishlist')
+            .delete()
+            .eq('product_id', productId);
+          console.log('Wishlist delete result:', { wishlistData, wishlistError });
         } catch (cleanupError) {
           console.log('Cleanup error (non-critical):', cleanupError);
         }
         
         // Now delete the product
+        console.log('Deleting product...');
         const { error: deleteError } = await supabase
           .from('products')
           .delete()
           .eq('id', productId);
 
+        console.log('Product delete result:', { deleteError });
+
         if (deleteError) {
           console.error('Error deleting product:', deleteError);
+          console.log('Error code:', deleteError.code);
+          console.log('Error details:', deleteError.details);
+          console.log('Error hint:', deleteError.hint);
+          console.log('Error message:', deleteError.message);
           
           // If delete fails due to foreign key, hide it instead
           if (deleteError.code === '23503') {
-            console.log('Foreign key constraint, hiding product instead...');
+            console.log('Foreign key constraint detected');
+            console.log('Constraint details:', deleteError.details);
+            console.log('Hiding product instead...');
+            
             const { error: hideError } = await supabase
               .from('products')
               .update({ 
@@ -311,8 +332,8 @@ export function ProductManagement() {
 
             toast({
               title: 'Product Hidden',
-              description: 'Product has dependencies, so it was hidden instead. It will no longer appear in marketplace.',
-              duration: 5000,
+              description: `Product has dependencies (${deleteError.details}), so it was hidden instead. It will no longer appear in marketplace.`,
+              duration: 7000,
             });
           } else {
             throw deleteError;
