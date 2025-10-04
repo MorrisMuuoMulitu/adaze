@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, ShoppingBag, Package, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar';
 import { UserManagement } from '@/components/admin/user-management';
+import { ProductManagement } from '@/components/admin/product-management';
 
 interface DashboardStats {
   totalUsers: number;
@@ -243,17 +244,7 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="products">
-            <Card>
-              <CardHeader>
-                <CardTitle>Product Management</CardTitle>
-                <CardDescription>Approve, reject, or remove products</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Product management features coming soon...
-                </p>
-              </CardContent>
-            </Card>
+            <ProductManagement />
           </TabsContent>
 
           <TabsContent value="orders">
