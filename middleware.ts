@@ -88,6 +88,7 @@ export async function middleware(request: NextRequest) {
     '/dashboard/buyer': ['buyer'],
     '/dashboard/trader': ['trader'],
     '/dashboard/transporter': ['transporter'],
+    '/admin': ['admin'], // Admin dashboard - admins only
     '/marketplace': ['buyer'], // Only buyers can access marketplace
     '/products/add': ['trader'],
     '/products/manage': ['trader'],
