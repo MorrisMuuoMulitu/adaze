@@ -13,6 +13,7 @@ import { ProductManagement } from '@/components/admin/product-management';
 import { OrderManagement } from '@/components/admin/order-management';
 import { AnalyticsDashboard } from '@/components/admin/analytics-dashboard';
 import { AdminSettings } from '@/components/admin/admin-settings';
+import { SecurityMonitoring } from '@/components/admin/security-monitoring';
 
 interface DashboardStats {
   totalUsers: number;
@@ -229,6 +230,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
@@ -304,6 +306,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="orders">
             <OrderManagement />
+          </TabsContent>
+
+          <TabsContent value="security">
+            <SecurityMonitoring />
           </TabsContent>
 
           <TabsContent value="settings">
