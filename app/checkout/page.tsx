@@ -116,9 +116,12 @@ export default function CheckoutPage() {
           .insert({
             buyer_id: user.id,
             trader_id: traderId,
-            total_amount: orderTotal,
+            title: `Order from ${items.map(i => i.product_name).join(', ').substring(0, 100)}`,
+            description: `${items.length} item(s)`,
+            amount: orderTotal,
             status: 'pending',
             payment_status: 'pending',
+            shipping_address: deliveryAddress,
             delivery_address: deliveryAddress,
             phone_number: phoneNumber,
             notes: notes || null,
