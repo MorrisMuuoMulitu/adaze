@@ -169,8 +169,23 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
   };
 
   const onRegisterSubmit = async (data: z.infer<typeof registerSchema>) => {
+    console.log('🎯 [AUTH MODAL] Registration form submitted');
+    console.log('📋 [AUTH MODAL] Form data:', {
+      email: data.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone,
+      location: data.location,
+      role: data.role,
+      agreeToTerms: data.agreeToTerms,
+      hasPassword: !!data.password,
+      passwordLength: data.password?.length,
+      passwordsMatch: data.password === data.confirmPassword
+    });
+
     setLoading(true);
     try {
+      console.log('📡 [AUTH MODAL] Sending registration request to /api/auth/register...');
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
@@ -178,24 +193,56 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
         },
         body: JSON.stringify(data),
       });
+      
+      console.log('📨 [AUTH MODAL] Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
       const result = await response.json();
+      console.log('📦 [AUTH MODAL] Response data:', result);
+      
       if (response.ok) {
+        console.log('✅ [AUTH MODAL] Registration successful!', {
+          userId: result.user?.id,
+          email: result.user?.email,
+          needsConfirmation: result.needsConfirmation,
+          profile: result.profile
+        });
+        
         onSuccess(result.user);
         toast.success('Account created successfully!', {
           description: result.message || 'Please check your email to confirm your account.'
         });
+        
+        console.log('🔄 [AUTH MODAL] Redirecting to /dashboard...');
         // Redirect to marketplace after successful registration
         window.location.href = '/dashboard';
       } else {
+        console.error('❌ [AUTH MODAL] Registration failed:', {
+          status: response.status,
+          message: result.message,
+          error: result.error
+        });
+        
         toast.error('Authentication failed', {
           description: result.message || 'Please check your credentials and try again.'
         });
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('💥 [AUTH MODAL] Registration error:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      
       toast.error('An error occurred', {
         description: 'Please try again later.'
       });
     } finally {
+      console.log('🏁 [AUTH MODAL] Registration process completed, loading=false');
       setLoading(false);
     }
   };
