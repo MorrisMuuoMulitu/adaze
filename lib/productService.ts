@@ -28,9 +28,16 @@ class ProductService {
 
   async getAllProducts(filters?: ProductFilters): Promise<Product[]> {
     try {
+      // Fetch only ACTIVE products from NON-SUSPENDED traders
       let query = this.supabase
         .from('products')
-        .select('*')
+        .select(`
+          *,
+          trader:profiles!trader_id (
+            is_suspended
+          )
+        `)
+        .eq('status', 'active') // Only approved products
         .order('created_at', { ascending: false });
 
       if (filters) {
@@ -61,7 +68,16 @@ class ProductService {
         throw error;
       }
 
-      return data as Product[];
+      // Filter out products from suspended traders
+      const activeProducts = (data || []).filter(
+        (product: any) => !product.trader?.is_suspended
+      );
+
+      // Remove trader data from final product (not needed in UI)
+      return activeProducts.map((product: any) => {
+        const { trader, ...productData } = product;
+        return productData as Product;
+      });
     } catch (error) {
       const appError = ErrorHandler.handle(error, 'ProductService.getAllProducts');
       ErrorHandler.showErrorToast(appError);
