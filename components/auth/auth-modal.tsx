@@ -169,8 +169,18 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
   };
 
   const onRegisterSubmit = async (data: z.infer<typeof registerSchema>) => {
-    console.log('🎯 [AUTH MODAL] Registration form submitted');
-    console.log('📋 [AUTH MODAL] Form data:', {
+    // Create a logs array to save in localStorage
+    const logs: string[] = [];
+    const addLog = (message: string, data?: any) => {
+      const logEntry = data ? `${message} ${JSON.stringify(data)}` : message;
+      console.log(message, data || '');
+      logs.push(logEntry);
+      // Save to localStorage immediately
+      localStorage.setItem('registration_debug_logs', JSON.stringify(logs));
+    };
+
+    addLog('🎯 [AUTH MODAL] Registration form submitted');
+    addLog('📋 [AUTH MODAL] Form data:', {
       email: data.email,
       firstName: data.firstName,
       lastName: data.lastName,
@@ -185,7 +195,7 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
 
     setLoading(true);
     try {
-      console.log('📡 [AUTH MODAL] Sending registration request to /api/auth/register...');
+      addLog('📡 [AUTH MODAL] Sending registration request to /api/auth/register...');
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
@@ -194,7 +204,7 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
         body: JSON.stringify(data),
       });
       
-      console.log('📨 [AUTH MODAL] Response received:', {
+      addLog('📨 [AUTH MODAL] Response received:', {
         status: response.status,
         statusText: response.statusText,
         ok: response.ok,
@@ -202,10 +212,10 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
       });
 
       const result = await response.json();
-      console.log('📦 [AUTH MODAL] Response data:', result);
+      addLog('📦 [AUTH MODAL] Response data:', result);
       
       if (response.ok) {
-        console.log('✅ [AUTH MODAL] Registration successful!', {
+        addLog('✅ [AUTH MODAL] Registration successful!', {
           userId: result.user?.id,
           email: result.user?.email,
           needsConfirmation: result.needsConfirmation,
@@ -214,33 +224,62 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
         
         onSuccess(result.user);
         toast.success('Account created successfully!', {
-          description: result.message || 'Please check your email to confirm your account.'
+          description: result.message || 'Please check your email to confirm your account.',
+          duration: 5000
         });
         
-        console.log('🔄 [AUTH MODAL] Redirecting to /dashboard...');
+        addLog('🔄 [AUTH MODAL] Waiting 2 seconds before redirect (so you can see logs)...');
+        // Wait 2 seconds so user can see the success logs
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        addLog('🔄 [AUTH MODAL] Redirecting to /dashboard...');
         // Redirect to marketplace after successful registration
         window.location.href = '/dashboard';
       } else {
-        console.error('❌ [AUTH MODAL] Registration failed:', {
+        // ERROR CASE - Save logs and keep modal open
+        addLog('❌ [AUTH MODAL] Registration failed:', {
           status: response.status,
           message: result.message,
           error: result.error
         });
         
-        toast.error('Authentication failed', {
-          description: result.message || 'Please check your credentials and try again.'
+        console.error('⚠️⚠️⚠️ REGISTRATION FAILED - MODAL STAYING OPEN SO YOU CAN COPY LOGS ⚠️⚠️⚠️');
+        console.error('📋 Full error details:', result);
+        console.error('💾 Logs saved to localStorage - Type: localStorage.getItem("registration_debug_logs")');
+        
+        // Show error toast but DON'T close modal or redirect
+        toast.error('❌ Registration failed - Check console logs!', {
+          description: result.message || 'Please check your credentials and try again.',
+          duration: 10000 // Show for 10 seconds
         });
+        
+        // Keep modal open by NOT calling onClose or onSuccess
+        console.error('🛑 [AUTH MODAL] Modal staying open so you can copy the error logs above');
+        console.error('🛑 [AUTH MODAL] Logs are also saved - Open console and type:');
+        console.error('    JSON.parse(localStorage.getItem("registration_debug_logs"))');
       }
     } catch (error: any) {
-      console.error('💥 [AUTH MODAL] Registration error:', {
+      // EXCEPTION CASE - Save logs
+      const errorLog = {
         name: error.name,
         message: error.message,
         stack: error.stack
+      };
+      logs.push(`💥 [AUTH MODAL] Registration error: ${JSON.stringify(errorLog)}`);
+      localStorage.setItem('registration_debug_logs', JSON.stringify(logs));
+      
+      console.error('💥 [AUTH MODAL] Registration error:', errorLog);
+      console.error('⚠️⚠️⚠️ UNEXPECTED ERROR - MODAL STAYING OPEN SO YOU CAN COPY LOGS ⚠️⚠️⚠️');
+      console.error('💾 Logs saved to localStorage - Type: localStorage.getItem("registration_debug_logs")');
+      
+      toast.error('❌ An error occurred - Check console logs!', {
+        description: 'Please try again later.',
+        duration: 10000
       });
       
-      toast.error('An error occurred', {
-        description: 'Please try again later.'
-      });
+      console.error('🛑 [AUTH MODAL] Modal staying open so you can copy the error logs above');
+      console.error('🛑 [AUTH MODAL] Logs are also saved - Open console and type:');
+      console.error('    JSON.parse(localStorage.getItem("registration_debug_logs"))');
     } finally {
       console.log('🏁 [AUTH MODAL] Registration process completed, loading=false');
       setLoading(false);
