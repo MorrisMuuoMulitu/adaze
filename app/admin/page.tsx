@@ -12,6 +12,7 @@ import { UserManagement } from '@/components/admin/user-management';
 import { ProductManagement } from '@/components/admin/product-management';
 import { OrderManagement } from '@/components/admin/order-management';
 import { AnalyticsDashboard } from '@/components/admin/analytics-dashboard';
+import { AdminSettings } from '@/components/admin/admin-settings';
 
 interface DashboardStats {
   totalUsers: number;
@@ -228,6 +229,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
