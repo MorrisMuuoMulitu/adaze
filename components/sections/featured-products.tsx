@@ -51,18 +51,35 @@ export function FeaturedProducts({ products, loading, error }: FeaturedProductsP
         setFeaturedLoading(true);
         const supabase = createClient();
         
-        // Fetch latest 5 products from the database
+        // Fetch only ACTIVE (approved) products from NON-SUSPENDED traders
         const { data, error } = await supabase
           .from('products')
-          .select('*')
+          .select(`
+            *,
+            trader:profiles!trader_id (
+              is_suspended
+            )
+          `)
+          .eq('status', 'active') // Only approved products
           .order('created_at', { ascending: false })
-          .limit(5);
+          .limit(10);
 
         if (error) {
           throw error;
         }
 
-        setFeaturedProducts(data as DBProduct[]);
+        // Filter out products from suspended traders
+        const activeProducts = (data || []).filter(
+          (product: any) => !product.trader?.is_suspended
+        );
+
+        // Get top 5 and remove trader data
+        const cleanProducts = activeProducts.slice(0, 5).map((product: any) => {
+          const { trader, ...productData } = product;
+          return productData;
+        });
+
+        setFeaturedProducts(cleanProducts as DBProduct[]);
       } catch (error) {
         console.error('Error fetching featured products:', error);
         // Fallback to some default products if fetch fails
