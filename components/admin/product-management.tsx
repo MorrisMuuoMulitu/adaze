@@ -360,10 +360,15 @@ export function ProductManagement() {
 
   const handleToggleFeatured = async (productId: string, currentFeatured: boolean) => {
     try {
-      const { error } = await supabase
+      console.log('Toggling featured:', { productId, currentFeatured, newValue: !currentFeatured });
+      
+      const { data, error } = await supabase
         .from('products')
         .update({ is_featured: !currentFeatured })
-        .eq('id', productId);
+        .eq('id', productId)
+        .select();
+
+      console.log('Featured toggle result:', { data, error });
 
       if (error) throw error;
 
@@ -373,11 +378,11 @@ export function ProductManagement() {
       });
 
       fetchProducts();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error toggling featured:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update product',
+        description: error.message || 'Failed to update product',
         variant: 'destructive',
       });
     }
@@ -524,7 +529,10 @@ export function ProductManagement() {
                     </TableCell>
                     <TableCell>
                       {product.is_featured ? (
-                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                        <div className="flex items-center gap-1">
+                          <Star className="h-5 w-5 text-yellow-500 fill-yellow-500 animate-pulse" />
+                          <span className="text-xs font-bold text-yellow-600">Featured</span>
+                        </div>
                       ) : (
                         <Star className="h-4 w-4 text-gray-300" />
                       )}

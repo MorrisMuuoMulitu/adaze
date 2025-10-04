@@ -51,7 +51,7 @@ export function FeaturedProducts({ products, loading, error }: FeaturedProductsP
         setFeaturedLoading(true);
         const supabase = createClient();
         
-        // Fetch only ACTIVE (approved) products from NON-SUSPENDED traders
+        // Fetch only FEATURED products that are ACTIVE and from NON-SUSPENDED traders
         const { data, error } = await supabase
           .from('products')
           .select(`
@@ -61,6 +61,7 @@ export function FeaturedProducts({ products, loading, error }: FeaturedProductsP
             )
           `)
           .eq('status', 'active') // Only approved products
+          .eq('is_featured', true) // Only featured products ⭐
           .order('created_at', { ascending: false })
           .limit(10);
 
