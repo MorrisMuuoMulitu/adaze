@@ -10,6 +10,7 @@ import { Users, ShoppingBag, Package, DollarSign, TrendingUp, AlertCircle } from
 import { Navbar } from '@/components/layout/navbar';
 import { UserManagement } from '@/components/admin/user-management';
 import { ProductManagement } from '@/components/admin/product-management';
+import { OrderManagement } from '@/components/admin/order-management';
 
 interface DashboardStats {
   totalUsers: number;
@@ -290,17 +291,7 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="orders">
-            <Card>
-              <CardHeader>
-                <CardTitle>Order Management</CardTitle>
-                <CardDescription>View and manage all orders</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Order management features coming soon...
-                </p>
-              </CardContent>
-            </Card>
+            <OrderManagement />
           </TabsContent>
         </Tabs>
       </main>
