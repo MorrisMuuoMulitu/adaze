@@ -215,13 +215,21 @@ export function ProductManagement() {
 
   const handleDeleteProduct = async (productId: string) => {
     try {
+      // First, remove product from all carts
+      await supabase.from('cart').delete().eq('product_id', productId);
+      
+      // Remove from all wishlists
+      await supabase.from('wishlist').delete().eq('product_id', productId);
+      
+      // Note: Don't delete from order_items (keep order history)
+      // Just delete the product itself
       const { error } = await supabase.from('products').delete().eq('id', productId);
 
       if (error) throw error;
 
       toast({
         title: 'Success',
-        description: 'Product deleted successfully',
+        description: 'Product deleted successfully (removed from carts/wishlists)',
       });
 
       setDeleteDialog({ open: false, productId: null });
@@ -230,7 +238,7 @@ export function ProductManagement() {
       console.error('Error deleting product:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete product',
+        description: 'Failed to delete product. It may be part of existing orders.',
         variant: 'destructive',
       });
     }
