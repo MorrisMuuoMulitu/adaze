@@ -9,41 +9,45 @@ export interface NotificationData {
   text?: string;
 }
 
-// Send email notification
+// Send email notification using Resend API
 export async function sendEmailNotification(data: NotificationData) {
   try {
-    // In production, integrate with:
-    // - SendGrid
-    // - Resend
-    // - AWS SES
-    // - Postmark
-    // etc.
+    console.log('📧 Sending email notification to:', data.to);
+    
+    const apiKey = process.env.NEXT_PUBLIC_RESEND_API_KEY || process.env.RESEND_API_KEY;
+    
+    if (!apiKey) {
+      console.error('❌ RESEND_API_KEY not found in environment variables');
+      return { success: false, error: 'RESEND_API_KEY not configured' };
+    }
+    
+    // Send email via Resend API
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'Adaze Security <onboarding@resend.dev>', // Use resend.dev for testing, replace with your verified domain
+        to: data.to,
+        subject: data.subject,
+        html: data.html,
+        text: data.text,
+      }),
+    });
 
-    // For now, log to console
-    console.log('📧 Email Notification:');
-    console.log('To:', data.to);
-    console.log('Subject:', data.subject);
-    console.log('Content:', data.text || data.html);
+    const result = await response.json();
 
-    // TODO: Replace with actual email service
-    // Example with Resend:
-    // const response = await fetch('https://api.resend.com/emails', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     from: 'noreply@adaze.com',
-    //     to: data.to,
-    //     subject: data.subject,
-    //     html: data.html,
-    //   }),
-    // });
+    if (!response.ok) {
+      console.error('❌ Resend error:', result);
+      return { success: false, error: result };
+    }
 
-    return { success: true };
+    console.log('✅ Email sent successfully:', result.id);
+    return { success: true, data: result };
   } catch (error) {
-    console.error('Failed to send email:', error);
+    console.error('❌ Failed to send email:', error);
     return { success: false, error };
   }
 }
