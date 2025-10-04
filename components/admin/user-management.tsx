@@ -98,18 +98,17 @@ export function UserManagement() {
 
       if (profilesError) throw profilesError;
 
-      // Get emails from auth.users (need to use admin API or RPC function)
-      // For now, we'll just use profiles data
-      const usersWithEmail = await Promise.all(
-        (profiles || []).map(async (profile) => {
-          // Try to get email from auth users table via RPC or service
-          const { data: { user } } = await supabase.auth.admin.getUserById(profile.id);
-          return {
-            ...profile,
-            email: user?.email || 'N/A',
-          };
-        })
-      );
+      // Fetch emails via API route (since we can't use admin API client-side)
+      const response = await fetch('/api/admin/users');
+      const emailData = await response.json();
+      
+      const usersWithEmail = (profiles || []).map((profile) => {
+        const emailInfo = emailData.find((u: any) => u.id === profile.id);
+        return {
+          ...profile,
+          email: emailInfo?.email || 'N/A',
+        };
+      });
 
       setUsers(usersWithEmail);
     } catch (error) {
