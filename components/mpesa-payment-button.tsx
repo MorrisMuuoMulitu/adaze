@@ -99,14 +99,16 @@ export function MpesaPaymentButton({
 
   const startPolling = (requestId: string) => {
     let attempts = 0;
-    const maxAttempts = 30; // Poll for 1 minute (30 * 2 seconds)
+    const maxAttempts = 60; // Poll for 2 minutes (60 * 2 seconds) - increased for sandbox
 
     const pollInterval = setInterval(async () => {
       attempts++;
+      console.log(`Polling attempt ${attempts}/${maxAttempts} for ${requestId}`);
 
       try {
         const response = await fetch(`/api/mpesa/status?checkoutRequestId=${requestId}`);
         const data = await response.json();
+        console.log('Status response:', data);
 
         if (data.status === 'completed') {
           clearInterval(pollInterval);
@@ -131,8 +133,9 @@ export function MpesaPaymentButton({
         if (attempts >= maxAttempts) {
           clearInterval(pollInterval);
           setLoading(false);
-          toast.warning('Payment pending', {
-            description: 'Please check your order status later',
+          setPaymentStatus('failed');
+          toast.error('Payment timeout', {
+            description: 'Payment took too long. Check your orders page to see if it completed.',
           });
         }
       } catch (error) {
