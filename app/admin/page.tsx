@@ -305,6 +305,10 @@ export default function AdminDashboard() {
           <TabsContent value="orders">
             <OrderManagement />
           </TabsContent>
+
+          <TabsContent value="settings">
+            <AdminSettings />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
