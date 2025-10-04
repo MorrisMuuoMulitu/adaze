@@ -382,8 +382,21 @@ export default function ProfilePage() {
                           variant="outline" 
                           className="w-full justify-start text-red-600 hover:text-red-600 hover:bg-red-50"
                           onClick={async () => {
-                            await supabase.auth.signOut();
-                            router.push('/');
+                            try {
+                              // Terminate active session
+                              if (user?.id) {
+                                const { terminateSession } = await import('@/lib/login-tracker');
+                                await terminateSession(user.id);
+                              }
+                              
+                              await supabase.auth.signOut();
+                              // Use window.location for full page reload to clear auth state
+                              window.location.href = '/';
+                            } catch (error) {
+                              console.error('Error logging out:', error);
+                              // Even on error, redirect to landing page
+                              window.location.href = '/';
+                            }
                           }}
                         >
                           Sign Out
