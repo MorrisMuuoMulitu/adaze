@@ -347,10 +347,10 @@ export function AnalyticsDashboard() {
   return (
     <div className="space-y-6">
       {/* Header with Time Range Selector */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold">Platform Analytics</h2>
-          <p className="text-muted-foreground">Track your marketplace performance</p>
+          <p className="text-muted-foreground">Detailed charts and insights</p>
         </div>
         <Select value={timeRange} onValueChange={setTimeRange}>
           <SelectTrigger className="w-[180px]">
@@ -364,60 +364,6 @@ export function AnalyticsDashboard() {
             <SelectItem value="year">Last Year</SelectItem>
           </SelectContent>
         </Select>
-      </div>
-
-      {/* Key Metrics Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white hover:shadow-xl transition-all">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-purple-100">Total Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">KSh {analytics.metrics.totalRevenue.toLocaleString()}</div>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-xs text-purple-100">Delivered orders only</span>
-              <TrendIndicator value={analytics.metrics.revenueGrowth} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:shadow-xl transition-all">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-blue-100">Total Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{analytics.metrics.totalOrders}</div>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-xs text-blue-100">vs previous period</span>
-              <TrendIndicator value={analytics.metrics.ordersGrowth} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-emerald-600 text-white hover:shadow-xl transition-all">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-green-100">Total Users</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{analytics.metrics.totalUsers}</div>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-xs text-green-100">vs previous period</span>
-              <TrendIndicator value={analytics.metrics.usersGrowth} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-500 to-red-600 text-white hover:shadow-xl transition-all">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-orange-100">Completion Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{analytics.metrics.completionRate.toFixed(1)}%</div>
-            <div className="mt-2">
-              <span className="text-xs text-orange-100">Avg Order: KSh {analytics.metrics.avgOrderValue.toLocaleString()}</span>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Charts Grid */}
