@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { AuthModal } from '@/components/auth/auth-modal';
 import Link from 'next/link';
 
 const faqs = [
@@ -111,6 +112,7 @@ const faqs = [
 export default function HelpCenterPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [authModal, setAuthModal] = useState<'login' | 'register' | null>(null);
 
   const handleToggle = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
@@ -118,7 +120,7 @@ export default function HelpCenterPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar onAuthClick={() => {}} />
+      <Navbar onAuthClick={setAuthModal} />
       
       <main className="flex-grow py-12 sm:py-16 lg:py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -256,6 +258,13 @@ export default function HelpCenterPage() {
       </main>
       
       <Footer />
+      
+      <AuthModal 
+        type={authModal} 
+        isOpen={!!authModal} 
+        onClose={() => setAuthModal(null)}
+        onSuccess={() => setAuthModal(null)}
+      />
     </div>
   );
 }
