@@ -228,12 +228,16 @@ export function ProductManagement() {
     try {
       console.log('Attempting to delete product:', productId);
       
-      // Check if product is in any orders
+      // Check if product is in any ACTIVE orders (not cancelled)
       const { data: orderItems, error: orderCheckError } = await supabase
         .from('order_items')
-        .select('id')
-        .eq('product_id', productId)
-        .limit(1);
+        .select(`
+          id,
+          order:orders!order_id (
+            status
+          )
+        `)
+        .eq('product_id', productId);
 
       console.log('Order items check:', { orderItems, orderCheckError });
 
@@ -243,8 +247,15 @@ export function ProductManagement() {
         // This handles RLS permission issues
       }
 
-      if (orderItems && orderItems.length > 0) {
-        // Product is in orders - can't delete (preserve history)
+      // Filter for active orders only (exclude cancelled)
+      const activeOrderItems = (orderItems || []).filter(
+        (item: any) => item.order?.status !== 'cancelled'
+      );
+
+      console.log('Active order items:', activeOrderItems.length);
+
+      if (activeOrderItems.length > 0) {
+        // Product is in active orders - can't delete (preserve history)
         // Instead, set status to rejected to hide it
         const { error } = await supabase
           .from('products')
@@ -261,7 +272,7 @@ export function ProductManagement() {
 
         toast({
           title: 'Product Hidden',
-          description: 'Product is in existing orders, so it was hidden instead of deleted. It will no longer appear in marketplace.',
+          description: `Product is in ${activeOrderItems.length} active order(s), so it was hidden instead of deleted. Cancel the orders first to delete permanently.`,
           duration: 5000,
         });
       } else {
