@@ -26,6 +26,7 @@ import { useAuth } from '@/components/auth/auth-provider';
 
 export default function Home() {
   const router = useRouter();
+  const supabase = createClient();
   const [authModal, setAuthModal] = useState<'login' | 'register' | null>(null);
   const { user } = useAuth(); // New useAuth hook
   const [showOnboarding, setShowOnboarding] = useState(false);
