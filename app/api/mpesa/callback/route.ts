@@ -11,7 +11,8 @@ import { createClient } from '@/lib/supabase/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('M-Pesa Callback received:', JSON.stringify(body, null, 2));
+    console.log('=== M-Pesa Callback START ===');
+    console.log('Full callback body:', JSON.stringify(body, null, 2));
 
     const { Body } = body;
     
@@ -33,8 +34,12 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
+    console.log('Processing callback - ResultCode:', ResultCode, 'ResultDesc:', ResultDesc);
+
     // ResultCode 0 = Success
     if (ResultCode === 0) {
+      console.log('✅ Payment SUCCESSFUL');
+      
       // Extract payment details from CallbackMetadata
       const metadata = CallbackMetadata?.Item || [];
       const getMetadataValue = (name: string) => {
@@ -47,10 +52,12 @@ export async function POST(request: NextRequest) {
       const transactionDate = getMetadataValue('TransactionDate');
       const phoneNumber = getMetadataValue('PhoneNumber');
 
-      console.log('Payment successful:', {
+      console.log('Payment details:', {
         CheckoutRequestID,
         mpesaReceiptNumber,
         amount,
+        phoneNumber,
+        transactionDate,
       });
 
       // Update transaction status
@@ -92,13 +99,16 @@ export async function POST(request: NextRequest) {
         console.log('Order confirmed:', transaction.order_id);
       }
 
+      console.log('=== M-Pesa Callback END (Success) ===');
       return NextResponse.json({
         ResultCode: 0,
         ResultDesc: 'Success',
       });
     } else {
       // Payment failed or cancelled
-      console.log('Payment failed:', ResultDesc);
+      console.log('❌ Payment FAILED');
+      console.log('Failure reason:', ResultDesc);
+      console.log('Failure code:', ResultCode);
 
       await supabase
         .from('mpesa_transactions')
