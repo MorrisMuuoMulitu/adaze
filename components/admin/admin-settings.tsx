@@ -291,13 +291,8 @@ export function AdminSettings() {
         <TabsContent value="email" className="space-y-6">
           <Card className="border-0 shadow-lg">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Email Configuration</CardTitle>
-                  <CardDescription>SMTP settings for sending emails</CardDescription>
-                </div>
-                <TestEmailButton />
-              </div>
+              <CardTitle>Email Configuration</CardTitle>
+              <CardDescription>SMTP settings for sending emails</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
