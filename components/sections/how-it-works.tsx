@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Search, ShoppingCart, Truck, Star, UserPlus, Package } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const steps = [
   {
@@ -43,6 +44,8 @@ const steps = [
 ];
 
 export function HowItWorks() {
+  const router = useRouter();
+
   return (
     <section id="how-it-works" className="py-12 sm:py-16 lg:py-20 bg-muted/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -126,6 +129,7 @@ export function HowItWorks() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={() => router.push('/marketplace')}
                 className="px-6 sm:px-8 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity h-12 mobile-button"
               >
                 Start Shopping Now
@@ -133,9 +137,10 @@ export function HowItWorks() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 className="px-6 sm:px-8 py-3 bg-accent text-accent-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity h-12 mobile-button"
               >
-                Become a Trader
+                Get Started
               </motion.button>
             </div>
           </div>

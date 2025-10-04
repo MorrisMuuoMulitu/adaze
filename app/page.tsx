@@ -12,6 +12,7 @@ import { Stats } from '@/components/sections/stats';
 import { Testimonials } from '@/components/sections/testimonials';
 import { WhyChooseUs } from '@/components/sections/why-choose-us';
 import { CTA } from '@/components/sections/cta';
+import { TrustBadges } from '@/components/sections/trust-badges';
 import { Footer } from '@/components/layout/footer';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { OnboardingTour } from '@/components/onboarding/onboarding-tour';
@@ -187,9 +188,10 @@ export default function Home() {
         {!user ? (
           <>
             <Hero onGetStarted={() => setAuthModal('register')} />
-            <Stats />
+            <TrustBadges />
             <FeaturedProducts products={products} loading={productsLoading} error={productsError} />
             <HowItWorks />
+            <Stats />
             <CTA onAuthClick={() => setAuthModal('register')} />
           </>
         ) : (

@@ -141,8 +141,6 @@ export function Navbar({ onAuthClick }: NavbarProps) {
   const navItems = [
     { name: t('nav.marketplace'), href: '/marketplace', icon: ShoppingBag },
     { name: t('nav.how_it_works'), href: '#how-it-works', icon: null },
-    { name: t('nav.about'), href: '/about', icon: null },
-    { name: t('nav.contact'), href: '/contact', icon: null },
   ];
 
   const traderNavItems = [
