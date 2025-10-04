@@ -20,8 +20,7 @@ export const setupAvatarBucket = async () => {
 export const uploadAvatar = async (userId: string, file: File) => {
   const supabase = createClient();
   const fileExt = file.name.split('.').pop();
-  const fileName = `${userId}/avatar.${fileExt}`;
-  const filePath = `avatars/${fileName}`;
+  const filePath = `${userId}/avatar.${fileExt}`;
 
   // Validate file type
   const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
