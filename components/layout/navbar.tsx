@@ -118,6 +118,12 @@ export function Navbar({ onAuthClick }: NavbarProps) {
 
   const handleLogout = async () => {
     try {
+      // Terminate active session
+      if (user?.id) {
+        const { terminateSession } = await import('@/lib/login-tracker');
+        await terminateSession(user.id);
+      }
+      
       await supabase.auth.signOut();
       // Always redirect to landing page after logout
       window.location.href = '/';
