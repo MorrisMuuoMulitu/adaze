@@ -11,6 +11,7 @@ export interface Product {
   image_url: string | null;
   stock_quantity: number;
   rating: number;
+  review_count?: number;
   created_at: string;
   updated_at: string;
 }

@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { reviewService } from '@/lib/reviewService';
 import { createClient } from '@/lib/supabase/client';
 import { wishlistService } from '@/lib/wishlistService';
+import { ProductReviews } from '@/components/reviews/product-reviews';
 
 export default function ProductDetailPage() {
   const { user } = useAuth();
@@ -341,6 +342,14 @@ export default function ProductDetailPage() {
                 </ul>
               </div>
             </div>
+          </div>
+
+          {/* Reviews Section */}
+          <div className="mt-12">
+            <ProductReviews
+              productId={product.id}
+              traderId={product.trader_id}
+            />
           </div>
         </motion.div>
       </div>
