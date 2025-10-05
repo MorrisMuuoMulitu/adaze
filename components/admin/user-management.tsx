@@ -102,6 +102,23 @@ export function UserManagement() {
       const response = await fetch('/api/admin/users');
       const emailData = await response.json();
       
+      // Check if API returned an error
+      if (!response.ok || emailData.error) {
+        console.error('API Error:', emailData);
+        toast({
+          title: 'Error',
+          description: `Failed to fetch user emails: ${emailData.details || emailData.error}`,
+          variant: 'destructive',
+        });
+        // Use profiles without emails as fallback
+        setUsers((profiles || []).map((profile) => ({
+          ...profile,
+          email: 'N/A',
+        })));
+        setLoading(false);
+        return;
+      }
+      
       const usersWithEmail = (profiles || []).map((profile) => {
         const emailInfo = emailData.find((u: any) => u.id === profile.id);
         return {
