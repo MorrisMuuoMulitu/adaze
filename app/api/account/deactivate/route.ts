@@ -15,7 +15,11 @@ export async function POST(request: Request) {
     // Update profile to mark as suspended
     const { error: updateError } = await supabase
       .from('profiles')
-      .update({ is_suspended: true })
+      .update({ 
+        is_suspended: true,
+        suspended_at: new Date().toISOString(),
+        suspended_by: 'self' // Track that user suspended their own account
+      })
       .eq('id', user.id);
 
     if (updateError) {

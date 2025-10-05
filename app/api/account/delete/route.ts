@@ -31,7 +31,8 @@ export async function DELETE(request: Request) {
       .from('profiles')
       .update({ 
         is_deleted: true,
-        deleted_at: new Date().toISOString()
+        deleted_at: new Date().toISOString(),
+        deleted_by: 'self' // Track that user deleted their own account
       })
       .eq('id', user.id);
 

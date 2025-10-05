@@ -39,8 +39,33 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Search, MoreVertical, UserCheck, UserX, Trash2, Edit } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  Search, 
+  MoreVertical, 
+  UserCheck, 
+  UserX, 
+  Trash2, 
+  Edit, 
+  ShoppingCart, 
+  Package, 
+  Star, 
+  Calendar,
+  Clock,
+  AlertTriangle,
+  User as UserIcon,
+  Mail,
+  Phone as PhoneIcon,
+  MapPin
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface User {
   id: string;
@@ -51,6 +76,21 @@ interface User {
   location: string | null;
   created_at: string;
   is_suspended?: boolean;
+  is_deleted?: boolean;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
+  suspended_at?: string | null;
+  suspended_by?: string | null;
+  last_login_at?: string | null;
+  login_count?: number;
+  avatar_url?: string | null;
+}
+
+interface UserStats {
+  total_orders?: number;
+  total_spent?: number;
+  total_products?: number;
+  total_reviews?: number;
 }
 
 export function UserManagement() {
@@ -73,6 +113,15 @@ export function UserManagement() {
     userId: null,
     currentRole: null,
     newRole: null,
+  });
+  const [userDetailsDialog, setUserDetailsDialog] = useState<{
+    open: boolean;
+    user: User | null;
+    stats: UserStats | null;
+  }>({
+    open: false,
+    user: null,
+    stats: null,
   });
 
   const supabase = createClient();
@@ -165,10 +214,17 @@ export function UserManagement() {
 
   const handleSuspendUser = async (userId: string, suspend: boolean) => {
     try {
+      // Get current user (admin) ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
       // Update user suspension status
       const { error } = await supabase
         .from('profiles')
-        .update({ is_suspended: suspend })
+        .update({ 
+          is_suspended: suspend,
+          suspended_at: suspend ? new Date().toISOString() : null,
+          suspended_by: suspend ? (user?.id || 'admin') : null
+        })
         .eq('id', userId);
 
       if (error) throw error;
@@ -241,6 +297,55 @@ export function UserManagement() {
     }
   };
 
+  const fetchUserDetails = async (user: User) => {
+    try {
+      // Fetch user statistics
+      const stats: UserStats = {};
+
+      // Get order count and total spent (for buyers)
+      if (user.role === 'buyer') {
+        const { data: orders } = await supabase
+          .from('orders')
+          .select('total_amount')
+          .eq('user_id', user.id);
+        
+        stats.total_orders = orders?.length || 0;
+        stats.total_spent = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+      }
+
+      // Get product count (for traders)
+      if (user.role === 'trader') {
+        const { data: products } = await supabase
+          .from('products')
+          .select('id')
+          .eq('trader_id', user.id);
+        
+        stats.total_products = products?.length || 0;
+      }
+
+      // Get review count (for all users)
+      const { data: reviews } = await supabase
+        .from('reviews')
+        .select('id')
+        .eq('user_id', user.id);
+      
+      stats.total_reviews = reviews?.length || 0;
+
+      setUserDetailsDialog({
+        open: true,
+        user,
+        stats,
+      });
+    } catch (error) {
+      console.error('Error fetching user details:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch user details',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'admin':
@@ -308,41 +413,100 @@ export function UserManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
+                  <TableHead>User</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Joined</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Last Login</TableHead>
+                  <TableHead>Logins</TableHead>
+                  <TableHead>Joined</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
+                  <TableRow 
+                    key={user.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => fetchUserDetails(user)}
+                  >
                     <TableCell className="font-medium">
-                      {user.full_name || 'N/A'}
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={user.avatar_url || undefined} />
+                          <AvatarFallback>
+                            {user.full_name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{user.full_name || 'N/A'}</div>
+                          <div className="text-xs text-muted-foreground">ID: {user.id.slice(0, 8)}...</div>
+                        </div>
+                      </div>
                     </TableCell>
-                    <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        <Mail className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-sm">{user.email}</span>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Badge className={getRoleBadgeColor(user.role)}>
                         {user.role}
                       </Badge>
                     </TableCell>
-                    <TableCell>{user.phone || 'N/A'}</TableCell>
-                    <TableCell>{user.location || 'N/A'}</TableCell>
                     <TableCell>
-                      {new Date(user.created_at).toLocaleDateString()}
+                      <div className="space-y-1">
+                        {user.is_deleted ? (
+                          <div className="space-y-0.5">
+                            <Badge variant="destructive" className="bg-black text-white">
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Deleted
+                            </Badge>
+                            {user.deleted_by && (
+                              <div className="text-xs text-muted-foreground">
+                                by: {user.deleted_by === 'self' ? 'User' : 'Admin'}
+                              </div>
+                            )}
+                          </div>
+                        ) : user.is_suspended ? (
+                          <div className="space-y-0.5">
+                            <Badge variant="destructive">
+                              <UserX className="h-3 w-3 mr-1" />
+                              Suspended
+                            </Badge>
+                            {user.suspended_by && (
+                              <div className="text-xs text-muted-foreground">
+                                by: {user.suspended_by === 'self' ? 'User' : 'Admin'}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <Badge variant="outline" className="bg-green-50 text-green-700">
+                            <UserCheck className="h-3 w-3 mr-1" />
+                            Active
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
-                      {user.is_suspended ? (
-                        <Badge variant="destructive">Suspended</Badge>
+                      {user.last_login_at ? (
+                        <div className="flex items-center gap-1.5 text-sm">
+                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          <span>{new Date(user.last_login_at).toLocaleDateString()}</span>
+                        </div>
                       ) : (
-                        <Badge variant="outline" className="bg-green-50 text-green-700">
-                          Active
-                        </Badge>
+                        <span className="text-xs text-muted-foreground">Never</span>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm font-medium">{user.login_count || 0}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 text-sm">
+                        <Calendar className="h-3 w-3 text-muted-foreground" />
+                        <span>{new Date(user.created_at).toLocaleDateString()}</span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -468,6 +632,237 @@ export function UserManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* User Details Dialog */}
+      <Dialog 
+        open={userDetailsDialog.open} 
+        onOpenChange={(open) => setUserDetailsDialog({ ...userDetailsDialog, open })}
+      >
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={userDetailsDialog.user?.avatar_url || undefined} />
+                <AvatarFallback className="text-lg">
+                  {userDetailsDialog.user?.full_name?.charAt(0).toUpperCase() || 
+                   userDetailsDialog.user?.email?.charAt(0).toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="text-xl font-bold">
+                  {userDetailsDialog.user?.full_name || 'Unnamed User'}
+                </div>
+                <div className="text-sm font-normal text-muted-foreground">
+                  Complete User Profile
+                </div>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          {userDetailsDialog.user && (
+            <div className="space-y-6">
+              {/* Status Alerts */}
+              {userDetailsDialog.user.is_deleted && (
+                <div className="p-4 bg-black/10 dark:bg-black/20 border border-black rounded-lg">
+                  <div className="flex items-center gap-2 text-black dark:text-white font-semibold mb-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    Account Deleted
+                  </div>
+                  <div className="text-sm space-y-1">
+                    <p>Deleted by: <strong>{userDetailsDialog.user.deleted_by === 'self' ? 'User (Self-Deletion)' : 'Admin'}</strong></p>
+                    {userDetailsDialog.user.deleted_at && (
+                      <p>Deleted on: <strong>{new Date(userDetailsDialog.user.deleted_at).toLocaleString()}</strong></p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {userDetailsDialog.user.is_suspended && (
+                <div className="p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-lg">
+                  <div className="flex items-center gap-2 text-red-900 dark:text-red-100 font-semibold mb-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    Account Suspended
+                  </div>
+                  <div className="text-sm text-red-800 dark:text-red-200 space-y-1">
+                    <p>Suspended by: <strong>{userDetailsDialog.user.suspended_by === 'self' ? 'User (Self-Suspension)' : 'Admin'}</strong></p>
+                    {userDetailsDialog.user.suspended_at && (
+                      <p>Suspended on: <strong>{new Date(userDetailsDialog.user.suspended_at).toLocaleString()}</strong></p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Basic Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <UserIcon className="h-5 w-5" />
+                    Basic Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-1">Full Name</div>
+                      <div className="font-medium">{userDetailsDialog.user.full_name || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-1">User ID</div>
+                      <div className="font-mono text-xs">{userDetailsDialog.user.id}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                        <Mail className="h-3 w-3" />
+                        Email
+                      </div>
+                      <div className="font-medium">{userDetailsDialog.user.email}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                        <PhoneIcon className="h-3 w-3" />
+                        Phone
+                      </div>
+                      <div className="font-medium">{userDetailsDialog.user.phone || 'Not set'}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        Location
+                      </div>
+                      <div className="font-medium">{userDetailsDialog.user.location || 'Not set'}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-1">Role</div>
+                      <Badge className={getRoleBadgeColor(userDetailsDialog.user.role)}>
+                        {userDetailsDialog.user.role}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Account Activity */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Account Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-1">Account Created</div>
+                      <div className="font-medium">
+                        {new Date(userDetailsDialog.user.created_at).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {Math.floor((Date.now() - new Date(userDetailsDialog.user.created_at).getTime()) / (1000 * 60 * 60 * 24))} days ago
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-1">Last Login</div>
+                      <div className="font-medium">
+                        {userDetailsDialog.user.last_login_at 
+                          ? new Date(userDetailsDialog.user.last_login_at).toLocaleString()
+                          : 'Never logged in'}
+                      </div>
+                      {userDetailsDialog.user.last_login_at && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {Math.floor((Date.now() - new Date(userDetailsDialog.user.last_login_at).getTime()) / (1000 * 60 * 60 * 24))} days ago
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-1">Total Logins</div>
+                      <div className="font-medium text-2xl">{userDetailsDialog.user.login_count || 0}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-1">Current Status</div>
+                      <div>
+                        {userDetailsDialog.user.is_deleted ? (
+                          <Badge variant="destructive" className="bg-black text-white">
+                            Deleted
+                          </Badge>
+                        ) : userDetailsDialog.user.is_suspended ? (
+                          <Badge variant="destructive">Suspended</Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-green-50 text-green-700">Active</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* User Statistics */}
+              {userDetailsDialog.stats && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Star className="h-5 w-5" />
+                      Statistics
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {userDetailsDialog.user.role === 'buyer' && (
+                        <>
+                          <div className="text-center p-4 bg-muted rounded-lg">
+                            <ShoppingCart className="h-6 w-6 mx-auto mb-2 text-blue-600" />
+                            <div className="text-2xl font-bold">{userDetailsDialog.stats.total_orders || 0}</div>
+                            <div className="text-xs text-muted-foreground">Total Orders</div>
+                          </div>
+                          <div className="text-center p-4 bg-muted rounded-lg">
+                            <Package className="h-6 w-6 mx-auto mb-2 text-green-600" />
+                            <div className="text-2xl font-bold">
+                              KSh {(userDetailsDialog.stats.total_spent || 0).toLocaleString()}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Total Spent</div>
+                          </div>
+                        </>
+                      )}
+                      {userDetailsDialog.user.role === 'trader' && (
+                        <div className="text-center p-4 bg-muted rounded-lg">
+                          <Package className="h-6 w-6 mx-auto mb-2 text-purple-600" />
+                          <div className="text-2xl font-bold">{userDetailsDialog.stats.total_products || 0}</div>
+                          <div className="text-xs text-muted-foreground">Products Listed</div>
+                        </div>
+                      )}
+                      <div className="text-center p-4 bg-muted rounded-lg">
+                        <Star className="h-6 w-6 mx-auto mb-2 text-yellow-600" />
+                        <div className="text-2xl font-bold">{userDetailsDialog.stats.total_reviews || 0}</div>
+                        <div className="text-xs text-muted-foreground">Reviews Given</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setUserDetailsDialog({ open: false, user: null, stats: null })}
+                >
+                  Close
+                </Button>
+                {!userDetailsDialog.user.is_deleted && (
+                  <Button
+                    variant={userDetailsDialog.user.is_suspended ? "default" : "destructive"}
+                    onClick={() => {
+                      handleSuspendUser(userDetailsDialog.user!.id, !userDetailsDialog.user!.is_suspended);
+                      setUserDetailsDialog({ open: false, user: null, stats: null });
+                    }}
+                  >
+                    {userDetailsDialog.user.is_suspended ? 'Activate Account' : 'Suspend Account'}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
