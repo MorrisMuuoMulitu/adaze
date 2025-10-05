@@ -37,6 +37,25 @@ export default function Home() {
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState<string | null>(null);
 
+  // Check for suspension error in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+    
+    if (error === 'account_suspended') {
+      // Show error toast
+      import('sonner').then(({ toast }) => {
+        toast.error('Account Suspended', {
+          description: 'Your account has been suspended. Please contact support for assistance.',
+          duration: 8000,
+        });
+      });
+      
+      // Clean up URL
+      window.history.replaceState({}, '', '/');
+    }
+  }, []);
+
   // Handle OAuth callback on homepage (fallback)
   useEffect(() => {
     const handleOAuthCallback = async () => {

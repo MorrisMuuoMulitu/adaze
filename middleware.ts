@@ -83,7 +83,19 @@ export async function middleware(request: NextRequest) {
     console.log('Middleware - User ID:', user.id);
     console.log('Middleware - Profile:', profile);
     console.log('Middleware - Role:', profile?.role);
+    console.log('Middleware - Suspended:', profile?.is_suspended);
     console.log('Middleware - Path:', pathname);
+    
+    // Check if account is suspended
+    if (profile?.is_suspended) {
+      console.log('Middleware - Account suspended, signing out');
+      // Sign out suspended users
+      await supabase.auth.signOut();
+      // Redirect to home with error message
+      const redirectUrl = new URL('/', request.url);
+      redirectUrl.searchParams.set('error', 'account_suspended');
+      return NextResponse.redirect(redirectUrl);
+    }
     
     userRole = profile?.role || null;
   }
