@@ -104,7 +104,9 @@ export function UserManagement() {
       
       // Check if API returned an error
       if (!response.ok || emailData.error) {
-        console.error('API Error:', emailData);
+        console.error('API Error:', JSON.stringify(emailData, null, 2));
+        console.error('Error details:', emailData.details);
+        console.error('Error message:', emailData.error);
         toast({
           title: 'Error',
           description: `Failed to fetch user emails: ${emailData.details || emailData.error}`,

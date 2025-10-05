@@ -64,8 +64,8 @@ export function ProductReviews({ productId, traderId }: ProductReviewsProps) {
   const checkCanReview = async () => {
     if (!user) return;
     try {
-      const can = await reviewService.canUserReview(user.id, productId);
-      setCanReview(can);
+      // Allow all logged-in users to review
+      setCanReview(true);
     } catch (error) {
       console.error('Error checking review eligibility:', error);
     }
@@ -241,7 +241,7 @@ export function ProductReviews({ productId, traderId }: ProductReviewsProps) {
       )}
 
       {/* Write Review Button */}
-      {!showReviewForm && !userReview && canReview && (
+      {!showReviewForm && !userReview && user && (
         <div className="flex justify-center">
           <Button
             onClick={() => setShowReviewForm(true)}

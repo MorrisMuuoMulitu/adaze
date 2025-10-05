@@ -9,7 +9,7 @@ import { cartService } from '@/lib/cartService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Package, MapPin, DollarSign, ShoppingCart, Star, Search, Heart, Filter, SlidersHorizontal, X, Eye, ArrowUpDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -55,11 +55,14 @@ const SORT_OPTIONS = [
 export default function MarketplacePage() {
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedTrader, setSelectedTrader] = useState<string | null>(null);
+  const [traders, setTraders] = useState<Array<{id: string, name: string}>>([]);
   const [sortBy, setSortBy] = useState('newest');
   const [priceRange, setPriceRange] = useState([0, 10000]);
   const [maxPrice, setMaxPrice] = useState(10000);
@@ -70,6 +73,14 @@ export default function MarketplacePage() {
   const [wishlistStatus, setWishlistStatus] = useState<Record<string, boolean>>({});
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Check for trader filter in URL
+  useEffect(() => {
+    const traderParam = searchParams?.get('trader');
+    if (traderParam) {
+      setSelectedTrader(traderParam);
+    }
+  }, [searchParams]);
 
   const handleAuthClick = (type: 'login' | 'register') => {
     setAuthModalType(type);
@@ -127,6 +138,19 @@ export default function MarketplacePage() {
         const max = Math.max(...allProducts.map(p => p.price), 10000);
         setMaxPrice(max);
         setPriceRange([0, max]);
+
+        // Get unique traders from products
+        const supabase = createClient();
+        const uniqueTraderIds = [...new Set(allProducts.map(p => p.trader_id))];
+        const { data: traderProfiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', uniqueTraderIds)
+          .eq('role', 'trader');
+        
+        if (traderProfiles) {
+          setTraders(traderProfiles.map(t => ({ id: t.id, name: t.full_name })));
+        }
 
         const initialWishlistStatus: Record<string, boolean> = {};
         for (const product of allProducts) {
@@ -243,6 +267,11 @@ export default function MarketplacePage() {
       });
     }
 
+    // Trader filter
+    if (selectedTrader) {
+      filtered = filtered.filter(product => product.trader_id === selectedTrader);
+    }
+
     // Price range filter
     filtered = filtered.filter(product => 
       product.price >= priceRange[0] && product.price <= priceRange[1]
@@ -266,21 +295,29 @@ export default function MarketplacePage() {
     });
 
     return sorted;
-  }, [products, debouncedSearch, selectedCategory, priceRange, sortBy]);
+  }, [products, debouncedSearch, selectedCategory, selectedTrader, priceRange, sortBy]);
 
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (selectedCategory !== 'all') count++;
+    if (selectedTrader) count++;
     if (priceRange[0] !== 0 || priceRange[1] !== maxPrice) count++;
     return count;
-  }, [selectedCategory, priceRange, maxPrice]);
+  }, [selectedCategory, selectedTrader, priceRange, maxPrice]);
+
+  const getTraderName = (traderId: string) => {
+    return traders.find(t => t.id === traderId)?.name || 'Unknown Seller';
+  };
 
   const handleClearFilters = () => {
     setSelectedCategory('all');
+    setSelectedTrader(null);
     setPriceRange([0, maxPrice]);
     setSearchTerm('');
     setSortBy('newest');
     setFiltersOpen(false);
+    // Clear URL params
+    router.push('/marketplace');
   };
 
   if (loading) {
@@ -478,6 +515,21 @@ export default function MarketplacePage() {
                           </SelectContent>
                         </Select>
                       </div>
+
+                      <div>
+                        <Label className="mb-3 block">Seller/Trader</Label>
+                        <Select value={selectedTrader || 'all'} onValueChange={(value) => setSelectedTrader(value === 'all' ? null : value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="All Sellers" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Sellers</SelectItem>
+                            {traders.map(trader => (
+                              <SelectItem key={trader.id} value={trader.id}>{trader.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <SheetFooter>
                       <Button variant="outline" onClick={handleClearFilters} className="w-full">
@@ -497,6 +549,12 @@ export default function MarketplacePage() {
                     <Badge variant="secondary" className="gap-1">
                       {categoryOptions.find(c => c.value === selectedCategory)?.label}
                       <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedCategory('all')} />
+                    </Badge>
+                  )}
+                  {selectedTrader && (
+                    <Badge variant="secondary" className="gap-1">
+                      Seller: {getTraderName(selectedTrader)}
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => { setSelectedTrader(null); router.push('/marketplace'); }} />
                     </Badge>
                   )}
                   {(priceRange[0] !== 0 || priceRange[1] !== maxPrice) && (

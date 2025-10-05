@@ -239,21 +239,42 @@ export default function ProductDetailPage() {
                 {product.description}
               </p>
 
+              {/* Seller Info Card - Prominent */}
+              <Card className="mb-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Sold by</p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => router.push(`/marketplace?trader=${product.trader_id}`)}
+                          className="text-xl font-bold hover:text-primary transition-colors"
+                        >
+                          {traderInfo?.name || 'Loading...'}
+                        </button>
+                        {traderInfo?.averageRating !== null && (
+                          <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <span className="font-medium">{traderInfo?.averageRating.toFixed(1)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push(`/marketplace?trader=${product.trader_id}`)}
+                    >
+                      View All Products
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Category:</span>
                   <span className="font-medium">{product.category}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Seller:</span>
-                  <span className="font-medium">
-                    {traderInfo?.name || 'N/A'}
-                    {traderInfo?.averageRating !== null && (
-                      <span className="ml-2 flex items-center">
-                        ({traderInfo?.averageRating.toFixed(1)} <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 ml-1" />)
-                      </span>
-                    )}
-                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Delivery:</span>

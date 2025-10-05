@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>You're Invited to ADAZE</title>
+  <style>
+    /* Reset styles */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f5f5f5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Container */
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+    }
+    
+    /* Header with gradient */
+    .header {
+      background: linear-gradient(135deg, #16a34a 0%, #059669 50%, #0d9488 100%);
+      padding: 40px 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* Decorative circles */
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 150px;
+      height: 150px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 50%;
+    }
+    
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -30px;
+      left: -30px;
+      width: 100px;
+      height: 100px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 50%;
+    }
+    
+    .logo {
+      font-size: 36px;
+      font-weight: 800;
+      color: #ffffff;
+      margin: 0;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: relative;
+      z-index: 1;
+    }
+    
+    .tagline {
+      color: rgba(255,255,255,0.9);
+      font-size: 14px;
+      margin-top: 8px;
+      font-weight: 500;
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Invitation badge */
+    .invitation-badge {
+      background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-block;
+      margin-top: 15px;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Content */
+    .content {
+      padding: 40px 30px;
+      color: #1f2937;
+    }
+    
+    .greeting {
+      font-size: 28px;
+      font-weight: 700;
+      color: #111827;
+      margin: 0 0 15px 0;
+      text-align: center;
+    }
+    
+    .subheading {
+      font-size: 18px;
+      color: #059669;
+      font-weight: 600;
+      text-align: center;
+      margin: 0 0 30px 0;
+    }
+    
+    .message {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #4b5563;
+      margin: 0 0 20px 0;
+    }
+    
+    /* Invitation card */
+    .invitation-card {
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      border: 2px solid #10b981;
+      border-radius: 12px;
+      padding: 25px;
+      margin: 30px 0;
+      text-align: center;
+    }
+    
+    .invitation-card-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+    
+    .invitation-card-text {
+      font-size: 16px;
+      color: #065f46;
+      font-weight: 600;
+      margin: 0;
+    }
+    
+    /* Button */
+    .button-container {
+      text-align: center;
+      margin: 40px 0;
+    }
+    
+    .accept-button {
+      display: inline-block;
+      padding: 18px 50px;
+      background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 17px;
+      box-shadow: 0 6px 16px rgba(22, 163, 74, 0.4);
+      transition: all 0.3s ease;
+      letter-spacing: 0.5px;
+    }
+    
+    .accept-button:hover {
+      box-shadow: 0 8px 20px rgba(22, 163, 74, 0.5);
+      transform: translateY(-2px);
+    }
+    
+    /* Benefits section */
+    .benefits {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border-radius: 12px;
+      padding: 25px;
+      margin: 30px 0;
+    }
+    
+    .benefits-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #92400e;
+      margin: 0 0 20px 0;
+      text-align: center;
+    }
+    
+    .benefits-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    
+    .benefits-list li {
+      padding: 12px 0;
+      font-size: 15px;
+      color: #78350f;
+      position: relative;
+      padding-left: 35px;
+      font-weight: 500;
+    }
+    
+    .benefits-list li:before {
+      content: "🎁";
+      position: absolute;
+      left: 0;
+      font-size: 20px;
+    }
+    
+    /* Features */
+    .features {
+      margin: 30px 0;
+      padding: 0;
+      list-style: none;
+    }
+    
+    .features li {
+      padding: 12px 0;
+      font-size: 15px;
+      color: #4b5563;
+      position: relative;
+      padding-left: 30px;
+    }
+    
+    .features li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #16a34a;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    
+    /* Info boxes */
+    .info-box {
+      background-color: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 16px;
+      margin: 30px 0;
+      border-radius: 4px;
+    }
+    
+    .info-box p {
+      margin: 0;
+      font-size: 14px;
+      color: #1e40af;
+      line-height: 1.5;
+    }
+    
+    /* Alternative link */
+    .alternative-link {
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #f9fafb;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+    }
+    
+    .alternative-link-title {
+      font-size: 13px;
+      color: #6b7280;
+      margin: 0 0 10px 0;
+      font-weight: 600;
+    }
+    
+    .alternative-link a {
+      color: #059669;
+      word-break: break-all;
+      font-size: 12px;
+      text-decoration: none;
+    }
+    
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+      margin: 30px 0;
+    }
+    
+    /* Footer */
+    .footer {
+      background-color: #f9fafb;
+      padding: 30px 20px;
+      text-align: center;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .footer-text {
+      font-size: 13px;
+      color: #6b7280;
+      margin: 0 0 15px 0;
+      line-height: 1.6;
+    }
+    
+    .social-links {
+      margin: 20px 0;
+    }
+    
+    .social-links a {
+      display: inline-block;
+      margin: 0 10px;
+      color: #6b7280;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    
+    .social-links a:hover {
+      color: #16a34a;
+    }
+    
+    .copyright {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 20px;
+    }
+    
+    /* Mobile responsive */
+    @media only screen and (max-width: 600px) {
+      .content {
+        padding: 30px 20px;
+      }
+      
+      .greeting {
+        font-size: 24px;
+      }
+      
+      .subheading {
+        font-size: 16px;
+      }
+      
+      .message {
+        font-size: 15px;
+      }
+      
+      .accept-button {
+        padding: 16px 40px;
+        font-size: 16px;
+      }
+      
+      .logo {
+        font-size: 28px;
+      }
+      
+      .invitation-card {
+        padding: 20px;
+      }
+      
+      .benefits {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <!-- Header -->
+    <div class="header">
+      <h1 class="logo">ADAZE</h1>
+      <p class="tagline">Kenya's Premier Mitumba Marketplace</p>
+      <div class="invitation-badge">🎉 SPECIAL INVITATION</div>
+    </div>
+    
+    <!-- Content -->
+    <div class="content">
+      <h2 class="greeting">You're Invited! 🎊</h2>
+      <p class="subheading">Join Kenya's Fastest-Growing Mitumba Community</p>
+      
+      <!-- Invitation Card -->
+      <div class="invitation-card">
+        <div class="invitation-card-icon">✉️</div>
+        <p class="invitation-card-text">
+          You've received an exclusive invitation to join ADAZE
+        </p>
+      </div>
+      
+      <p class="message">
+        Someone thought you'd be a perfect fit for our vibrant mitumba marketplace community! 
+        We're excited to welcome you to a platform where quality meets affordability.
+      </p>
+      
+      <p class="message">
+        Click the button below to accept your invitation and create your account:
+      </p>
+      
+      <!-- Accept Button -->
+      <div class="button-container">
+        <a href="{{ .ConfirmationURL }}" class="accept-button">
+          Accept Invitation & Join Now
+        </a>
+      </div>
+      
+      <!-- Benefits Section -->
+      <div class="benefits">
+        <h3 class="benefits-title">🌟 What You'll Get When You Join</h3>
+        <ul class="benefits-list">
+          <li>Access to thousands of quality mitumba products</li>
+          <li>Connect with trusted traders across Kenya</li>
+          <li>Secure M-Pesa payment integration</li>
+          <li>Real-time order tracking & updates</li>
+          <li>Nationwide delivery to your doorstep</li>
+          <li>Join a thriving community of buyers & sellers</li>
+        </ul>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <!-- Why ADAZE -->
+      <p class="message">
+        <strong>Why thousands of Kenyans choose ADAZE:</strong>
+      </p>
+      
+      <ul class="features">
+        <li><strong>Quality Assured:</strong> Every trader is verified</li>
+        <li><strong>Best Prices:</strong> Compare prices from multiple sellers</li>
+        <li><strong>Safe Payments:</strong> Secure M-Pesa transactions</li>
+        <li><strong>Fast Delivery:</strong> Kenya-wide shipping network</li>
+        <li><strong>Easy Returns:</strong> Hassle-free return policy</li>
+      </ul>
+      
+      <!-- Info Box -->
+      <div class="info-box">
+        <p>
+          <strong>⏰ Act Fast!</strong> This invitation link will expire in 7 days. 
+          Don't miss out on being part of Kenya's most exciting mitumba marketplace!
+        </p>
+      </div>
+      
+      <!-- Alternative Link -->
+      <div class="alternative-link">
+        <p class="alternative-link-title">Button not working? Copy and paste this link:</p>
+        <a href="{{ .ConfirmationURL }}">{{ .ConfirmationURL }}</a>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <p class="message" style="text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px;">
+        <strong>Questions about this invitation?</strong><br>
+        Contact us at <a href="mailto:support@adaze.com" style="color: #059669;">support@adaze.com</a>
+      </p>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+      <p class="footer-text">
+        Need help? Contact us at <a href="mailto:support@adaze.com" style="color: #059669; text-decoration: none;">support@adaze.com</a>
+      </p>
+      
+      <div class="social-links">
+        <a href="https://facebook.com/adaze">Facebook</a> •
+        <a href="https://twitter.com/adaze">Twitter</a> •
+        <a href="https://instagram.com/adaze">Instagram</a>
+      </div>
+      
+      <p class="copyright">
+        © 2024 ADAZE. All rights reserved.<br>
+        Kenya's Premier Mitumba Marketplace
+      </p>
+      
+      <p class="footer-text" style="margin-top: 15px; font-size: 11px;">
+        You received this invitation from a trusted member of ADAZE.<br>
+        If you don't want to join, you can safely ignore this email.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

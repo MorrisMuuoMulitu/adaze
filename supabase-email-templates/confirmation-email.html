@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirm Your ADAZE Account</title>
+  <style>
+    /* Reset styles */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f5f5f5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Container */
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+    }
+    
+    /* Header with gradient */
+    .header {
+      background: linear-gradient(135deg, #16a34a 0%, #059669 50%, #0d9488 100%);
+      padding: 40px 20px;
+      text-align: center;
+    }
+    
+    .logo {
+      font-size: 36px;
+      font-weight: 800;
+      color: #ffffff;
+      margin: 0;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .tagline {
+      color: rgba(255,255,255,0.9);
+      font-size: 14px;
+      margin-top: 8px;
+      font-weight: 500;
+    }
+    
+    /* Content */
+    .content {
+      padding: 40px 30px;
+      color: #1f2937;
+    }
+    
+    .greeting {
+      font-size: 24px;
+      font-weight: 700;
+      color: #111827;
+      margin: 0 0 20px 0;
+    }
+    
+    .message {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #4b5563;
+      margin: 0 0 30px 0;
+    }
+    
+    /* Button */
+    .button-container {
+      text-align: center;
+      margin: 40px 0;
+    }
+    
+    .confirm-button {
+      display: inline-block;
+      padding: 16px 48px;
+      background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 16px;
+      box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+      transition: all 0.3s ease;
+    }
+    
+    .confirm-button:hover {
+      box-shadow: 0 6px 16px rgba(22, 163, 74, 0.4);
+      transform: translateY(-2px);
+    }
+    
+    /* Alternative link */
+    .alternative-link {
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #f9fafb;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+    }
+    
+    .alternative-link-title {
+      font-size: 13px;
+      color: #6b7280;
+      margin: 0 0 10px 0;
+      font-weight: 600;
+    }
+    
+    .alternative-link a {
+      color: #059669;
+      word-break: break-all;
+      font-size: 12px;
+      text-decoration: none;
+    }
+    
+    /* Info boxes */
+    .info-box {
+      background-color: #ecfdf5;
+      border-left: 4px solid #16a34a;
+      padding: 16px;
+      margin: 30px 0;
+      border-radius: 4px;
+    }
+    
+    .info-box p {
+      margin: 0;
+      font-size: 14px;
+      color: #065f46;
+      line-height: 1.5;
+    }
+    
+    /* Features */
+    .features {
+      margin: 30px 0;
+      padding: 0;
+      list-style: none;
+    }
+    
+    .features li {
+      padding: 12px 0;
+      font-size: 15px;
+      color: #4b5563;
+      position: relative;
+      padding-left: 30px;
+    }
+    
+    .features li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #16a34a;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    
+    /* Footer */
+    .footer {
+      background-color: #f9fafb;
+      padding: 30px 20px;
+      text-align: center;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .footer-text {
+      font-size: 13px;
+      color: #6b7280;
+      margin: 0 0 15px 0;
+      line-height: 1.6;
+    }
+    
+    .social-links {
+      margin: 20px 0;
+    }
+    
+    .social-links a {
+      display: inline-block;
+      margin: 0 10px;
+      color: #6b7280;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    
+    .social-links a:hover {
+      color: #16a34a;
+    }
+    
+    .copyright {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 20px;
+    }
+    
+    /* Mobile responsive */
+    @media only screen and (max-width: 600px) {
+      .content {
+        padding: 30px 20px;
+      }
+      
+      .greeting {
+        font-size: 20px;
+      }
+      
+      .message {
+        font-size: 15px;
+      }
+      
+      .confirm-button {
+        padding: 14px 36px;
+        font-size: 15px;
+      }
+      
+      .logo {
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <!-- Header -->
+    <div class="header">
+      <h1 class="logo">ADAZE</h1>
+      <p class="tagline">Kenya's Premier Mitumba Marketplace</p>
+    </div>
+    
+    <!-- Content -->
+    <div class="content">
+      <h2 class="greeting">Karibu to ADAZE! 🎉</h2>
+      
+      <p class="message">
+        Thank you for joining Kenya's fastest-growing mitumba marketplace! We're excited to have you as part of our community.
+      </p>
+      
+      <p class="message">
+        To get started and unlock all the amazing features, please confirm your email address by clicking the button below:
+      </p>
+      
+      <!-- Confirm Button -->
+      <div class="button-container">
+        <a href="{{ .ConfirmationURL }}" class="confirm-button">
+          Confirm Your Email
+        </a>
+      </div>
+      
+      <!-- Info Box -->
+      <div class="info-box">
+        <p>
+          <strong>🔒 Security Note:</strong> This link will expire in 24 hours for your security. If you didn't create an ADAZE account, you can safely ignore this email.
+        </p>
+      </div>
+      
+      <!-- What's Next -->
+      <p class="message" style="margin-top: 30px;">
+        <strong>What you can do after confirming:</strong>
+      </p>
+      
+      <ul class="features">
+        <li>Browse thousands of quality mitumba products</li>
+        <li>Buy from trusted traders across Kenya</li>
+        <li>Track your orders in real-time</li>
+        <li>Pay securely with M-Pesa</li>
+        <li>Get items delivered to your doorstep</li>
+      </ul>
+      
+      <!-- Alternative Link -->
+      <div class="alternative-link">
+        <p class="alternative-link-title">Button not working? Copy and paste this link:</p>
+        <a href="{{ .ConfirmationURL }}">{{ .ConfirmationURL }}</a>
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+      <p class="footer-text">
+        Need help? Contact us at <a href="mailto:support@adaze.com" style="color: #059669; text-decoration: none;">support@adaze.com</a>
+      </p>
+      
+      <div class="social-links">
+        <a href="https://facebook.com/adaze">Facebook</a> •
+        <a href="https://twitter.com/adaze">Twitter</a> •
+        <a href="https://instagram.com/adaze">Instagram</a>
+      </div>
+      
+      <p class="copyright">
+        © 2024 ADAZE. All rights reserved.<br>
+        Kenya's Premier Mitumba Marketplace
+      </p>
+      
+      <p class="footer-text" style="margin-top: 15px; font-size: 11px;">
+        You received this email because you signed up for ADAZE.<br>
+        If you didn't sign up, please ignore this email.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

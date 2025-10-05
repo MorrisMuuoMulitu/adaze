@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirm Email Change - ADAZE</title>
+  <style>
+    /* Reset styles */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f5f5f5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Container */
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+    }
+    
+    /* Header with gradient */
+    .header {
+      background: linear-gradient(135deg, #16a34a 0%, #059669 50%, #0d9488 100%);
+      padding: 40px 20px;
+      text-align: center;
+    }
+    
+    .logo {
+      font-size: 36px;
+      font-weight: 800;
+      color: #ffffff;
+      margin: 0;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .tagline {
+      color: rgba(255,255,255,0.9);
+      font-size: 14px;
+      margin-top: 8px;
+      font-weight: 500;
+    }
+    
+    /* Security badge */
+    .security-badge {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-block;
+      margin-top: 15px;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    
+    /* Content */
+    .content {
+      padding: 40px 30px;
+      color: #1f2937;
+    }
+    
+    .greeting {
+      font-size: 26px;
+      font-weight: 700;
+      color: #111827;
+      margin: 0 0 15px 0;
+      text-align: center;
+    }
+    
+    .subheading {
+      font-size: 16px;
+      color: #6b7280;
+      font-weight: 500;
+      text-align: center;
+      margin: 0 0 30px 0;
+    }
+    
+    .message {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #4b5563;
+      margin: 0 0 20px 0;
+    }
+    
+    /* Email change card */
+    .email-change-card {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border: 2px solid #3b82f6;
+      border-radius: 12px;
+      padding: 25px;
+      margin: 30px 0;
+    }
+    
+    .email-change-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1e40af;
+      margin: 0 0 20px 0;
+      text-align: center;
+    }
+    
+    .email-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 15px 0;
+      padding: 15px;
+      background-color: white;
+      border-radius: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .email-label {
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    
+    .email-address {
+      font-size: 16px;
+      color: #111827;
+      font-weight: 600;
+      word-break: break-all;
+    }
+    
+    .arrow-icon {
+      font-size: 24px;
+      color: #3b82f6;
+      margin: 0 10px;
+    }
+    
+    /* Warning box */
+    .warning-box {
+      background-color: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 20px;
+      margin: 30px 0;
+      border-radius: 4px;
+    }
+    
+    .warning-box-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #92400e;
+      margin: 0 0 10px 0;
+      display: flex;
+      align-items: center;
+    }
+    
+    .warning-box-title::before {
+      content: "⚠️";
+      margin-right: 8px;
+      font-size: 20px;
+    }
+    
+    .warning-box p {
+      margin: 0;
+      font-size: 14px;
+      color: #78350f;
+      line-height: 1.6;
+    }
+    
+    /* Security info box */
+    .security-box {
+      background-color: #fef2f2;
+      border-left: 4px solid #ef4444;
+      padding: 20px;
+      margin: 30px 0;
+      border-radius: 4px;
+    }
+    
+    .security-box-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #991b1b;
+      margin: 0 0 10px 0;
+      display: flex;
+      align-items: center;
+    }
+    
+    .security-box-title::before {
+      content: "🔒";
+      margin-right: 8px;
+      font-size: 20px;
+    }
+    
+    .security-box p {
+      margin: 0;
+      font-size: 14px;
+      color: #7f1d1d;
+      line-height: 1.6;
+    }
+    
+    /* Button */
+    .button-container {
+      text-align: center;
+      margin: 40px 0;
+    }
+    
+    .confirm-button {
+      display: inline-block;
+      padding: 18px 50px;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 17px;
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+      transition: all 0.3s ease;
+      letter-spacing: 0.5px;
+    }
+    
+    .confirm-button:hover {
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.5);
+      transform: translateY(-2px);
+    }
+    
+    /* Info list */
+    .info-list {
+      margin: 30px 0;
+      padding: 0;
+      list-style: none;
+    }
+    
+    .info-list li {
+      padding: 10px 0;
+      font-size: 15px;
+      color: #4b5563;
+      position: relative;
+      padding-left: 30px;
+    }
+    
+    .info-list li:before {
+      content: "•";
+      position: absolute;
+      left: 10px;
+      color: #3b82f6;
+      font-weight: bold;
+      font-size: 20px;
+    }
+    
+    /* Alternative link */
+    .alternative-link {
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #f9fafb;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+    }
+    
+    .alternative-link-title {
+      font-size: 13px;
+      color: #6b7280;
+      margin: 0 0 10px 0;
+      font-weight: 600;
+    }
+    
+    .alternative-link a {
+      color: #3b82f6;
+      word-break: break-all;
+      font-size: 12px;
+      text-decoration: none;
+    }
+    
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+      margin: 30px 0;
+    }
+    
+    /* Footer */
+    .footer {
+      background-color: #f9fafb;
+      padding: 30px 20px;
+      text-align: center;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .footer-text {
+      font-size: 13px;
+      color: #6b7280;
+      margin: 0 0 15px 0;
+      line-height: 1.6;
+    }
+    
+    .social-links {
+      margin: 20px 0;
+    }
+    
+    .social-links a {
+      display: inline-block;
+      margin: 0 10px;
+      color: #6b7280;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    
+    .social-links a:hover {
+      color: #16a34a;
+    }
+    
+    .copyright {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 20px;
+    }
+    
+    /* Mobile responsive */
+    @media only screen and (max-width: 600px) {
+      .content {
+        padding: 30px 20px;
+      }
+      
+      .greeting {
+        font-size: 22px;
+      }
+      
+      .message {
+        font-size: 15px;
+      }
+      
+      .confirm-button {
+        padding: 16px 40px;
+        font-size: 16px;
+      }
+      
+      .logo {
+        font-size: 28px;
+      }
+      
+      .email-change-card {
+        padding: 20px;
+      }
+      
+      .email-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .arrow-icon {
+        margin: 10px 0;
+        transform: rotate(90deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <!-- Header -->
+    <div class="header">
+      <h1 class="logo">ADAZE</h1>
+      <p class="tagline">Kenya's Premier Mitumba Marketplace</p>
+      <div class="security-badge">🔐 SECURITY UPDATE</div>
+    </div>
+    
+    <!-- Content -->
+    <div class="content">
+      <h2 class="greeting">Confirm Your Email Change</h2>
+      <p class="subheading">We received a request to change your email address</p>
+      
+      <!-- Email Change Card -->
+      <div class="email-change-card">
+        <p class="email-change-title">📧 Email Address Update</p>
+        
+        <div class="email-row">
+          <div>
+            <div class="email-label">Current Email</div>
+            <div class="email-address">{{ .Email }}</div>
+          </div>
+        </div>
+        
+        <div style="text-align: center; margin: 15px 0;">
+          <span class="arrow-icon">⬇</span>
+        </div>
+        
+        <div class="email-row">
+          <div>
+            <div class="email-label">New Email</div>
+            <div class="email-address">{{ .NewEmail }}</div>
+          </div>
+        </div>
+      </div>
+      
+      <p class="message">
+        To complete this email change, please confirm by clicking the button below. 
+        This ensures the security of your ADAZE account.
+      </p>
+      
+      <!-- Confirm Button -->
+      <div class="button-container">
+        <a href="{{ .ConfirmationURL }}" class="confirm-button">
+          Confirm Email Change
+        </a>
+      </div>
+      
+      <!-- Warning Box -->
+      <div class="warning-box">
+        <p class="warning-box-title">Important Security Information</p>
+        <p>
+          <strong>Did you request this change?</strong> If yes, click the button above to confirm. 
+          If you did NOT request this email change, <strong>please ignore this email</strong> and 
+          contact our support team immediately at <a href="mailto:support@adaze.com" style="color: #92400e; text-decoration: underline;">support@adaze.com</a>
+        </p>
+      </div>
+      
+      <!-- Security Info Box -->
+      <div class="security-box">
+        <p class="security-box-title">Security Notice</p>
+        <p>
+          This link will expire in <strong>24 hours</strong> for your security. 
+          After confirmation, all future account notifications will be sent to your new email address.
+        </p>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <!-- What Happens Next -->
+      <p class="message">
+        <strong>What happens after you confirm:</strong>
+      </p>
+      
+      <ul class="info-list">
+        <li>Your email will be updated to <strong>{{ .NewEmail }}</strong></li>
+        <li>You'll use the new email to sign in</li>
+        <li>All account notifications will go to the new email</li>
+        <li>Your order history and data remain unchanged</li>
+        <li>You'll receive a confirmation at both email addresses</li>
+      </ul>
+      
+      <!-- Alternative Link -->
+      <div class="alternative-link">
+        <p class="alternative-link-title">Button not working? Copy and paste this link:</p>
+        <a href="{{ .ConfirmationURL }}">{{ .ConfirmationURL }}</a>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <p class="message" style="text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px;">
+        <strong>Need help?</strong><br>
+        Contact us at <a href="mailto:support@adaze.com" style="color: #3b82f6;">support@adaze.com</a> or call our support line
+      </p>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+      <p class="footer-text">
+        This is a security-related email from ADAZE.<br>
+        Need help? Contact us at <a href="mailto:support@adaze.com" style="color: #059669; text-decoration: none;">support@adaze.com</a>
+      </p>
+      
+      <div class="social-links">
+        <a href="https://facebook.com/adaze">Facebook</a> •
+        <a href="https://twitter.com/adaze">Twitter</a> •
+        <a href="https://instagram.com/adaze">Instagram</a>
+      </div>
+      
+      <p class="copyright">
+        © 2024 ADAZE. All rights reserved.<br>
+        Kenya's Premier Mitumba Marketplace
+      </p>
+      
+      <p class="footer-text" style="margin-top: 15px; font-size: 11px;">
+        You received this email because a request was made to change the email address 
+        associated with your ADAZE account. If you didn't make this request, please ignore 
+        this email and contact support immediately.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
