@@ -35,15 +35,9 @@ export const reviewService = {
   async getProductReviews(productId: string): Promise<Review[]> {
     const supabase = createClient();
     
-    const { data, error } = await supabase
+    const { data: reviews, error } = await supabase
       .from('reviews')
-      .select(`
-        *,
-        profiles:user_id (
-          full_name,
-          avatar_url
-        )
-      `)
+      .select('*')
       .eq('product_id', productId)
       .order('created_at', { ascending: false });
 
@@ -52,12 +46,26 @@ export const reviewService = {
       throw error;
     }
 
+    if (!reviews || reviews.length === 0) {
+      return [];
+    }
+
+    // Fetch user profiles separately
+    const userIds = reviews.map(r => r.user_id);
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url')
+      .in('id', userIds);
+
     // Map the data to include user info
-    return (data || []).map(review => ({
-      ...review,
-      user_name: review.profiles?.full_name || 'Anonymous',
-      user_avatar: review.profiles?.avatar_url || null,
-    }));
+    return reviews.map(review => {
+      const userProfile = profiles?.find(p => p.id === review.user_id);
+      return {
+        ...review,
+        user_name: userProfile?.full_name || 'Anonymous',
+        user_avatar: userProfile?.avatar_url || null,
+      };
+    });
   },
 
   // Get review statistics for a product
