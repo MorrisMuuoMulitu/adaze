@@ -14,9 +14,19 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { MapPin, Phone, User as UserIcon, Mail, Camera } from 'lucide-react';
+import { MapPin, Phone, User as UserIcon, Mail, Camera, AlertTriangle, Trash2, PauseCircle, PlayCircle } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar'; // Import Navbar
 import { AuthModal } from '@/components/auth/auth-modal'; // Import AuthModal
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Profile {
   id: string;
@@ -47,6 +57,10 @@ export default function ProfilePage() {
   });
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalType, setAuthModalType] = useState<'login' | 'register'>('login');
+  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
 
   const handleAuthClick = (type: 'login' | 'register') => {
     setAuthModalType(type);
@@ -211,6 +225,84 @@ export default function ProfilePage() {
       ErrorHandler.showErrorToast(appError, `Error uploading avatar: ${appError.message}`);
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDeactivateAccount = async () => {
+    setActionLoading(true);
+    try {
+      const response = await fetch('/api/account/deactivate', {
+        method: 'POST',
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast.success('Account deactivated', {
+          description: 'Your account has been deactivated. Contact support to reactivate.',
+        });
+        // Redirect to home after a delay
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+      } else {
+        toast.error('Failed to deactivate account', {
+          description: result.error || 'Please try again later',
+        });
+      }
+    } catch (error) {
+      console.error('Error deactivating account:', error);
+      toast.error('An error occurred', {
+        description: 'Failed to deactivate account',
+      });
+    } finally {
+      setActionLoading(false);
+      setShowDeactivateDialog(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmEmail !== user?.email) {
+      toast.error('Email does not match', {
+        description: 'Please enter your email correctly to confirm deletion',
+      });
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const response = await fetch('/api/account/delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ confirmEmail: deleteConfirmEmail }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast.success('Account deleted', {
+          description: 'Your account and all data have been permanently deleted.',
+        });
+        // Redirect to home after a delay
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+      } else {
+        toast.error('Failed to delete account', {
+          description: result.error || 'Please try again later',
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast.error('An error occurred', {
+        description: 'Failed to delete account',
+      });
+    } finally {
+      setActionLoading(false);
+      setShowDeleteDialog(false);
+      setDeleteConfirmEmail('');
     }
   };
 
@@ -570,12 +662,181 @@ export default function ProfilePage() {
                       </div>
                     </CardContent>
                   </Card>
+
+                  {/* Account Management - Danger Zone */}
+                  <Card className="mt-6 border-red-200 dark:border-red-900">
+                    <CardHeader>
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-red-600" />
+                        <CardTitle className="text-red-600">Account Management</CardTitle>
+                      </div>
+                      <CardDescription>
+                        Manage your account status or permanently delete your account
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Deactivate Account */}
+                      <div className="p-4 border border-orange-200 dark:border-orange-900 rounded-lg bg-orange-50 dark:bg-orange-950/20">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <PauseCircle className="h-5 w-5 text-orange-600" />
+                              <h3 className="font-semibold text-orange-900 dark:text-orange-100">
+                                Deactivate Account
+                              </h3>
+                            </div>
+                            <p className="text-sm text-orange-800 dark:text-orange-200 mb-3">
+                              Temporarily suspend your account. You can contact support to reactivate it later. 
+                              Your data will be preserved.
+                            </p>
+                            <ul className="text-xs text-orange-700 dark:text-orange-300 space-y-1 mb-3">
+                              <li>• You will be signed out immediately</li>
+                              <li>• You cannot login until reactivated</li>
+                              <li>• All your data remains safe</li>
+                              <li>• Contact support to reactivate</li>
+                            </ul>
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          className="w-full border-orange-600 text-orange-600 hover:bg-orange-600 hover:text-white"
+                          onClick={() => setShowDeactivateDialog(true)}
+                        >
+                          <PauseCircle className="h-4 w-4 mr-2" />
+                          Deactivate Account
+                        </Button>
+                      </div>
+
+                      {/* Delete Account */}
+                      <div className="p-4 border border-red-200 dark:border-red-900 rounded-lg bg-red-50 dark:bg-red-950/20">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Trash2 className="h-5 w-5 text-red-600" />
+                              <h3 className="font-semibold text-red-900 dark:text-red-100">
+                                Delete Account Permanently
+                              </h3>
+                            </div>
+                            <p className="text-sm text-red-800 dark:text-red-200 mb-3">
+                              Permanently delete your account and all associated data. This action cannot be undone.
+                            </p>
+                            <ul className="text-xs text-red-700 dark:text-red-300 space-y-1 mb-3">
+                              <li>• Your profile will be deleted</li>
+                              <li>• All your orders history will be removed</li>
+                              <li>• Your cart and wishlist will be cleared</li>
+                              <li>• This action is irreversible</li>
+                            </ul>
+                          </div>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          className="w-full"
+                          onClick={() => setShowDeleteDialog(true)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Account Permanently
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
             </motion.div>
           </div>
         </div>
       </main>
+
+      {/* Deactivate Account Dialog */}
+      <AlertDialog open={showDeactivateDialog} onOpenChange={setShowDeactivateDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <PauseCircle className="h-5 w-5 text-orange-600" />
+              Deactivate Your Account?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Your account will be temporarily suspended and you will be signed out immediately.
+              </p>
+              <p className="font-semibold">
+                To reactivate your account, you'll need to contact our support team.
+              </p>
+              <p>
+                All your data will be preserved and restored when you reactivate.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeactivateAccount}
+              disabled={actionLoading}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              {actionLoading ? 'Deactivating...' : 'Yes, Deactivate Account'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Account Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              Permanently Delete Account?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p className="font-semibold text-red-600">
+                This action is permanent and cannot be undone!
+              </p>
+              <p>
+                All your data including:
+              </p>
+              <ul className="text-sm space-y-1 list-disc list-inside">
+                <li>Profile information</li>
+                <li>Order history</li>
+                <li>Shopping cart</li>
+                <li>Saved addresses</li>
+                <li>Reviews and ratings</li>
+              </ul>
+              <p>
+                will be permanently deleted from our system.
+              </p>
+              <div className="pt-2">
+                <Label htmlFor="confirm-email" className="text-sm font-semibold">
+                  Type your email to confirm: <span className="text-red-600">{user?.email}</span>
+                </Label>
+                <Input
+                  id="confirm-email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={deleteConfirmEmail}
+                  onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+                  className="mt-2"
+                  disabled={actionLoading}
+                />
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              disabled={actionLoading}
+              onClick={() => setDeleteConfirmEmail('')}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={actionLoading || deleteConfirmEmail !== user?.email}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {actionLoading ? 'Deleting...' : 'Yes, Delete My Account'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
