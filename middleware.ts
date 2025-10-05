@@ -78,6 +78,15 @@ export async function middleware(request: NextRequest) {
     if (error) {
       console.error('Middleware - Error fetching user role:', error);
       console.error('Middleware - User ID:', user.id);
+      
+      // If profile doesn't exist (deleted account), sign out
+      if (error.code === 'PGRST116' || !profile) {
+        console.log('Middleware - Account deleted, signing out');
+        await supabase.auth.signOut();
+        const redirectUrl = new URL('/', request.url);
+        redirectUrl.searchParams.set('error', 'account_deleted');
+        return NextResponse.redirect(redirectUrl);
+      }
     }
     
     console.log('Middleware - User ID:', user.id);
@@ -85,6 +94,15 @@ export async function middleware(request: NextRequest) {
     console.log('Middleware - Role:', profile?.role);
     console.log('Middleware - Suspended:', profile?.is_suspended);
     console.log('Middleware - Path:', pathname);
+    
+    // Check if profile exists (account not deleted)
+    if (!profile) {
+      console.log('Middleware - No profile found (deleted account), signing out');
+      await supabase.auth.signOut();
+      const redirectUrl = new URL('/', request.url);
+      redirectUrl.searchParams.set('error', 'account_deleted');
+      return NextResponse.redirect(redirectUrl);
+    }
     
     // Check if account is suspended
     if (profile?.is_suspended) {

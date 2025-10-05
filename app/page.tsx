@@ -37,7 +37,7 @@ export default function Home() {
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState<string | null>(null);
 
-  // Check for suspension error in URL
+  // Check for suspension/deletion error in URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const error = params.get('error');
@@ -47,6 +47,17 @@ export default function Home() {
       import('sonner').then(({ toast }) => {
         toast.error('Account Suspended', {
           description: 'Your account has been suspended. Please contact support for assistance.',
+          duration: 8000,
+        });
+      });
+      
+      // Clean up URL
+      window.history.replaceState({}, '', '/');
+    } else if (error === 'account_deleted') {
+      // Show error toast for deleted account
+      import('sonner').then(({ toast }) => {
+        toast.error('Account Not Found', {
+          description: 'This account has been deleted. Please create a new account if you wish to continue.',
           duration: 8000,
         });
       });

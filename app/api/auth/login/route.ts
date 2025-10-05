@@ -34,9 +34,25 @@ export async function POST(request: Request) {
 
   if (profileError) {
     console.error('Error fetching profile:', profileError);
-    // Sign out the user if their profile is missing, as this is an inconsistent state
+    // Sign out the user if their profile is missing/deleted
     await supabase.auth.signOut();
+    
+    // If profile doesn't exist, the account was likely deleted
+    if (profileError.code === 'PGRST116') {
+      return NextResponse.json({ 
+        message: 'This account has been deleted. Please create a new account if you wish to continue.' 
+      }, { status: 404 });
+    }
+    
     return NextResponse.json({ message: 'Error verifying user profile. Please contact support.' }, { status: 500 });
+  }
+
+  // Check if profile exists
+  if (!profileData) {
+    await supabase.auth.signOut();
+    return NextResponse.json({ 
+      message: 'This account has been deleted. Please create a new account if you wish to continue.' 
+    }, { status: 404 });
   }
 
   // 3. Check if the account is suspended
