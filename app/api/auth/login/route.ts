@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   // 2. Get the user's profile to verify their role, suspension, and deletion status
   const { data: profileData, error: profileError } = await supabase
     .from('profiles')
-    .select('role, is_suspended, is_deleted')
+    .select('role, is_suspended, is_deleted, login_count')
     .eq('id', authData.user.id)
     .single();
 
@@ -81,6 +81,20 @@ export async function POST(request: Request) {
     }, { status: 403 });
   }
 
-  // 6. If roles match and account is not suspended or deleted, login is successful
+  // 6. Update login tracking (last login time and increment login count)
+  try {
+    await supabase
+      .from('profiles')
+      .update({ 
+        last_login_at: new Date().toISOString(),
+        login_count: (profileData.login_count || 0) + 1
+      })
+      .eq('id', authData.user.id);
+  } catch (error) {
+    // Log error but don't fail the login
+    console.error('Error updating login tracking:', error);
+  }
+
+  // 7. If roles match and account is not suspended or deleted, login is successful
   return NextResponse.json({ message: 'Login successful', user: authData.user });
 }
