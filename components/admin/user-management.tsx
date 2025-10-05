@@ -465,7 +465,12 @@ export function UserManagement() {
                             </Badge>
                             {user.deleted_by && (
                               <div className="text-xs text-muted-foreground">
-                                by: {user.deleted_by === 'self' ? 'User' : 'Admin'}
+                                by: {user.deleted_by === 'self' ? 'User' : `Admin (${user.deleted_by.slice(0, 8)}...)`}
+                              </div>
+                            )}
+                            {!user.deleted_by && (
+                              <div className="text-xs text-muted-foreground">
+                                by: Unknown
                               </div>
                             )}
                           </div>
@@ -477,7 +482,12 @@ export function UserManagement() {
                             </Badge>
                             {user.suspended_by && (
                               <div className="text-xs text-muted-foreground">
-                                by: {user.suspended_by === 'self' ? 'User' : 'Admin'}
+                                by: {user.suspended_by === 'self' ? 'User' : `Admin (${user.suspended_by.slice(0, 8)}...)`}
+                              </div>
+                            )}
+                            {!user.suspended_by && user.is_suspended && (
+                              <div className="text-xs text-muted-foreground">
+                                by: Unknown
                               </div>
                             )}
                           </div>
@@ -669,7 +679,13 @@ export function UserManagement() {
                     Account Deleted
                   </div>
                   <div className="text-sm space-y-1">
-                    <p>Deleted by: <strong>{userDetailsDialog.user.deleted_by === 'self' ? 'User (Self-Deletion)' : 'Admin'}</strong></p>
+                    <p>Deleted by: <strong>
+                      {!userDetailsDialog.user.deleted_by 
+                        ? 'Unknown (deleted before tracking was added)' 
+                        : userDetailsDialog.user.deleted_by === 'self' 
+                          ? 'User (Self-Deletion)' 
+                          : `Admin (ID: ${userDetailsDialog.user.deleted_by.slice(0, 8)}...)`}
+                    </strong></p>
                     {userDetailsDialog.user.deleted_at && (
                       <p>Deleted on: <strong>{new Date(userDetailsDialog.user.deleted_at).toLocaleString()}</strong></p>
                     )}
@@ -684,7 +700,13 @@ export function UserManagement() {
                     Account Suspended
                   </div>
                   <div className="text-sm text-red-800 dark:text-red-200 space-y-1">
-                    <p>Suspended by: <strong>{userDetailsDialog.user.suspended_by === 'self' ? 'User (Self-Suspension)' : 'Admin'}</strong></p>
+                    <p>Suspended by: <strong>
+                      {!userDetailsDialog.user.suspended_by 
+                        ? 'Unknown (suspended before tracking was added)' 
+                        : userDetailsDialog.user.suspended_by === 'self' 
+                          ? 'User (Self-Suspension)' 
+                          : `Admin (ID: ${userDetailsDialog.user.suspended_by.slice(0, 8)}...)`}
+                    </strong></p>
                     {userDetailsDialog.user.suspended_at && (
                       <p>Suspended on: <strong>{new Date(userDetailsDialog.user.suspended_at).toLocaleString()}</strong></p>
                     )}
