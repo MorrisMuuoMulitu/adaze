@@ -25,10 +25,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Authentication failed: no user data returned' }, { status: 401 });
   }
 
-  // 2. Get the user's profile to verify their role and suspension status
+  // 2. Get the user's profile to verify their role, suspension, and deletion status
   const { data: profileData, error: profileError } = await supabase
     .from('profiles')
-    .select('role, is_suspended')
+    .select('role, is_suspended, is_deleted')
     .eq('id', authData.user.id)
     .single();
 
@@ -55,7 +55,15 @@ export async function POST(request: Request) {
     }, { status: 404 });
   }
 
-  // 3. Check if the account is suspended
+  // 3. Check if the account is deleted (soft delete)
+  if (profileData.is_deleted) {
+    await supabase.auth.signOut();
+    return NextResponse.json({ 
+      message: 'This account has been deleted. Please create a new account if you wish to continue.' 
+    }, { status: 404 });
+  }
+
+  // 4. Check if the account is suspended
   if (profileData.is_suspended) {
     // Sign out the user as their account is suspended
     await supabase.auth.signOut();
@@ -64,7 +72,7 @@ export async function POST(request: Request) {
     }, { status: 403 });
   }
 
-  // 4. Check if the user's stored role matches the role they are trying to log in with
+  // 5. Check if the user's stored role matches the role they are trying to log in with
   if (profileData.role !== role) {
     // Sign out the user as they are trying to access an unauthorized role
     await supabase.auth.signOut();
@@ -73,6 +81,6 @@ export async function POST(request: Request) {
     }, { status: 403 });
   }
 
-  // 5. If roles match and account is not suspended, login is successful
+  // 6. If roles match and account is not suspended or deleted, login is successful
   return NextResponse.json({ message: 'Login successful', user: authData.user });
 }

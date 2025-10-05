@@ -23,13 +23,16 @@ export async function DELETE(request: Request) {
       }, { status: 400 });
     }
 
-    // Note: We can only delete the profile, not the auth user
-    // Deleting auth.users requires admin privileges
-    // The profile deletion will cascade to related data based on foreign keys
+    // Note: We use soft delete to mark the account as deleted
+    // This prevents login while preserving data for potential recovery
+    // Hard deleting the auth user requires admin privileges
 
     const { error: deleteError } = await supabase
       .from('profiles')
-      .delete()
+      .update({ 
+        is_deleted: true,
+        deleted_at: new Date().toISOString()
+      })
       .eq('id', user.id);
 
     if (deleteError) {

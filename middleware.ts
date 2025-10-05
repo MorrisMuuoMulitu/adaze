@@ -93,11 +93,21 @@ export async function middleware(request: NextRequest) {
     console.log('Middleware - Profile:', profile);
     console.log('Middleware - Role:', profile?.role);
     console.log('Middleware - Suspended:', profile?.is_suspended);
+    console.log('Middleware - Deleted:', profile?.is_deleted);
     console.log('Middleware - Path:', pathname);
     
     // Check if profile exists (account not deleted)
     if (!profile) {
       console.log('Middleware - No profile found (deleted account), signing out');
+      await supabase.auth.signOut();
+      const redirectUrl = new URL('/', request.url);
+      redirectUrl.searchParams.set('error', 'account_deleted');
+      return NextResponse.redirect(redirectUrl);
+    }
+    
+    // Check if account is deleted (soft delete)
+    if (profile?.is_deleted) {
+      console.log('Middleware - Account deleted (soft delete), signing out');
       await supabase.auth.signOut();
       const redirectUrl = new URL('/', request.url);
       redirectUrl.searchParams.set('error', 'account_deleted');
