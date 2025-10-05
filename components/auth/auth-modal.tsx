@@ -326,7 +326,6 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
   };
 
   return (
-    <>
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md max-w-[95vw] max-h-[95vh] overflow-y-auto">
         <DialogHeader className="space-y-3">
