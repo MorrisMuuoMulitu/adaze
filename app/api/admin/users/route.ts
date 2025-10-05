@@ -37,8 +37,13 @@ export async function GET() {
     
     if (error) {
       console.error('Error fetching user emails:', error);
-      // Fallback: return profiles without emails
-      return NextResponse.json(profiles?.map(p => ({ id: p.id, email: 'N/A' })) || []);
+      // Return error details for debugging
+      return NextResponse.json({ 
+        error: 'Failed to fetch user emails', 
+        details: error.message,
+        code: error.code,
+        hint: error.hint 
+      }, { status: 500 });
     }
 
     return NextResponse.json(userEmails || []);
