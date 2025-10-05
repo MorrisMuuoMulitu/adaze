@@ -85,6 +85,8 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -227,9 +229,18 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
           profile: result.profile
         });
         
+        // Check if email verification is needed
+        if (result.needsConfirmation) {
+          addLog('📧 [AUTH MODAL] Email confirmation required');
+          setRegisteredEmail(data.email);
+          setShowEmailVerification(true);
+          setLoading(false);
+          return;
+        }
+        
         onSuccess(result.user);
         toast.success('Account created successfully!', {
-          description: result.message || 'Please check your email to confirm your account.',
+          description: 'Welcome to ADAZE!',
           duration: 5000
         });
         
@@ -997,5 +1008,109 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
         </AnimatePresence>
       </DialogContent>
     </Dialog>
+
+      {/* Email Verification Success Dialog */}
+      <Dialog open={showEmailVerification} onOpenChange={(open) => {
+        if (!open) {
+          setShowEmailVerification(false);
+          handleClose();
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
+              <Mail className="h-8 w-8 text-green-600" />
+            </div>
+            <DialogTitle className="text-center text-2xl">Check Your Email!</DialogTitle>
+            <DialogDescription className="text-center text-base">
+              We've sent a verification link to
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-center font-semibold text-lg break-all">{registeredEmail}</p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                <div className="mt-0.5">
+                  <div className="h-6 w-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-bold">1</div>
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Check your inbox</p>
+                  <p className="text-xs text-muted-foreground">Look for an email from ADAZE</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                <div className="mt-0.5">
+                  <div className="h-6 w-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-bold">2</div>
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Click the verification link</p>
+                  <p className="text-xs text-muted-foreground">This confirms your email address</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                <div className="mt-0.5">
+                  <div className="h-6 w-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-bold">3</div>
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Sign in to your account</p>
+                  <p className="text-xs text-muted-foreground">Return here to start shopping</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                <strong>Can't find the email?</strong> Check your spam folder or contact support.
+              </p>
+            </div>
+
+            <Button
+              onClick={() => {
+                setShowEmailVerification(false);
+                handleClose();
+              }}
+              className="w-full h-12 african-gradient text-white"
+            >
+              Got it, I'll check my email
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={async () => {
+                if (!registeredEmail) return;
+                
+                try {
+                  const { createClient } = await import('@/lib/supabase/client');
+                  const supabase = createClient();
+                  
+                  const { error } = await supabase.auth.resend({
+                    type: 'signup',
+                    email: registeredEmail,
+                  });
+                  
+                  if (error) throw error;
+                  
+                  toast.success('Verification email resent!', {
+                    description: 'Please check your inbox again'
+                  });
+                } catch (error: any) {
+                  toast.error('Failed to resend email', {
+                    description: error.message
+                  });
+                }
+              }}
+              className="w-full"
+            >
+              Resend Verification Email
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
   );
 }
