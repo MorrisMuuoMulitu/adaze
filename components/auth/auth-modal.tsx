@@ -338,6 +338,7 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
   };
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md max-w-[95vw] max-h-[95vh] overflow-y-auto">
         <DialogHeader className="space-y-3">
@@ -1009,8 +1010,8 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
       </DialogContent>
     </Dialog>
 
-      {/* Email Verification Success Dialog */}
-      <Dialog open={showEmailVerification} onOpenChange={(open) => {
+    {/* Email Verification Success Dialog */}
+    <Dialog open={showEmailVerification} onOpenChange={(open) => {
         if (!open) {
           setShowEmailVerification(false);
           handleClose();
@@ -1112,5 +1113,6 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
           </div>
         </DialogContent>
       </Dialog>
+    </>
   );
 }
