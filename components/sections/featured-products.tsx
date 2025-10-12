@@ -232,6 +232,7 @@ export function FeaturedProducts({ products, loading, error }: FeaturedProductsP
                       height={300}
                       className="w-full h-full object-cover"
                       unoptimized={!product.image_url}
+                      priority
                     />
                     {product.rating >= 4.5 && (
                       <Badge className="absolute top-2 right-2 bg-red-500 text-white">

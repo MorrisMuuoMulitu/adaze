@@ -580,7 +580,7 @@ export default function MarketplacePage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {filteredAndSortedProducts.map((product) => (
+                  {filteredAndSortedProducts.map((product, index) => (
                     <Card key={product.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
                       <div className="relative">
                         <div className="h-48 bg-gray-200 relative overflow-hidden">
@@ -591,6 +591,7 @@ export default function MarketplacePage() {
                               width={400}
                               height={300}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              priority={index < 4}
                             />
                           ) : (
                             <div className="w-full h-full bg-muted flex items-center justify-center">

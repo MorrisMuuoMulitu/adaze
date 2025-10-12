@@ -185,6 +185,7 @@ export default function ProductDetailPage() {
                     width={600}
                     height={600}
                     className="w-full h-full object-cover"
+                    priority
                   />
                 ) : (
                   <div className="w-full h-full bg-muted flex items-center justify-center">
