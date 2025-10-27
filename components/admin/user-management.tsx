@@ -356,6 +356,8 @@ export function UserManagement() {
         return 'bg-green-500 text-white';
       case 'buyer':
         return 'bg-yellow-500 text-white';
+      case 'wholesaler':
+        return 'bg-indigo-500 text-white';
       default:
         return 'bg-gray-500 text-white';
     }
@@ -397,6 +399,7 @@ export function UserManagement() {
                 <SelectItem value="buyer">Buyer</SelectItem>
                 <SelectItem value="trader">Trader</SelectItem>
                 <SelectItem value="transporter">Transporter</SelectItem>
+                <SelectItem value="wholesaler">Wholesaler</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -630,6 +633,7 @@ export function UserManagement() {
                 <SelectItem value="buyer">Buyer</SelectItem>
                 <SelectItem value="trader">Trader</SelectItem>
                 <SelectItem value="transporter">Transporter</SelectItem>
+                <SelectItem value="wholesaler">Wholesaler</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
               </SelectContent>
             </Select>
