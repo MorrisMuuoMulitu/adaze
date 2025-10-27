@@ -1,239 +1,116 @@
-'use client'
-
-import { Navbar } from '@/components/layout/navbar';
-import { Footer } from '@/components/layout/footer';
-import { FileText, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
-import { useState } from 'react';
-import { AuthModal } from '@/components/auth/auth-modal';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function TermsPage() {
-  const [authModal, setAuthModal] = useState<'login' | 'register' | null>(null);
-
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navbar onAuthClick={setAuthModal} />
-      
-      <main className="flex-grow py-12 sm:py-16 lg:py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
-              <FileText className="h-8 w-8 text-primary" />
-            </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              Terms of Service
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              Last updated: January 2025
-            </p>
-          </div>
-
-          {/* Content */}
-          <div className="prose prose-slate dark:prose-invert max-w-none">
-            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-6 mb-8">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-amber-900 dark:text-amber-100 m-0">
-                  By accessing or using ADAZE, you agree to be bound by these Terms of Service. Please read them carefully.
-                </p>
-              </div>
-            </div>
-
+    <div className="min-h-screen bg-background py-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-3xl font-bold">Terms and Conditions</CardTitle>
+            <p className="text-muted-foreground">Last updated: October 27, 2025</p>
+          </CardHeader>
+          <CardContent className="prose prose-blue max-w-none">
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">1. Acceptance of Terms</h2>
-              <p>By creating an account or using ADAZE, you agree to comply with and be bound by these Terms of Service and our Privacy Policy.</p>
+              <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
+              <p>
+                Welcome to ADAZE Marketplace ("we", "us", "our"). These terms and conditions outline the rules and regulations for the use of ADAZE Marketplace's Website, located at adaze.com.
+              </p>
+              <p>
+                By accessing this website, we assume you accept these terms and conditions. Do not continue to use ADAZE Marketplace if you do not agree to all of the terms and conditions stated on this page.
+              </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">2. User Accounts</h2>
-              <h3 className="text-xl font-semibold mb-3">Registration</h3>
-              <p>To use certain features, you must register for an account. You agree to:</p>
-              <ul>
-                <li>Provide accurate, current, and complete information</li>
-                <li>Maintain and update your information to keep it accurate</li>
-                <li>Keep your password secure and confidential</li>
-                <li>Be responsible for all activities under your account</li>
-                <li>Notify us immediately of unauthorized access</li>
-              </ul>
-
-              <h3 className="text-xl font-semibold mb-3 mt-6">User Roles</h3>
-              <ul>
-                <li><strong>Buyers:</strong> Purchase products from traders</li>
-                <li><strong>Traders:</strong> List and sell second-hand fashion items</li>
-                <li><strong>Transporters:</strong> Deliver orders and earn commissions</li>
+              <h2 className="text-2xl font-semibold mb-4">2. Intellectual Property</h2>
+              <p>
+                Unless otherwise stated, ADAZE Marketplace and/or its licensors own the intellectual property rights for all material on ADAZE Marketplace. All intellectual property rights are reserved. You may access this from ADAZE Marketplace for your own personal use subjected to restrictions set in these terms and conditions.
+              </p>
+              <p>You must not:</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Republish material from ADAZE Marketplace</li>
+                <li>Sell, rent, or sub-license material from ADAZE Marketplace</li>
+                <li>Reproduce, duplicate, or copy material from ADAZE Marketplace</li>
+                <li>Redistribute content from ADAZE Marketplace</li>
               </ul>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">3. For Traders</h2>
-              <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
-                <div className="flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-semibold text-green-900 dark:text-green-100 m-0 mb-2">You agree to:</p>
-                    <ul className="text-sm text-green-900 dark:text-green-100 space-y-1 m-0">
-                      <li>Only list authentic, quality second-hand items</li>
-                      <li>Provide accurate descriptions and photos</li>
-                      <li>Honor prices and availability as listed</li>
-                      <li>Ship items within 2 business days of payment</li>
-                      <li>Package items securely to prevent damage</li>
-                      <li>Respond to buyer inquiries promptly</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                <div className="flex items-start gap-2">
-                  <XCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-semibold text-red-900 dark:text-red-100 m-0 mb-2">You may not:</p>
-                    <ul className="text-sm text-red-900 dark:text-red-100 space-y-1 m-0">
-                      <li>Sell counterfeit or stolen goods</li>
-                      <li>Misrepresent product condition or quality</li>
-                      <li>Engage in price manipulation or fraud</li>
-                      <li>Harass or discriminate against buyers</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">4. For Buyers</h2>
-              <p>As a buyer, you agree to:</p>
-              <ul>
-                <li>Make purchases in good faith</li>
-                <li>Provide accurate shipping information</li>
-                <li>Pay for purchases promptly</li>
-                <li>Inspect items upon delivery and report issues within 48 hours</li>
-                <li>Leave honest, fair reviews</li>
+              <h2 className="text-2xl font-semibold mb-4">3. User Responsibilities</h2>
+              <p>As a user of ADAZE Marketplace, you agree to:</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Provide accurate and complete information during registration</li>
+                <li>Maintain the security of your account credentials</li>
+                <li>Use the platform in compliance with applicable laws</li>
+                <li>Respect other users' rights and privacy</li>
+                <li>Not engage in fraudulent or deceptive practices</li>
+                <li>Report any security vulnerabilities you discover</li>
               </ul>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">5. Payments and Fees</h2>
-              <h3 className="text-xl font-semibold mb-3">Accepted Payment Methods</h3>
-              <ul>
-                <li>M-Pesa (Kenya)</li>
-                <li>Credit/Debit Cards (via Stripe)</li>
-                <li>PayPal (international)</li>
-              </ul>
-
-              <h3 className="text-xl font-semibold mb-3 mt-6">Platform Fees</h3>
-              <ul>
-                <li><strong>Buyers:</strong> No fees - shop for free!</li>
-                <li><strong>Traders:</strong> 5% commission on each sale</li>
-                <li><strong>Transporters:</strong> Earn 10% of delivery fee</li>
-              </ul>
+              <h2 className="text-2xl font-semibold mb-4">4. Product Listings</h2>
+              <p>
+                Traders and wholesalers are solely responsible for the accuracy of their product listings. You agree to provide accurate descriptions, pricing, and availability information. 
+                You must not list items that are illegal, counterfeit, or prohibited by applicable laws.
+              </p>
+              <p>
+                ADAZE reserves the right to remove or modify any product listing that violates these terms or that we determine at our sole discretion to be objectionable.
+              </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">6. Shipping and Delivery</h2>
-              <ul>
-                <li>Traders must ship within 2 business days of payment confirmation</li>
-                <li>Transporters must deliver within agreed timeframes</li>
-                <li>Track your orders in real-time through the platform</li>
-                <li>Report delivery issues immediately</li>
-              </ul>
+              <h2 className="text-2xl font-semibold mb-4">5. Transactions & Payments</h2>
+              <p>
+                All transactions on ADAZE Marketplace are governed by the payment and transaction policies. 
+                We use M-Pesa and other payment methods to process payments securely. 
+                While we do not control the products or services that are purchased through the platform, 
+                we provide tools and systems to facilitate transactions between buyers and sellers.
+              </p>
+              <p>
+                ADAZE charges a commission of 10% on successful transactions. Commission rates may vary for premium trader subscriptions.
+              </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">7. Returns and Refunds</h2>
-              <ul>
-                <li>Items must match their description and photos</li>
-                <li>Report issues within 48 hours of delivery</li>
-                <li>Returns accepted for damaged, defective, or misrepresented items</li>
-                <li>Refunds processed within 5-7 business days</li>
-                <li>Return shipping costs may apply depending on the reason</li>
-              </ul>
+              <h2 className="text-2xl font-semibold mb-4">6. Limitation of Liability</h2>
+              <p>
+                In no event shall ADAZE Marketplace, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of or inability to access or use the service.
+              </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">8. Prohibited Activities</h2>
-              <p>You may not:</p>
-              <ul>
-                <li>Violate any laws or regulations</li>
-                <li>Infringe on intellectual property rights</li>
-                <li>Post fraudulent, misleading, or harmful content</li>
-                <li>Use the platform for money laundering or illegal activities</li>
-                <li>Harass, threaten, or discriminate against other users</li>
-                <li>Attempt to hack, disrupt, or damage the platform</li>
-                <li>Create multiple accounts to manipulate reviews or ratings</li>
-              </ul>
+              <h2 className="text-2xl font-semibold mb-4">7. Governing Law</h2>
+              <p>
+                These terms shall be governed and construed in accordance with the laws of Kenya, without regard to its conflict of law provisions.
+              </p>
+              <p>
+                Our failure to enforce any right or provision of these Terms will not be considered a waiver of those rights. 
+                If any provision of these Terms is held to be invalid or unenforceable by a court, the remaining provisions of these Terms will remain in effect.
+              </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">9. Content and Intellectual Property</h2>
-              <ul>
-                <li>You retain ownership of content you post (photos, descriptions, reviews)</li>
-                <li>By posting, you grant ADAZE a license to use, display, and distribute your content</li>
-                <li>You must own or have rights to any content you upload</li>
-                <li>ADAZE trademarks, logos, and platform design are our property</li>
-              </ul>
+              <h2 className="text-2xl font-semibold mb-4">8. Changes to Terms</h2>
+              <p>
+                We reserve the right, at our sole discretion, to modify or replace these terms at any time. 
+                If a revision is material, we will provide at least 30 days' notice prior to any new terms taking effect. 
+                What constitutes a material change will be determined at our sole discretion.
+              </p>
             </section>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">10. Dispute Resolution</h2>
-              <p>If disputes arise between users:</p>
-              <ul>
-                <li>First, attempt to resolve directly with the other party</li>
-                <li>Contact ADAZE support for mediation</li>
-                <li>We may suspend accounts involved in serious disputes</li>
-                <li>Disputes are subject to Kenyan law and jurisdiction</li>
-              </ul>
+            <section>
+              <h2 className="text-2xl font-semibold mb-4">9. Contact Us</h2>
+              <p>
+                If you have any questions about these Terms and Conditions, please contact us at:
+                <br />
+                Email: support@adaze.com
+                <br />
+                Address: Kenya
+              </p>
             </section>
-
-            <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">11. Termination</h2>
-              <p>We reserve the right to suspend or terminate accounts that:</p>
-              <ul>
-                <li>Violate these Terms of Service</li>
-                <li>Engage in fraudulent or illegal activities</li>
-                <li>Receive multiple complaints from users</li>
-                <li>Remain inactive for extended periods</li>
-              </ul>
-              <p>You may also close your account at any time from your settings.</p>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">12. Limitation of Liability</h2>
-              <p>ADAZE provides a platform to connect buyers, traders, and transporters. We are not responsible for:</p>
-              <ul>
-                <li>Quality, safety, or legality of items listed</li>
-                <li>Accuracy of listings or user-generated content</li>
-                <li>Ability of users to complete transactions</li>
-                <li>Actions or conduct of platform users</li>
-              </ul>
-              <p>Use the platform at your own risk. Our liability is limited to the fullest extent permitted by law.</p>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">13. Changes to Terms</h2>
-              <p>We may update these Terms of Service from time to time. Continued use of the platform after changes constitutes acceptance of the new terms.</p>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">14. Contact Us</h2>
-              <p>Questions about these terms? Contact us:</p>
-              <ul>
-                <li><strong>Email:</strong> <a href="mailto:legal@adaze.co.ke">legal@adaze.co.ke</a></li>
-                <li><strong>Phone:</strong> +254 700 123 456</li>
-                <li><strong>Support:</strong> <a href="/help">Help Center</a></li>
-              </ul>
-            </section>
-          </div>
-        </div>
-      </main>
-      
-      <Footer />
-      
-      <AuthModal 
-        type={authModal} 
-        isOpen={!!authModal} 
-        onClose={() => setAuthModal(null)}
-        onSuccess={() => setAuthModal(null)}
-      />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

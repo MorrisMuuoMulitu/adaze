@@ -2,7 +2,7 @@
 
 A full-stack e-commerce platform connecting buyers, traders, and transporters in Kenya's second-hand clothing market (mitumba).
 
-[![Netlify Status](https://img.shields.io/badge/Deployed-Netlify-00C7B7?style=flat-square&logo=netlify)](https://adaze.netlify.app)
+[![Netlify Status](https://img.shields.io/badge/Deployed-Netlify-00C7B7?style=flat-square&logo=netlify)](https://adazeconnect.com)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Auth%20%26%20DB-3ECF8E?style=flat-square&logo=supabase)](https://supabase.com/)
@@ -75,7 +75,7 @@ A full-stack e-commerce platform connecting buyers, traders, and transporters in
 ### Deployment
 - **Hosting**: Netlify
 - **CI/CD**: Automatic deployment from GitHub
-- **Domain**: adaze.netlify.app / adaze.com
+- **Domain**: adazeconnect.com
 
 ## 🚀 Quick Start
 
@@ -269,8 +269,8 @@ Built with ❤️ by the ADAZE Team
 
 ## 📞 Support
 
-- **Website**: [adaze.netlify.app](https://adaze.netlify.app)
-- **Email**: support@adaze.com
+- **Website**: [adazeconnect.com](https://adazeconnect.com)
+- **Email**: support@adazeconnect.com
 - **Documentation**: See `/docs` folder
 
 ## 🙏 Acknowledgments

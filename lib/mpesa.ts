@@ -87,8 +87,8 @@ class MpesaService {
       return `${process.env.URL}/api/mpesa/callback`;
     }
     
-    // Fallback to localhost for development
-    return 'http://localhost:3000/api/mpesa/callback';
+    // Fallback to new domain for production if not configured
+    return 'https://adazeconnect.com/api/mpesa/callback';
   }
 
   /**

@@ -37,6 +37,8 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}/dashboard/trader`);
       } else if (role === 'transporter') {
         return NextResponse.redirect(`${origin}/dashboard/transporter`);
+      } else if (role === 'wholesaler') {
+        return NextResponse.redirect(`${origin}/dashboard/wholesaler`);
       }
     }
   }

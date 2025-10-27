@@ -29,10 +29,20 @@ const footerSections = [
   {
     title: 'For Transporters',
     links: [
-      { name: 'Join Network', href: '/marketplace' },
+      { name: 'Join Network', href: '/transporter-registration' },
       { name: 'Transporter Dashboard', href: '/dashboard/transporter' },
-      { name: 'Available Deliveries', href: '/transporter/available-deliveries' },
-      { name: 'My Deliveries', href: '/transporter/my-deliveries' },
+      { name: 'Find Delivery', href: '/transporter-connection' },
+      { name: 'My Deliveries', href: '/dashboard/transporter' },
+      { name: 'Help Center', href: '/help' }
+    ]
+  },
+  {
+    title: 'For Wholesalers',
+    links: [
+      { name: 'Wholesaler Dashboard', href: '/dashboard/wholesaler' },
+      { name: 'Manage Inventory', href: '/products' },
+      { name: 'View Orders', href: '/orders' },
+      { name: 'Analytics', href: '/dashboard/wholesaler/analytics' },
       { name: 'Help Center', href: '/help' }
     ]
   },
@@ -128,7 +138,7 @@ export function Footer() {
 
             {/* Links sections */}
             <div className="lg:col-span-8">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-8">
                 {footerSections.map((section, index) => (
                   <motion.div
                     key={section.title}

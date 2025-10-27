@@ -1,160 +1,153 @@
-'use client'
-
-import { Navbar } from '@/components/layout/navbar';
-import { Footer } from '@/components/layout/footer';
-import { Shield, Lock, Eye, Database, Users, AlertCircle } from 'lucide-react';
-import { useState } from 'react';
-import { AuthModal } from '@/components/auth/auth-modal';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function PrivacyPolicyPage() {
-  const [authModal, setAuthModal] = useState<'login' | 'register' | null>(null);
-
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navbar onAuthClick={setAuthModal} />
-      
-      <main className="flex-grow py-12 sm:py-16 lg:py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
-              <Shield className="h-8 w-8 text-primary" />
-            </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              Privacy Policy
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              Last updated: January 2025
-            </p>
-          </div>
-
-          {/* Content */}
-          <div className="prose prose-slate dark:prose-invert max-w-none">
-            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mb-8">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-blue-900 dark:text-blue-100 m-0">
-                  At ADAZE, we take your privacy seriously. This policy explains how we collect, use, and protect your personal information.
-                </p>
-              </div>
-            </div>
-
+    <div className="min-h-screen bg-background py-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-3xl font-bold">Privacy Policy</CardTitle>
+            <p className="text-muted-foreground">Last updated: October 27, 2025</p>
+          </CardHeader>
+          <CardContent className="prose prose-blue max-w-none">
             <section className="mb-8">
-              <div className="flex items-center gap-3 mb-4">
-                <Database className="h-6 w-6 text-primary" />
-                <h2 className="text-2xl font-bold m-0">Information We Collect</h2>
-              </div>
-              <p>We collect information that you provide directly to us, including:</p>
-              <ul>
-                <li><strong>Account Information:</strong> Name, email address, phone number, and password</li>
-                <li><strong>Profile Data:</strong> Profile picture, location, and role (buyer, trader, or transporter)</li>
-                <li><strong>Transaction Data:</strong> Order history, payment information (securely processed through M-Pesa, Stripe, or PayPal)</li>
-                <li><strong>Product Listings:</strong> For traders - product photos, descriptions, and pricing</li>
-                <li><strong>Communications:</strong> Messages, reviews, and support inquiries</li>
+              <h2 className="text-2xl font-semibold mb-4">1. Information We Collect</h2>
+              <p>
+                We collect information you provide directly to us when you use our services, including:
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Account registration information (name, email, phone number)</li>
+                <li>Profile information (location, business details)</li>
+                <li>Transaction information (orders, payments)</li>
+                <li>Communication preferences and support interactions</li>
+                <li>Usage data and preferences</li>
               </ul>
             </section>
 
             <section className="mb-8">
-              <div className="flex items-center gap-3 mb-4">
-                <Eye className="h-6 w-6 text-primary" />
-                <h2 className="text-2xl font-bold m-0">How We Use Your Information</h2>
-              </div>
-              <p>We use your information to:</p>
-              <ul>
-                <li>Provide and improve our marketplace services</li>
-                <li>Process transactions and send order confirmations</li>
-                <li>Communicate with you about your account and orders</li>
-                <li>Personalize your experience and show relevant products</li>
-                <li>Prevent fraud and ensure platform security</li>
+              <h2 className="text-2xl font-semibold mb-4">2. How We Use Your Information</h2>
+              <p>We use the information we collect to:</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Provide, maintain, and improve our services</li>
+                <li>Process transactions and send related communications</li>
+                <li>Send marketing communications with your consent</li>
+                <li>Protect against fraud and ensure security</li>
                 <li>Comply with legal obligations</li>
+                <li>Personalize your experience on our platform</li>
               </ul>
             </section>
 
             <section className="mb-8">
-              <div className="flex items-center gap-3 mb-4">
-                <Lock className="h-6 w-6 text-primary" />
-                <h2 className="text-2xl font-bold m-0">Data Security</h2>
-              </div>
-              <p>We implement industry-standard security measures to protect your data:</p>
-              <ul>
-                <li><strong>Encryption:</strong> All data is encrypted in transit and at rest using SSL/TLS</li>
-                <li><strong>Secure Authentication:</strong> Password hashing and secure session management</li>
-                <li><strong>Payment Security:</strong> We never store full payment card details</li>
-                <li><strong>Access Controls:</strong> Role-based permissions limit data access</li>
-                <li><strong>Regular Audits:</strong> We conduct security assessments regularly</li>
+              <h2 className="text-2xl font-semibold mb-4">3. Information Sharing</h2>
+              <p>
+                We do not sell your personal information. We may share your information with:
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Service providers who assist in our operations</li>
+                <li>Payment processors for transaction processing</li>
+                <li>Transporters for delivery coordination</li>
+                <li>Legal authorities when required by law</li>
+                <li>Other users as necessary for transaction completion</li>
               </ul>
             </section>
 
             <section className="mb-8">
-              <div className="flex items-center gap-3 mb-4">
-                <Users className="h-6 w-6 text-primary" />
-                <h2 className="text-2xl font-bold m-0">Information Sharing</h2>
-              </div>
-              <p>We only share your information in these limited circumstances:</p>
-              <ul>
-                <li><strong>With Other Users:</strong> Your public profile information is visible to facilitate transactions</li>
-                <li><strong>Service Providers:</strong> Payment processors, hosting services, and analytics providers</li>
-                <li><strong>Legal Requirements:</strong> When required by law or to protect our rights</li>
-                <li><strong>Business Transfers:</strong> In case of merger, acquisition, or asset sale</li>
+              <h2 className="text-2xl font-semibold mb-4">4. Data Security</h2>
+              <p>
+                We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. 
+                These measures include encryption, secure server infrastructure, and access controls.
+              </p>
+              <p>
+                However, no method of transmission over the internet or method of electronic storage is 100% secure, 
+                and we cannot guarantee absolute security of your information.
+              </p>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-2xl font-semibold mb-4">5. Data Retention</h2>
+              <p>
+                We retain your personal information for as long as necessary to provide our services and comply with our legal obligations. 
+                Specific retention periods vary based on the type of information and purpose of processing.
+              </p>
+              <p>
+                You can request deletion of your account and associated data by contacting us, 
+                subject to legal requirements and ongoing business needs.
+              </p>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-2xl font-semibold mb-4">6. Your Rights</h2>
+              <p>Depending on your location, you may have the following rights regarding your personal information:</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Access to your personal information</li>
+                <li>Correction of inaccurate information</li>
+                <li>Deletion of your information</li>
+                <li>Restriction of processing</li>
+                <li>Data portability</li>
+                <li>Objection to processing</li>
+                <li>Withdrawal of consent</li>
               </ul>
-              <p><strong>We never sell your personal information to third parties.</strong></p>
+              <p>
+                To exercise these rights, please contact us using the information provided below.
+              </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">Your Rights</h2>
-              <p>You have the right to:</p>
-              <ul>
-                <li><strong>Access:</strong> Request a copy of your personal data</li>
-                <li><strong>Correction:</strong> Update or correct your information</li>
-                <li><strong>Deletion:</strong> Request deletion of your account and data</li>
-                <li><strong>Opt-out:</strong> Unsubscribe from marketing communications</li>
-                <li><strong>Data Portability:</strong> Export your data in a portable format</li>
-              </ul>
-              <p>To exercise these rights, contact us at <a href="mailto:privacy@adaze.co.ke">privacy@adaze.co.ke</a></p>
+              <h2 className="text-2xl font-semibold mb-4">7. Cookies and Tracking Technologies</h2>
+              <p>
+                We use cookies and similar tracking technologies to enhance your experience on our platform. 
+                Cookies help us remember your preferences, analyze platform usage, and provide personalized content.
+              </p>
+              <p>
+                You can control cookies through your browser settings, but disabling cookies may affect the functionality of our services.
+              </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">Cookies and Tracking</h2>
-              <p>We use cookies and similar technologies to:</p>
-              <ul>
-                <li>Remember your preferences and settings</li>
-                <li>Analyze site traffic and user behavior</li>
-                <li>Personalize content and advertisements</li>
-              </ul>
-              <p>You can control cookies through your browser settings.</p>
+              <h2 className="text-2xl font-semibold mb-4">8. Third-Party Services</h2>
+              <p>
+                We may use third-party services for analytics, payment processing, and other business functions. 
+                These third parties may collect information on our behalf, subject to their own privacy policies.
+              </p>
+              <p>
+                We encourage you to review the privacy policies of these third parties to understand how your information is processed.
+              </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">Children's Privacy</h2>
-              <p>ADAZE is not intended for users under 18 years of age. We do not knowingly collect information from children under 18.</p>
+              <h2 className="text-2xl font-semibold mb-4">9. Children's Privacy</h2>
+              <p>
+                Our services are not directed to children under the age of 18. We do not knowingly collect personal information from children under 18.
+              </p>
+              <p>
+                If we become aware that we have collected personal information from a child under 18, we will take steps to delete such information.
+              </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">Changes to This Policy</h2>
-              <p>We may update this privacy policy from time to time. We will notify you of significant changes via email or platform notification.</p>
+              <h2 className="text-2xl font-semibold mb-4">10. International Transfer</h2>
+              <p>
+                Your information may be transferred to and processed in countries other than your country of residence. 
+                These countries may have different data protection laws than those in your jurisdiction.
+              </p>
+              <p>
+                When transferring your information internationally, we implement appropriate safeguards to protect your privacy rights.
+              </p>
             </section>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
-              <p>If you have questions about this privacy policy, please contact us:</p>
-              <ul>
-                <li><strong>Email:</strong> <a href="mailto:privacy@adaze.co.ke">privacy@adaze.co.ke</a></li>
-                <li><strong>Phone:</strong> +254 700 123 456</li>
-                <li><strong>Address:</strong> Nairobi, Kenya</li>
-              </ul>
+            <section>
+              <h2 className="text-2xl font-semibold mb-4">11. Contact Us</h2>
+              <p>
+                If you have questions about this Privacy Policy or how we handle your personal information, please contact us at:
+                <br />
+                Email: privacy@adaze.com
+                <br />
+                Address: Kenya
+              </p>
             </section>
-          </div>
-        </div>
-      </main>
-      
-      <Footer />
-      
-      <AuthModal 
-        type={authModal} 
-        isOpen={!!authModal} 
-        onClose={() => setAuthModal(null)}
-        onSuccess={() => setAuthModal(null)}
-      />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

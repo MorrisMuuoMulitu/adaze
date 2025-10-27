@@ -7,7 +7,7 @@ export interface User {
   firstName?: string;
   lastName?: string;
   phone?: string;
-  role: 'buyer' | 'trader' | 'transporter';
+  role: 'buyer' | 'trader' | 'transporter' | 'wholesaler';
   avatar?: string;
   location: string;
   isVerified: boolean;

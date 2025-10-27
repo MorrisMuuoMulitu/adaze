@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { productService } from '@/lib/productService';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://adaze.africa';
+  const baseUrl = 'https://adazeconnect.com';
 
   // Get all products
   const products = await productService.getAllProducts();

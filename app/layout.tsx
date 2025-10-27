@@ -13,7 +13,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://adaze.africa'),
+  metadataBase: new URL('https://adazeconnect.com'),
   title: 'ADAZE - Ultimate African Mitumba Marketplace',
   description: 'Discover quality second-hand fashion at unbeatable prices. Connect traders, buyers, and transporters in Africa\'s premier mitumba marketplace with real-time tracking, secure payments, and community features.',
   keywords: 'mitumba, second-hand clothes, African marketplace, fashion, trading, Kenya, Tanzania, Uganda, Nigeria, Ghana, Rwanda, sustainable fashion, thrift, vintage',
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'ADAZE - Ultimate African Mitumba Marketplace',
     description: 'Discover quality second-hand fashion at unbeatable prices across Africa',
-    url: 'https://adaze.africa',
+    url: 'https://adazeconnect.com',
     siteName: 'ADAZE',
     images: [
       {

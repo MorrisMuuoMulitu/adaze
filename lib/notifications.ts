@@ -80,7 +80,7 @@ export async function notifyNewLogin(
         <li>Reviewing your active sessions</li>
       </ul>
       <p style="margin-top: 30px;">
-        <a href="https://adaze.com/settings" style="background: #8b5cf6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+        <a href="https://adazeconnect.com/settings" style="background: #8b5cf6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
           Secure My Account
         </a>
       </p>
@@ -99,7 +99,7 @@ IP Address: ${ipAddress}
 Time: ${new Date().toLocaleString()}
 
 If this wasn't you, please secure your account immediately.
-Visit: https://adaze.com/settings
+Visit: https://adazeconnect.com/settings
   `;
 
   return sendEmailNotification({ to: email, subject, html, text });
@@ -133,7 +133,7 @@ export async function notifySuspiciousActivity(
         <li>Check your active sessions and terminate any you don't recognize</li>
       </ul>
       <p style="margin-top: 30px;">
-        <a href="https://adaze.com/settings" style="background: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+        <a href="https://adazeconnect.com/settings" style="background: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
           Review Account Security
         </a>
       </p>
@@ -152,7 +152,7 @@ Details: ${description}
 Time: ${new Date().toLocaleString()}
 
 Please review your account security immediately.
-Visit: https://adaze.com/settings
+Visit: https://adazeconnect.com/settings
   `;
 
   return sendEmailNotification({ to: email, subject, html, text });
@@ -216,7 +216,7 @@ export async function notify2FAEnabled(userId: string, email: string) {
       </div>
       <p>If you didn't enable 2FA, please secure your account immediately.</p>
       <p style="margin-top: 30px;">
-        <a href="https://adaze.com/settings" style="background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+        <a href="https://adazeconnect.com/settings" style="background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
           View Security Settings
         </a>
       </p>

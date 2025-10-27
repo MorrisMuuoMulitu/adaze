@@ -48,7 +48,7 @@ export default function ContactPage() {
             <CardDescription>Send us an email anytime</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-primary font-medium">support@adaze.africa</p>
+            <p className="text-primary font-medium">support@adazeconnect.com</p>
           </CardContent>
         </Card>
 

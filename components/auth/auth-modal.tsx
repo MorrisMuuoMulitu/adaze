@@ -41,7 +41,7 @@ import { toast } from 'sonner';
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
   password: z.string().min(1, { message: "Password is required" }),
-  role: z.enum(["buyer", "trader", "transporter"]),
+  role: z.enum(["buyer", "trader", "transporter", "wholesaler"]),
 });
 
 const registerSchema = z.object({
@@ -52,7 +52,7 @@ const registerSchema = z.object({
   location: z.string().min(1, { message: "Location is required" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   confirmPassword: z.string(),
-  role: z.enum(["buyer", "trader", "transporter"]),
+  role: z.enum(["buyer", "trader", "transporter", "wholesaler"]),
   agreeToTerms: z.boolean().refine((val) => val === true, {
     message: "You must agree to the terms and conditions",
   }),
@@ -134,6 +134,14 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
       icon: Truck,
       color: 'from-orange-500 to-red-500',
       features: ['Delivery jobs', 'County coverage', 'Good earnings']
+    },
+    {
+      value: 'wholesaler',
+      label: 'Wholesaler',
+      description: 'Import and wholesale mitumba items to traders across Kenya',
+      icon: ShoppingBag,
+      color: 'from-purple-500 to-pink-500',
+      features: ['Bulk imports', 'Trader supply', 'Country-wide reach']
     }
   ];
 
