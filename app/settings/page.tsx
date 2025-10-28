@@ -17,7 +17,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!user) {
-      router.push('/login');
+      router.push('/'); // Redirect to home page instead of /login which doesn't exist
     } else {
       setLoading(false);
     }

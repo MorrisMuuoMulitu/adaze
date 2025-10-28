@@ -133,6 +133,7 @@ export async function middleware(request: NextRequest) {
     '/dashboard/buyer': ['buyer'],
     '/dashboard/trader': ['trader'],
     '/dashboard/transporter': ['transporter'],
+    '/dashboard/wholesaler': ['wholesaler'],
     '/admin': ['admin'], // Admin dashboard - admins only
     '/marketplace': ['buyer'], // Only buyers can access marketplace
     '/products/add': ['trader'],
@@ -186,6 +187,8 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/dashboard/trader', request.url));
       } else if (userRole === 'transporter') {
         return NextResponse.redirect(new URL('/dashboard/transporter', request.url));
+      } else if (userRole === 'wholesaler') {
+        return NextResponse.redirect(new URL('/dashboard/wholesaler', request.url));
       }
       // Fallback for unknown roles or if dashboard doesn't exist
       return NextResponse.redirect(new URL('/', request.url));

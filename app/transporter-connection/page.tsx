@@ -59,7 +59,7 @@ export default function TransporterConnectionPage() {
 
   useEffect(() => {
     if (!loading && (!user || (user.role !== 'buyer' && user.role !== 'trader' && user.role !== 'wholesaler'))) {
-      router.push('/auth/login');
+      router.push('/');
       toast.error('Access denied. Buyers, traders, and wholesalers only.');
     }
   }, [user, loading, router]);
@@ -190,7 +190,7 @@ export default function TransporterConnectionPage() {
           </CardHeader>
           <CardContent className="text-center">
             <Button 
-              onClick={() => router.push('/auth/login')}
+              onClick={() => router.push('/')}
               className="w-full"
             >
               Go to Login

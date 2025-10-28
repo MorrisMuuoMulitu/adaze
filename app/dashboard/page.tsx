@@ -39,7 +39,9 @@ export default function Dashboard() {
         } else if (role === 'trader') {
           router.push('/dashboard/trader');
         } else if (role === 'transporter') {
-          router.push('/dashboard/transporter'); // Assuming a transporter dashboard exists
+          router.push('/dashboard/transporter');
+        } else if (role === 'wholesaler') {
+          router.push('/dashboard/wholesaler');
         } else {
           // Handle unknown role, maybe redirect to profile page to set role
           router.push('/profile');

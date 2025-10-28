@@ -137,6 +137,9 @@ export default function Home() {
       } else if (role === 'transporter') {
         // Transporters go to their dashboard
         router.push('/dashboard/transporter');
+      } else if (role === 'wholesaler') {
+        // Wholesalers go to their dashboard
+        router.push('/dashboard/wholesaler');
       }
     };
 
@@ -233,12 +236,36 @@ export default function Home() {
                 Welcome back, {user.user_metadata.full_name || (user.email ? user.email.split('@')[0] : 'User')}!
               </h2>
               <p className="text-muted-foreground mb-6">
-                Redirecting to the marketplace...
+                Redirecting to your dashboard...
               </p>
               <p className="text-sm text-muted-foreground">
                 You&apos;ll be redirected automatically, or{' '}
                 <button 
-                  onClick={() => router.push('/marketplace')}
+                  onClick={() => {
+                    const redirectBasedOnRole = async () => {
+                      const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('role')
+                        .eq('id', user.id)
+                        .single();
+                      
+                      const role = profile?.role;
+                      if (role === 'admin') {
+                        router.push('/admin');
+                      } else if (role === 'buyer') {
+                        router.push('/marketplace');
+                      } else if (role === 'trader') {
+                        router.push('/dashboard/trader');
+                      } else if (role === 'transporter') {
+                        router.push('/dashboard/transporter');
+                      } else if (role === 'wholesaler') {
+                        router.push('/dashboard/wholesaler');
+                      } else {
+                        router.push('/marketplace'); // default
+                      }
+                    };
+                    redirectBasedOnRole();
+                  }}
                   className="text-primary hover:underline"
                 >
                   click here

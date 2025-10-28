@@ -43,7 +43,7 @@ export default function WholesalerAnalytics() {
 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'wholesaler')) {
-      router.push('/auth/login');
+      router.push('/');
     }
   }, [user, loading, router]);
 
@@ -97,7 +97,7 @@ export default function WholesalerAnalytics() {
           </CardHeader>
           <CardContent className="text-center">
             <Button 
-              onClick={() => router.push('/auth/login')}
+              onClick={() => router.push('/')}
               className="w-full"
             >
               Go to Login

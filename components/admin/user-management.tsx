@@ -273,12 +273,21 @@ export function UserManagement() {
     if (!roleChangeDialog.userId || !roleChangeDialog.newRole) return;
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role: roleChangeDialog.newRole })
-        .eq('id', roleChangeDialog.userId);
+      const response = await fetch('/api/admin/update-role', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: roleChangeDialog.userId,
+          role: roleChangeDialog.newRole,
+        }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update role');
+      }
 
       toast({
         title: 'Success',

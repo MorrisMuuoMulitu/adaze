@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/components/auth/auth-provider';
+import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,19 +24,54 @@ import { toast } from 'sonner';
 export default function WholesalerDashboard() {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const supabase = createClient();
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalOrders: 0,
     totalRevenue: 0,
     pendingOrders: 0,
   });
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
 
+  // Get user role from profiles table
   useEffect(() => {
-    if (!loading && (!user || user.role !== 'wholesaler')) {
-      router.push('/auth/login');
-      toast.error('Access denied. Wholesalers only.');
-    }
-  }, [user, loading, router]);
+    const fetchUserRole = async () => {
+      if (user) {
+        try {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+          
+          if (error) {
+            console.error('Error fetching user role:', error);
+            // Redirect to home if unable to fetch role
+            router.push('/');
+            return;
+          }
+          
+          setUserRole(profile?.role || null);
+          
+          if (profile?.role !== 'wholesaler') {
+            router.push('/');
+            toast.error('Access denied. Wholesalers only.');
+          }
+        } catch (error) {
+          console.error('Error in fetchUserRole:', error);
+          router.push('/');
+          toast.error('Access denied. Please log in again.');
+        } finally {
+          setRoleLoading(false);
+        }
+      } else {
+        setRoleLoading(false);
+      }
+    };
+
+    fetchUserRole();
+  }, [user, router, supabase]);
 
   // Mock data for stats - in real app, this would come from API
   useEffect(() => {
@@ -49,12 +85,12 @@ export default function WholesalerDashboard() {
       });
     };
 
-    if (user?.role === 'wholesaler') {
+    if (userRole === 'wholesaler') {
       fetchStats();
     }
-  }, [user]);
+  }, [userRole]);
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
@@ -62,7 +98,7 @@ export default function WholesalerDashboard() {
     );
   }
 
-  if (!user || user.role !== 'wholesaler') {
+  if (!user || userRole !== 'wholesaler') {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
@@ -74,10 +110,10 @@ export default function WholesalerDashboard() {
           </CardHeader>
           <CardContent className="text-center">
             <Button 
-              onClick={() => router.push('/auth/login')}
+              onClick={() => router.push('/')}
               className="w-full"
             >
-              Go to Login
+              Go to Home
             </Button>
           </CardContent>
         </Card>

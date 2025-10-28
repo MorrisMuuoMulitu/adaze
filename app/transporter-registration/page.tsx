@@ -99,7 +99,7 @@ export default function TransporterRegistrationPage() {
           </CardHeader>
           <CardContent className="text-center">
             <Button 
-              onClick={() => router.push('/auth/login')}
+              onClick={() => router.push('/')}
               className="w-full"
             >
               Go to Login
