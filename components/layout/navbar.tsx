@@ -149,6 +149,12 @@ export function Navbar({ onAuthClick }: NavbarProps) {
     { name: 'Orders', href: '/orders/received', icon: ClipboardList },
   ];
 
+  const wholesalerNavItems = [
+    { name: 'Dashboard', href: '/dashboard/wholesaler', icon: LayoutDashboard },
+    { name: 'Products', href: '/products', icon: Package },
+    { name: 'Orders', href: '/orders', icon: ClipboardList },
+  ];
+
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'trader': return <Store className="h-4 w-4" />;
@@ -295,6 +301,12 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                           </DropdownMenuLabel>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem asChild>
+                            <Link href="/">
+                              <ShoppingBag className="mr-2 h-4 w-4" />
+                              <span>Home</span>
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
                             <Link href={`/dashboard/${userRole}`}>
                               <LayoutDashboard className="mr-2 h-4 w-4" />
                               <span>Dashboard</span>
@@ -414,7 +426,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                   />
                 </div>
 
-                {(userRole === 'trader' ? traderNavItems : navItems).map((item) => (
+                {(userRole === 'trader' ? traderNavItems : userRole === 'wholesaler' ? wholesalerNavItems : navItems).map((item) => (
                   <a
                     key={item.name}
                     href={item.href}

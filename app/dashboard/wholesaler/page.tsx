@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/components/auth/auth-provider';
 import { createClient } from '@/lib/supabase/client';
+import { Navbar } from '@/components/layout/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -123,6 +124,7 @@ export default function WholesalerDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Navbar onAuthClick={() => {}} /> {/* Add navbar to wholesaler dashboard */}
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-700 text-white p-6">
         <div className="max-w-7xl mx-auto">
