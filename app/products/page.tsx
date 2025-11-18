@@ -12,7 +12,7 @@ export default function MarketplacePage() {
   const [products, setProducts] = useState<DBProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Get max price from products
   const maxPrice = useMemo(() => {
     return products.length > 0
@@ -40,13 +40,13 @@ export default function MarketplacePage() {
       try {
         const response = await fetch('/api/products');
         console.log('MarketplacePage: API response received', response.status, response.statusText);
-        
+
         if (!response.ok) {
           const errorMsg = `Failed to fetch products: ${response.status} ${response.statusText}`;
           console.error('MarketplacePage: API error', errorMsg);
           throw new Error(errorMsg);
         }
-        
+
         const data: DBProduct[] = await response.json();
         console.log('MarketplacePage: Products data received', data.length, 'products');
         setProducts(data);
@@ -74,7 +74,7 @@ export default function MarketplacePage() {
         priceRange: [0, maxPrice],
       }));
     }
-  }, [maxPrice, products.length]);
+  }, [maxPrice, products.length, filters.priceRange]);
 
   // Apply filters and sorting
   const filteredProducts = useMemo(() => {
@@ -133,11 +133,11 @@ export default function MarketplacePage() {
     return filtered;
   }, [products, filters]);
 
-  console.log('MarketplacePage: Rendering component', { 
-    loading, 
-    error, 
+  console.log('MarketplacePage: Rendering component', {
+    loading,
+    error,
     productsCount: products.length,
-    filteredCount: filteredProducts.length 
+    filteredCount: filteredProducts.length
   });
 
   if (loading) {
@@ -194,10 +194,10 @@ export default function MarketplacePage() {
         </div>
 
         {/* Products */}
-        <FeaturedProducts 
-          products={filteredProducts} 
-          loading={false} 
-          error={null} 
+        <FeaturedProducts
+          products={filteredProducts}
+          loading={false}
+          error={null}
         />
       </div>
     </div>

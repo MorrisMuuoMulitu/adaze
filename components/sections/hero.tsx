@@ -53,15 +53,10 @@ export function Hero({ onGetStarted }: HeroProps) {
             </span>
           </motion.h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
-          >
-            Discover curated vintage & streetwear from Kenya's top verified sellers.
+          <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto lg:mx-0">
+            Discover curated vintage & streetwear from Kenya&apos;s top verified sellers.
             Premium quality, unbeatable prices.
-          </motion.p>
+          </p>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}

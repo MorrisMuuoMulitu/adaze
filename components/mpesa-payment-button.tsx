@@ -38,7 +38,7 @@ export function MpesaPaymentButton({
   const formatPhoneNumber = (value: string) => {
     // Remove all non-digits
     const digits = value.replace(/\D/g, '');
-    
+
     // Format as: 0712 345 678 or 254712 345 678
     if (digits.startsWith('254')) {
       return digits.slice(0, 12);
@@ -165,16 +165,12 @@ export function MpesaPaymentButton({
       </Button>
 
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <div className="h-10 w-10 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">
-                M
-              </div>
-              M-Pesa Payment
-            </DialogTitle>
+            <DialogTitle>M-Pesa Payment</DialogTitle>
             <DialogDescription>
-              Pay KSh {amount.toLocaleString()} via M-Pesa Lipa Na M-Pesa Online
+              Enter your M-Pesa phone number to pay KSh {amount.toLocaleString()}.
+              A prompt will be sent to your phone.
             </DialogDescription>
           </DialogHeader>
 
@@ -204,7 +200,7 @@ export function MpesaPaymentButton({
                   <p className="text-sm font-medium">How it works:</p>
                   <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
                     <li>Enter your M-Pesa registered phone number</li>
-                    <li>Click "Send Payment Request"</li>
+                    <li>Click &quot;Send Payment Request&quot;</li>
                     <li>Check your phone for the STK Push prompt</li>
                     <li>Enter your M-Pesa PIN to complete payment</li>
                   </ol>

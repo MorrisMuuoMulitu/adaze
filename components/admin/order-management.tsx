@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -115,15 +115,7 @@ export function OrderManagement() {
   const supabase = createClient();
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  useEffect(() => {
-    filterOrders();
-  }, [orders, searchTerm, statusFilter]);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -162,9 +154,9 @@ export function OrderManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
 
-  const filterOrders = () => {
+  const filterOrders = useCallback(() => {
     let filtered = [...orders];
 
     // Filter by search term
@@ -183,7 +175,15 @@ export function OrderManagement() {
     }
 
     setFilteredOrders(filtered);
-  };
+  }, [orders, searchTerm, statusFilter]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  useEffect(() => {
+    filterOrders();
+  }, [filterOrders]);
 
   const handleChangeStatus = async () => {
     if (!statusChangeDialog.orderId || !statusChangeDialog.newStatus) return;
@@ -217,7 +217,7 @@ export function OrderManagement() {
     try {
       // First delete order items
       await supabase.from('order_items').delete().eq('order_id', orderId);
-      
+
       // Then delete the order
       const { error } = await supabase.from('orders').delete().eq('id', orderId);
 

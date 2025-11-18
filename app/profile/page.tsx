@@ -152,7 +152,7 @@ export default function ProfilePage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => {
@@ -184,23 +184,23 @@ export default function ProfilePage() {
     }
 
     const file = e.target.files[0];
-    
+
     // Validate file before uploading
     if (!file.type.match('image.*')) {
       toast.error('Please select an image file (jpeg, png, webp)');
       return;
     }
-    
+
     setUploading(true);
 
     try {
       // Upload file using the utility function
       const { publicUrl } = await uploadAvatar(user?.id || '', file);
-      
+
       if (publicUrl) {
         // Update the form data with the new avatar URL
         setFormData(prev => ({ ...prev, avatar_url: publicUrl }));
-        
+
         // Update the profile directly in the database
         const { error: updateError } = await supabase
           .from('profiles')
@@ -308,7 +308,7 @@ export default function ProfilePage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast.error('Please fix the errors in the form before saving.');
       return;
@@ -342,8 +342,8 @@ export default function ProfilePage() {
         setEditing(false);
         // Re-fetch profile to update UI with latest data
         // For simplicity, we'll just update the local state for now
-        setProfile((prev) => prev ? { 
-          ...prev, 
+        setProfile((prev) => prev ? {
+          ...prev,
           full_name: formData.full_name,
           phone: formData.phone,
           location: formData.location,
@@ -371,10 +371,10 @@ export default function ProfilePage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar onAuthClick={handleAuthClick} />
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={handleCloseAuthModal} 
-        initialType={authModalType} 
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={handleCloseAuthModal}
+        initialType={authModalType}
         onSuccess={handleCloseAuthModal} // Add onSuccess prop
       />
       <main className="flex-grow">
@@ -405,10 +405,10 @@ export default function ProfilePage() {
                           </Avatar>
                           {editing && (
                             <label className="absolute bottom-2 right-2 bg-primary rounded-full p-1.5 cursor-pointer hover:opacity-80 transition-opacity">
-                              <input 
-                                type="file" 
-                                accept="image/*" 
-                                className="hidden" 
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
                                 onChange={handleImageUpload}
                                 disabled={uploading}
                               />
@@ -417,12 +417,12 @@ export default function ProfilePage() {
                           )}
                         </div>
                         {uploading && <p className="text-sm text-muted-foreground mt-2">Uploading...</p>}
-                        
+
                         <h2 className="text-xl font-bold mt-4">{profile.full_name || user.email}</h2>
                         <p className="text-muted-foreground">{user.email}</p>
                         <Badge variant="secondary" className="mt-2 capitalize">{profile.role}</Badge>
                       </div>
-                      
+
                       <div className="space-y-4">
                         <div className="flex items-center space-x-3">
                           <div className="bg-primary/10 p-2 rounded-lg">
@@ -433,7 +433,7 @@ export default function ProfilePage() {
                             <p className="font-medium">{profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}</p>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center space-x-3">
                           <div className="bg-primary/10 p-2 rounded-lg">
                             <Phone className="h-5 w-5 text-primary" />
@@ -443,7 +443,7 @@ export default function ProfilePage() {
                             <p className="font-medium">{profile.phone || 'Not set'}</p>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center space-x-3">
                           <div className="bg-primary/10 p-2 rounded-lg">
                             <MapPin className="h-5 w-5 text-primary" />
@@ -456,7 +456,7 @@ export default function ProfilePage() {
                       </div>
                     </CardContent>
                   </Card>
-                  
+
                   {/* Quick Actions */}
                   <Card className="mt-6">
                     <CardHeader>
@@ -470,8 +470,8 @@ export default function ProfilePage() {
                         <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/cart')}>
                           Shopping Cart
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="w-full justify-start text-red-600 hover:text-red-600 hover:bg-red-50"
                           onClick={async () => {
                             try {
@@ -480,7 +480,7 @@ export default function ProfilePage() {
                                 const { terminateSession } = await import('@/lib/login-tracker');
                                 await terminateSession(user.id);
                               }
-                              
+
                               await supabase.auth.signOut();
                               // Use window.location for full page reload to clear auth state
                               window.location.href = '/';
@@ -497,7 +497,7 @@ export default function ProfilePage() {
                     </CardContent>
                   </Card>
                 </div>
-                
+
                 {/* Profile Details Card */}
                 <div className="lg:col-span-2">
                   <Card>
@@ -530,7 +530,7 @@ export default function ProfilePage() {
                               <p className="text-lg font-medium capitalize">{profile.role}</p>
                             </div>
                           </div>
-                          
+
                           <div className="flex justify-end pt-6">
                             <Button onClick={() => setEditing(true)}>Edit Profile</Button>
                           </div>
@@ -550,7 +550,7 @@ export default function ProfilePage() {
                               />
                               {errors.full_name && <p className="text-sm text-red-500 mt-1">{errors.full_name}</p>}
                             </div>
-                            
+
                             <div>
                               <Label htmlFor="phone">Phone Number</Label>
                               <Input
@@ -563,7 +563,7 @@ export default function ProfilePage() {
                               />
                               {errors.phone && <p className="text-sm text-red-500 mt-1">{errors.phone}</p>}
                             </div>
-                            
+
                             <div>
                               <Label htmlFor="location">Location</Label>
                               <Input
@@ -576,14 +576,14 @@ export default function ProfilePage() {
                               />
                               {errors.location && <p className="text-sm text-red-500 mt-1">{errors.location}</p>}
                             </div>
-                            
+
                             <div>
                               <Label htmlFor="role">Role</Label>
                               <select
                                 id="role"
                                 name="role"
                                 value={formData.role}
-                                onChange={(e) => setFormData({...formData, role: e.target.value as any})}
+                                onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
                                 className="w-full border border-input bg-background rounded-md px-3 py-2 h-10 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                                 disabled
                               >
@@ -593,7 +593,7 @@ export default function ProfilePage() {
                               </select>
                               <p className="text-xs text-muted-foreground mt-1">Role cannot be changed directly</p>
                             </div>
-                            
+
                             <div className="md:col-span-2">
                               <Label htmlFor="avatar_url">Avatar URL</Label>
                               <Input
@@ -609,12 +609,12 @@ export default function ProfilePage() {
                               <p className="text-sm text-muted-foreground mt-1">Or upload an image using the camera icon above</p>
                             </div>
                           </div>
-                          
+
                           <div className="flex justify-end pt-4">
                             <div className="flex space-x-2">
-                              <Button 
-                                type="button" 
-                                variant="outline" 
+                              <Button
+                                type="button"
+                                variant="outline"
                                 onClick={() => {
                                   setEditing(false);
                                   setFormData({
@@ -639,7 +639,7 @@ export default function ProfilePage() {
                       )}
                     </CardContent>
                   </Card>
-                  
+
                   {/* Order Stats */}
                   <Card className="mt-6">
                     <CardHeader>
@@ -686,7 +686,7 @@ export default function ProfilePage() {
                               </h3>
                             </div>
                             <p className="text-sm text-orange-800 dark:text-orange-200 mb-3">
-                              Temporarily suspend your account. You can contact support to reactivate it later. 
+                              Temporarily suspend your account. You can contact support to reactivate it later.
                               Your data will be preserved.
                             </p>
                             <ul className="text-xs text-orange-700 dark:text-orange-300 space-y-1 mb-3">
@@ -743,11 +743,11 @@ export default function ProfilePage() {
               </div>
             </motion.div>
           </div>
-        </div>
-      </main>
+        </div >
+      </main >
 
       {/* Deactivate Account Dialog */}
-      <AlertDialog open={showDeactivateDialog} onOpenChange={setShowDeactivateDialog}>
+      < AlertDialog open={showDeactivateDialog} onOpenChange={setShowDeactivateDialog} >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
@@ -759,7 +759,7 @@ export default function ProfilePage() {
                 Your account will be temporarily suspended and you will be signed out immediately.
               </p>
               <p className="font-semibold">
-                To reactivate your account, you'll need to contact our support team.
+                To reactivate your account, you&apos;ll need to contact our support team.
               </p>
               <p>
                 All your data will be preserved and restored when you reactivate.
@@ -777,10 +777,10 @@ export default function ProfilePage() {
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </AlertDialog >
 
       {/* Delete Account Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      < AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog} >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-red-600">
@@ -821,7 +821,7 @@ export default function ProfilePage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel 
+            <AlertDialogCancel
               disabled={actionLoading}
               onClick={() => setDeleteConfirmEmail('')}
             >
@@ -836,7 +836,7 @@ export default function ProfilePage() {
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
-    </div>
+      </AlertDialog >
+    </div >
   );
 }

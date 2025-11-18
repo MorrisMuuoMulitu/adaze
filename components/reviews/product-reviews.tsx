@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ReviewCard } from './review-card';
 import { ReviewForm } from './review-form';
 import { StarRating } from './star-rating';
@@ -31,16 +31,7 @@ export function ProductReviews({ productId, traderId }: ProductReviewsProps) {
 
   const isTrader = user?.id === traderId;
 
-  useEffect(() => {
-    loadReviews();
-    loadStats();
-    if (user) {
-      checkCanReview();
-      loadUserReview();
-    }
-  }, [productId, user]);
-
-  const loadReviews = async () => {
+  const loadReviews = useCallback(async () => {
     try {
       const data = await reviewService.getProductReviews(productId);
       setReviews(data);
@@ -50,18 +41,18 @@ export function ProductReviews({ productId, traderId }: ProductReviewsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId]);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const data = await reviewService.getReviewStats(productId);
       setStats(data);
     } catch (error) {
       console.error('Error loading review stats:', error);
     }
-  };
+  }, [productId]);
 
-  const checkCanReview = async () => {
+  const checkCanReview = useCallback(async () => {
     if (!user) return;
     try {
       // Allow all logged-in users to review
@@ -69,9 +60,9 @@ export function ProductReviews({ productId, traderId }: ProductReviewsProps) {
     } catch (error) {
       console.error('Error checking review eligibility:', error);
     }
-  };
+  }, [user]);
 
-  const loadUserReview = async () => {
+  const loadUserReview = useCallback(async () => {
     if (!user) return;
     try {
       const review = await reviewService.getUserReview(user.id, productId);
@@ -79,7 +70,16 @@ export function ProductReviews({ productId, traderId }: ProductReviewsProps) {
     } catch (error) {
       console.error('Error loading user review:', error);
     }
-  };
+  }, [user, productId]);
+
+  useEffect(() => {
+    loadReviews();
+    loadStats();
+    if (user) {
+      checkCanReview();
+      loadUserReview();
+    }
+  }, [productId, user, loadReviews, loadStats, checkCanReview, loadUserReview]);
 
   const handleReviewSubmit = async (reviewData: {
     rating: number;
@@ -122,7 +122,7 @@ export function ProductReviews({ productId, traderId }: ProductReviewsProps) {
 
     try {
       await reviewService.markHelpful(reviewId, user.id);
-      
+
       // Toggle helpful mark in local state
       const newMarks = new Set(helpfulMarks);
       if (newMarks.has(reviewId)) {
@@ -219,9 +219,8 @@ export function ProductReviews({ productId, traderId }: ProductReviewsProps) {
                       onClick={() =>
                         setFilterRating(filterRating === rating ? null : rating)
                       }
-                      className={`flex items-center gap-3 w-full hover:bg-muted p-2 rounded transition-colors ${
-                        filterRating === rating ? 'bg-muted' : ''
-                      }`}
+                      className={`flex items-center gap-3 w-full hover:bg-muted p-2 rounded transition-colors ${filterRating === rating ? 'bg-muted' : ''
+                        }`}
                     >
                       <div className="flex items-center gap-1 min-w-[80px]">
                         <span className="text-sm font-medium">{rating}</span>

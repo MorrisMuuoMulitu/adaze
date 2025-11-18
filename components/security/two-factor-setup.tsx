@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,29 +43,43 @@ export function TwoFactorSetup() {
   const supabase = createClient();
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
 
-  const fetchSettings = async () => {
+
+  const fetchSettings = useCallback(async () => {
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data } = await supabase
-        .from('user_2fa')
+      const { data, error } = await supabase
+        .from('user_security_settings')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
-      setSettings(data);
+      if (error && error.code !== 'PGRST116') throw error;
+
+      if (data) {
+        setSettings({
+          enabled: data.require_2fa || false,
+          method: data.method || 'totp',
+          phone_number: data.phone_number || null,
+          phone_verified: data.phone_verified || false,
+          verified_at: data.verified_at || null,
+        });
+      } else {
+        setSettings(null);
+      }
     } catch (error) {
-      console.error('Error fetching 2FA settings:', error);
+      console.error('Error fetching settings:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   const generateSecret = () => {
     // Generate a random base32 secret (simplified version)
@@ -339,12 +354,13 @@ export function TwoFactorSetup() {
               <div className="ml-10 space-y-3">
                 <div className="p-6 bg-white border-2 border-dashed rounded-lg text-center">
                   {qrCode && (
-                    <div className="mb-4">
-                      <img
+                    <div className="mb-4 flex justify-center">
+                      <Image
                         src={qrCode}
                         alt="QR Code for 2FA"
+                        width={256}
+                        height={256}
                         className="mx-auto"
-                        style={{ width: '256px', height: '256px' }}
                       />
                     </div>
                   )}

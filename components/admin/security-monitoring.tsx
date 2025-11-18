@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,11 +58,7 @@ export function SecurityMonitoring() {
   const supabase = createClient();
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchSecurityData();
-  }, []);
-
-  const fetchSecurityData = async () => {
+  const fetchSecurityData = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -122,7 +118,11 @@ export function SecurityMonitoring() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchSecurityData();
+  }, [fetchSecurityData]);
 
   const resolveActivity = async (activityId: string, resolution: string) => {
     try {

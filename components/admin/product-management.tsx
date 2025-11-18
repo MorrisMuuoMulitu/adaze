@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -110,15 +110,7 @@ export function ProductManagement() {
   const supabase = createClient();
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  useEffect(() => {
-    filterProducts();
-  }, [products, searchTerm, statusFilter]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -145,9 +137,9 @@ export function ProductManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
 
-  const filterProducts = () => {
+  const filterProducts = useCallback(() => {
     let filtered = [...products];
 
     // Filter by search term
@@ -155,7 +147,6 @@ export function ProductManagement() {
       filtered = filtered.filter(
         (product) =>
           product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           product.trader?.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -166,7 +157,15 @@ export function ProductManagement() {
     }
 
     setFilteredProducts(filtered);
-  };
+  }, [products, searchTerm, statusFilter]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  useEffect(() => {
+    filterProducts();
+  }, [filterProducts]);
 
   const handleApproveProduct = async (productId: string) => {
     try {
@@ -227,7 +226,7 @@ export function ProductManagement() {
   const handleDeleteProduct = async (productId: string) => {
     try {
       console.log('Attempting to delete product:', productId);
-      
+
       // Check if product is in any ACTIVE orders (not cancelled)
       const { data: orderItems, error: orderCheckError } = await supabase
         .from('order_items')
@@ -259,7 +258,7 @@ export function ProductManagement() {
         // Instead, set status to rejected to hide it
         const { error } = await supabase
           .from('products')
-          .update({ 
+          .update({
             status: 'rejected',
             rejection_reason: 'Product removed by admin'
           })
@@ -278,7 +277,7 @@ export function ProductManagement() {
       } else {
         // Product not in orders - try to delete
         console.log('Product not in orders, attempting delete...');
-        
+
         // First, remove from carts and wishlists (ignore errors)
         try {
           console.log('Deleting from cart...');
@@ -297,7 +296,7 @@ export function ProductManagement() {
         } catch (cleanupError) {
           console.log('Cleanup error (non-critical):', cleanupError);
         }
-        
+
         // Now delete the product
         console.log('Deleting product...');
         const { error: deleteError } = await supabase
@@ -313,16 +312,16 @@ export function ProductManagement() {
           console.log('Error details:', deleteError.details);
           console.log('Error hint:', deleteError.hint);
           console.log('Error message:', deleteError.message);
-          
+
           // If delete fails due to foreign key, hide it instead
           if (deleteError.code === '23503') {
             console.log('Foreign key constraint detected');
             console.log('Constraint details:', deleteError.details);
             console.log('Hiding product instead...');
-            
+
             const { error: hideError } = await supabase
               .from('products')
-              .update({ 
+              .update({
                 status: 'rejected',
                 rejection_reason: 'Product removed by admin'
               })
@@ -361,7 +360,7 @@ export function ProductManagement() {
   const handleToggleFeatured = async (productId: string, currentFeatured: boolean) => {
     try {
       console.log('Toggling featured:', { productId, currentFeatured, newValue: !currentFeatured });
-      
+
       const { data, error } = await supabase
         .from('products')
         .update({ is_featured: !currentFeatured })
@@ -393,7 +392,7 @@ export function ProductManagement() {
 
     try {
       const updateData: any = { status: statusChangeDialog.newStatus };
-      
+
       // If changing to active, clear rejection reason
       if (statusChangeDialog.newStatus === 'active') {
         updateData.rejection_reason = null;
@@ -793,7 +792,7 @@ export function ProductManagement() {
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground mt-2">
-              Only "Active" products are visible in the marketplace
+              Only &quot;Active&quot; products are visible in the marketplace
             </p>
           </div>
           <AlertDialogFooter>

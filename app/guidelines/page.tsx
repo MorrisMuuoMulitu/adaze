@@ -12,7 +12,7 @@ export default function GuidelinesPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar onAuthClick={setAuthModal} />
-      
+
       <main className="flex-grow py-12 sm:py-16 lg:py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
@@ -48,7 +48,7 @@ export default function GuidelinesPage() {
               <ul>
                 <li>Use polite and professional language in all communications</li>
                 <li>Be patient with buyers, traders, and transporters</li>
-                <li>Respect cultural diversity across Kenya's 47 counties</li>
+                <li>Respect cultural diversity across Kenya&apos;s 47 counties</li>
                 <li>Avoid discriminatory or hateful speech based on tribe, religion, gender, or location</li>
                 <li>Disagree respectfully if you have concerns</li>
               </ul>
@@ -74,7 +74,7 @@ export default function GuidelinesPage() {
                 <Star className="h-6 w-6 text-primary" />
                 <h2 className="text-2xl font-bold m-0">Deliver Quality</h2>
               </div>
-              
+
               <h3 className="text-xl font-semibold mb-3">For Traders:</h3>
               <ul>
                 <li>Only list items in good, wearable condition</li>
@@ -113,21 +113,21 @@ export default function GuidelinesPage() {
                 <li>Be clear about product details, shipping times, and policies</li>
                 <li>Update buyers on order status proactively</li>
                 <li>If problems arise, communicate early and work together to resolve them</li>
-                <li>Use the platform's messaging system for all communications</li>
+                <li>Use the platform&apos;s messaging system for all communications</li>
               </ul>
             </section>
 
             <section className="mb-8">
               <div className="flex items-center gap-3 mb-4">
                 <AlertTriangle className="h-6 w-6 text-red-600" />
-                <h2 className="text-2xl font-bold m-0">What's Not Allowed</h2>
+                <h2 className="text-2xl font-bold m-0">What&apos;s Not Allowed</h2>
               </div>
-              
+
               <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-6">
                 <p className="font-semibold mb-3">Prohibited activities include:</p>
                 <ul className="space-y-2">
                   <li><strong>Counterfeit Goods:</strong> Selling fake designer items or replicas</li>
-                  <li><strong>Stolen Items:</strong> Selling items you don't legally own</li>
+                  <li><strong>Stolen Items:</strong> Selling items you don&apos;t legally own</li>
                   <li><strong>Fraud:</strong> Scams, fake payments, or misleading buyers</li>
                   <li><strong>Harassment:</strong> Bullying, threats, or abusive behavior</li>
                   <li><strong>Spam:</strong> Excessive messaging or unsolicited promotions</li>
@@ -155,7 +155,7 @@ export default function GuidelinesPage() {
               <h2 className="text-2xl font-bold mb-4">Reporting Violations</h2>
               <p>If you encounter behavior that violates these guidelines:</p>
               <ul>
-                <li>Use the "Report" button on listings or user profiles</li>
+                <li>Use the &quot;Report&quot; button on listings or user profiles</li>
                 <li>Provide specific details and evidence (screenshots, messages)</li>
                 <li>Contact support at <a href="mailto:support@adaze.co.ke">support@adaze.co.ke</a></li>
                 <li>We review all reports within 24-48 hours</li>
@@ -187,7 +187,7 @@ export default function GuidelinesPage() {
 
             <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl p-6 border mt-8">
               <p className="text-center font-semibold text-lg mb-2">
-                Together, we're building Kenya's most trusted marketplace! 🇰🇪
+                Together, we&apos;re building Kenya&apos;s most trusted marketplace! 🇰🇪
               </p>
               <p className="text-center text-muted-foreground">
                 Thank you for being a valuable member of the ADAZE community.
@@ -196,12 +196,12 @@ export default function GuidelinesPage() {
           </div>
         </div>
       </main>
-      
+
       <Footer />
-      
-      <AuthModal 
-        type={authModal} 
-        isOpen={!!authModal} 
+
+      <AuthModal
+        type={authModal}
+        isOpen={!!authModal}
         onClose={() => setAuthModal(null)}
         onSuccess={() => setAuthModal(null)}
       />

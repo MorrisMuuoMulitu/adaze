@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -40,16 +40,16 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  Search, 
-  MoreVertical, 
-  UserCheck, 
-  UserX, 
-  Trash2, 
-  Edit, 
-  ShoppingCart, 
-  Package, 
-  Star, 
+import {
+  Search,
+  MoreVertical,
+  UserCheck,
+  UserX,
+  Trash2,
+  Edit,
+  ShoppingCart,
+  Package,
+  Star,
   Calendar,
   Clock,
   AlertTriangle,
@@ -127,15 +127,7 @@ export function UserManagement() {
   const supabase = createClient();
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  useEffect(() => {
-    filterUsers();
-  }, [users, searchTerm, roleFilter]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -150,7 +142,7 @@ export function UserManagement() {
       // Fetch emails via API route (since we can't use admin API client-side)
       const response = await fetch('/api/admin/users');
       const emailData = await response.json();
-      
+
       // Check if API returned an error
       if (!response.ok || emailData.error) {
         console.error('API Error:', JSON.stringify(emailData, null, 2));
@@ -169,7 +161,7 @@ export function UserManagement() {
         setLoading(false);
         return;
       }
-      
+
       const usersWithEmail = (profiles || []).map((profile) => {
         const emailInfo = emailData.find((u: any) => u.id === profile.id);
         return {
@@ -189,9 +181,9 @@ export function UserManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
 
-  const filterUsers = () => {
+  const filterUsers = useCallback(() => {
     let filtered = [...users];
 
     // Filter by search term
@@ -210,17 +202,25 @@ export function UserManagement() {
     }
 
     setFilteredUsers(filtered);
-  };
+  }, [users, searchTerm, roleFilter]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  useEffect(() => {
+    filterUsers();
+  }, [filterUsers]);
 
   const handleSuspendUser = async (userId: string, suspend: boolean) => {
     try {
       // Get current user (admin) ID
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       // Update user suspension status
       const { error } = await supabase
         .from('profiles')
-        .update({ 
+        .update({
           is_suspended: suspend,
           suspended_at: suspend ? new Date().toISOString() : null,
           suspended_by: suspend ? (user?.id || 'admin') : null
@@ -317,7 +317,7 @@ export function UserManagement() {
           .from('orders')
           .select('total_amount')
           .eq('user_id', user.id);
-        
+
         stats.total_orders = orders?.length || 0;
         stats.total_spent = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
       }
@@ -328,7 +328,7 @@ export function UserManagement() {
           .from('products')
           .select('id')
           .eq('trader_id', user.id);
-        
+
         stats.total_products = products?.length || 0;
       }
 
@@ -337,7 +337,7 @@ export function UserManagement() {
         .from('reviews')
         .select('id')
         .eq('user_id', user.id);
-      
+
       stats.total_reviews = reviews?.length || 0;
 
       setUserDetailsDialog({
@@ -437,7 +437,7 @@ export function UserManagement() {
               </TableHeader>
               <TableBody>
                 {filteredUsers.map((user) => (
-                  <TableRow 
+                  <TableRow
                     key={user.id}
                     className="cursor-pointer hover:bg-muted/50"
                     onClick={() => fetchUserDetails(user)}
@@ -598,7 +598,7 @@ export function UserManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the user's
+              This action cannot be undone. This will permanently delete the user&apos;s
               profile data.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -657,8 +657,8 @@ export function UserManagement() {
       </AlertDialog>
 
       {/* User Details Dialog */}
-      <Dialog 
-        open={userDetailsDialog.open} 
+      <Dialog
+        open={userDetailsDialog.open}
         onOpenChange={(open) => setUserDetailsDialog({ ...userDetailsDialog, open })}
       >
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -667,8 +667,8 @@ export function UserManagement() {
               <Avatar className="h-12 w-12">
                 <AvatarImage src={userDetailsDialog.user?.avatar_url || undefined} />
                 <AvatarFallback className="text-lg">
-                  {userDetailsDialog.user?.full_name?.charAt(0).toUpperCase() || 
-                   userDetailsDialog.user?.email?.charAt(0).toUpperCase() || 'U'}
+                  {userDetailsDialog.user?.full_name?.charAt(0).toUpperCase() ||
+                    userDetailsDialog.user?.email?.charAt(0).toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
               <div>
@@ -693,10 +693,10 @@ export function UserManagement() {
                   </div>
                   <div className="text-sm space-y-1">
                     <p>Deleted by: <strong>
-                      {!userDetailsDialog.user.deleted_by 
-                        ? 'Unknown (deleted before tracking was added)' 
-                        : userDetailsDialog.user.deleted_by === 'self' 
-                          ? 'User (Self-Deletion)' 
+                      {!userDetailsDialog.user.deleted_by
+                        ? 'Unknown (deleted before tracking was added)'
+                        : userDetailsDialog.user.deleted_by === 'self'
+                          ? 'User (Self-Deletion)'
                           : `Admin (ID: ${userDetailsDialog.user.deleted_by.slice(0, 8)}...)`}
                     </strong></p>
                     {userDetailsDialog.user.deleted_at && (
@@ -714,10 +714,10 @@ export function UserManagement() {
                   </div>
                   <div className="text-sm text-red-800 dark:text-red-200 space-y-1">
                     <p>Suspended by: <strong>
-                      {!userDetailsDialog.user.suspended_by 
-                        ? 'Unknown (suspended before tracking was added)' 
-                        : userDetailsDialog.user.suspended_by === 'self' 
-                          ? 'User (Self-Suspension)' 
+                      {!userDetailsDialog.user.suspended_by
+                        ? 'Unknown (suspended before tracking was added)'
+                        : userDetailsDialog.user.suspended_by === 'self'
+                          ? 'User (Self-Suspension)'
                           : `Admin (ID: ${userDetailsDialog.user.suspended_by.slice(0, 8)}...)`}
                     </strong></p>
                     {userDetailsDialog.user.suspended_at && (
@@ -798,7 +798,7 @@ export function UserManagement() {
                     <div>
                       <div className="text-sm text-muted-foreground mb-1">Last Login</div>
                       <div className="font-medium">
-                        {userDetailsDialog.user.last_login_at 
+                        {userDetailsDialog.user.last_login_at
                           ? new Date(userDetailsDialog.user.last_login_at).toLocaleString()
                           : 'Never logged in'}
                       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,18 +64,14 @@ export function SecurityDashboard() {
     unusual_activity_alerts: true,
     auto_logout_minutes: 60,
   });
-  
+
   const supabase = createClient();
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchSecurityData();
-  }, []);
-
-  const fetchSecurityData = async () => {
+  const fetchSecurityData = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -119,7 +115,11 @@ export function SecurityDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchSecurityData();
+  }, [fetchSecurityData]);
 
   const handleSettingChange = async (field: keyof SecuritySettings, value: any) => {
     try {

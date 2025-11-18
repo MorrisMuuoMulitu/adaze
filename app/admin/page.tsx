@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
 import { createClient } from '@/lib/supabase/client';
@@ -34,7 +34,7 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const router = useRouter();
   const supabase = createClient();
-  
+
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
@@ -52,33 +52,7 @@ export default function AdminDashboard() {
   });
   const [isAdmin, setIsAdmin] = useState(false);
 
-  useEffect(() => {
-    const checkAdminAndFetchStats = async () => {
-      if (!user) {
-        router.push('/');
-        return;
-      }
-
-      // Check if user is admin
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      if (profile?.role !== 'admin') {
-        router.push('/dashboard');
-        return;
-      }
-
-      setIsAdmin(true);
-      await fetchStats();
-    };
-
-    checkAdminAndFetchStats();
-  }, [user, router, supabase]);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch user stats
@@ -96,7 +70,7 @@ export default function AdminDashboard() {
       const { data: orders } = await supabase.from('orders').select('id, status, amount, created_at');
       const pendingOrders = orders?.filter(o => o.status === 'pending').length || 0;
       const completedOrders = orders?.filter(o => o.status === 'delivered').length || 0;
-      
+
       // Calculate revenue (only from delivered orders)
       const deliveredOrders = orders?.filter(o => o.status === 'delivered') || [];
       const totalRevenue = deliveredOrders.reduce((sum, order) => sum + Number(order.amount), 0);
@@ -124,12 +98,40 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    const checkAdminAndFetchStats = async () => {
+      if (!user) {
+        router.push('/');
+        return;
+      }
+
+      // Check if user is admin
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.role !== 'admin') {
+        router.push('/dashboard');
+        return;
+      }
+
+      setIsAdmin(true);
+      await fetchStats();
+    };
+
+    checkAdminAndFetchStats();
+  }, [user, router, supabase, fetchStats]);
+
+
 
   if (!isAdmin || loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar onAuthClick={() => {}} />
+        <Navbar onAuthClick={() => { }} />
         <div className="container mx-auto px-4 py-8">
           <p className="text-center">{loading ? 'Loading...' : 'Access Denied'}</p>
         </div>
@@ -139,7 +141,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
-      <Navbar onAuthClick={() => {}} />
+      <Navbar onAuthClick={() => { }} />
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Header with Gradient */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 p-8 text-white shadow-2xl">

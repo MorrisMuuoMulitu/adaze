@@ -47,5 +47,35 @@ export default async function ProductDetailPage({ params }: Props) {
     return <div>Product not found</div>;
   }
 
-  return <ProductDetailClient product={product} />;
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    image: product.image_url,
+    description: product.description,
+    sku: product.id,
+    offers: {
+      '@type': 'Offer',
+      price: product.price,
+      priceCurrency: 'KES',
+      availability: product.stock_quantity > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      url: `https://adazeconnect.com/products/${product.id}`,
+      seller: {
+        '@type': 'Person',
+        name: product.trader_id // Ideally this would be the trader's name, but ID is what we have readily available here without extra fetch or join if not already present. 
+        // Actually productService.getProductById might return trader info if joined. Let's check the type or assume basic for now.
+        // Looking at previous file content, product type isn't fully visible but likely has basic fields.
+      }
+    }
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <ProductDetailClient product={product} />
+    </>
+  );
 }

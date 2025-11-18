@@ -11,12 +11,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Truck, 
-  MapPin, 
-  Phone, 
-  Mail, 
-  FileText, 
+import {
+  Truck,
+  MapPin,
+  Phone,
+  Mail,
+  FileText,
   Upload,
   CheckCircle,
   AlertCircle
@@ -62,7 +62,7 @@ export default function TransporterRegistrationPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoadingSubmit(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       toast.success('Transporter registration submitted for review!');
@@ -98,7 +98,7 @@ export default function TransporterRegistrationPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
-            <Button 
+            <Button
               onClick={() => router.push('/')}
               className="w-full"
             >
@@ -127,7 +127,7 @@ export default function TransporterRegistrationPage() {
               </div>
               <CardTitle className="text-3xl font-bold">Transporter Registration</CardTitle>
               <CardDescription>
-                Join ADAZE's transporter network and start earning today
+                Join ADAZE&apos;s transporter network and start earning today
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -136,18 +136,16 @@ export default function TransporterRegistrationPage() {
                 <div className="flex items-center">
                   {[1, 2, 3].map((s) => (
                     <div key={s} className="flex items-center">
-                      <Badge 
+                      <Badge
                         variant={step === s ? 'default' : 'secondary'}
-                        className={`rounded-full w-10 h-10 flex items-center justify-center ${
-                          step >= s ? 'bg-blue-600' : 'bg-muted'
-                        }`}
+                        className={`rounded-full w-10 h-10 flex items-center justify-center ${step >= s ? 'bg-blue-600' : 'bg-muted'
+                          }`}
                       >
                         {s}
                       </Badge>
                       {s < 3 && (
-                        <div className={`h-1 w-16 mx-2 ${
-                          step > s ? 'bg-blue-600' : 'bg-muted'
-                        }`}></div>
+                        <div className={`h-1 w-16 mx-2 ${step > s ? 'bg-blue-600' : 'bg-muted'
+                          }`}></div>
                       )}
                     </div>
                   ))}
@@ -363,7 +361,7 @@ export default function TransporterRegistrationPage() {
                   <p className="text-muted-foreground mb-6">
                     Please upload the following documents to complete your registration
                   </p>
-                  
+
                   <div className="space-y-6">
                     <div className="space-y-2">
                       <Label htmlFor="licenseUpload">Business License *</Label>
@@ -443,8 +441,8 @@ export default function TransporterRegistrationPage() {
                         <div>
                           <h4 className="font-medium text-blue-900">Registration Process</h4>
                           <p className="text-sm text-blue-700 mt-1">
-                            After submitting your application, our team will review your documents and credentials. 
-                            You'll receive an email notification within 2-3 business days regarding your application status.
+                            After submitting your application, our team will review your documents and credentials.
+                            You&apos;ll receive an email notification within 2-3 business days regarding your application status.
                           </p>
                         </div>
                       </div>
@@ -455,20 +453,20 @@ export default function TransporterRegistrationPage() {
 
               {/* Navigation Buttons */}
               <div className="flex justify-between mt-8">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={prevStep}
                   disabled={step === 1}
                 >
                   Previous
                 </Button>
-                
+
                 {step < 3 ? (
                   <Button onClick={nextStep}>
                     Next
                   </Button>
                 ) : (
-                  <Button 
+                  <Button
                     onClick={handleSubmit}
                     disabled={loadingSubmit}
                     className="bg-blue-600 hover:bg-blue-700"

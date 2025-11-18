@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -79,11 +79,9 @@ export function AnalyticsDashboard() {
   const supabase = createClient();
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [timeRange]);
 
-  const fetchAnalytics = async () => {
+
+  const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -215,7 +213,7 @@ export function AnalyticsDashboard() {
       (orderItems || []).forEach((item: any) => {
         const productId = item.product_id;
         const productName = item.products?.name || 'Unknown Product';
-        
+
         if (!productStats[productId]) {
           productStats[productId] = {
             name: productName,
@@ -223,7 +221,7 @@ export function AnalyticsDashboard() {
             revenue: 0,
           };
         }
-        
+
         productStats[productId].sales += item.quantity;
         productStats[productId].revenue += Number(item.price) * item.quantity;
       });
@@ -247,7 +245,7 @@ export function AnalyticsDashboard() {
       const recentRevenue = recentDelivered.reduce((sum, o) => sum + Number(o.amount), 0);
       const oldRevenue = oldDelivered.reduce((sum, o) => sum + Number(o.amount), 0);
       const revenueGrowth = oldRevenue > 0 ? ((recentRevenue - oldRevenue) / oldRevenue) * 100 : 0;
-      
+
       // Orders growth (all orders, not just delivered)
       const recentOrders = (orders || []).filter(o => new Date(o.created_at) >= midPoint);
       const oldOrders = (orders || []).filter(o => new Date(o.created_at) < midPoint);
@@ -272,11 +270,11 @@ export function AnalyticsDashboard() {
         if (traderId && traderStats) {
           const trader = traderStats.find(t => t.id === traderId);
           const traderName = trader?.full_name || trader?.email || 'Unknown Trader';
-          
+
           if (!traderRevenue[traderId]) {
             traderRevenue[traderId] = { name: traderName, revenue: 0, orders: 0 };
           }
-          
+
           traderRevenue[traderId].revenue += Number(item.price) * item.quantity;
           traderRevenue[traderId].orders += 1;
         }
@@ -324,7 +322,11 @@ export function AnalyticsDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase, timeRange]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [timeRange, fetchAnalytics]);
 
   const TrendIndicator = ({ value }: { value: number }) => {
     const isPositive = value >= 0;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,11 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Settings, 
-  Mail, 
-  CreditCard, 
-  Palette, 
+import {
+  Settings,
+  Mail,
+  CreditCard,
+  Palette,
   ToggleLeft,
   Save,
   Eye,
@@ -29,7 +29,7 @@ interface PlatformSettings {
   site_logo_url: string;
   contact_email: string;
   support_phone: string;
-  
+
   // Email
   smtp_host: string;
   smtp_port: string;
@@ -37,21 +37,21 @@ interface PlatformSettings {
   smtp_password: string;
   smtp_from_email: string;
   smtp_from_name: string;
-  
+
   // Payment
   mpesa_consumer_key: string;
   mpesa_consumer_secret: string;
   mpesa_passkey: string;
   mpesa_shortcode: string;
   platform_commission_rate: number;
-  
+
   // Features
   enable_reviews: boolean;
   enable_wishlist: boolean;
   enable_chat: boolean;
   enable_notifications: boolean;
   maintenance_mode: boolean;
-  
+
   // Appearance
   primary_color: string;
   secondary_color: string;
@@ -69,7 +69,7 @@ export function AdminSettings() {
     site_logo_url: '',
     contact_email: 'support@adaze.com',
     support_phone: '+254700000000',
-    
+
     // Email
     smtp_host: '',
     smtp_port: '587',
@@ -77,21 +77,21 @@ export function AdminSettings() {
     smtp_password: '',
     smtp_from_email: '',
     smtp_from_name: 'Adaze Marketplace',
-    
+
     // Payment
     mpesa_consumer_key: '',
     mpesa_consumer_secret: '',
     mpesa_passkey: '',
     mpesa_shortcode: '',
     platform_commission_rate: 10,
-    
+
     // Features
     enable_reviews: true,
     enable_wishlist: true,
     enable_chat: false,
     enable_notifications: true,
     maintenance_mode: false,
-    
+
     // Appearance
     primary_color: '#8b5cf6',
     secondary_color: '#3b82f6',
@@ -101,14 +101,10 @@ export function AdminSettings() {
   const supabase = createClient();
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       // Fetch settings from database
       const { data, error } = await supabase
         .from('platform_settings')
@@ -126,7 +122,11 @@ export function AdminSettings() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   const handleSave = async () => {
     try {

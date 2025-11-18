@@ -54,11 +54,11 @@ export default function PrivacyPolicyPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">4. Data Security</h2>
               <p>
-                We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. 
+                We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.
                 These measures include encryption, secure server infrastructure, and access controls.
               </p>
               <p>
-                However, no method of transmission over the internet or method of electronic storage is 100% secure, 
+                However, no method of transmission over the internet or method of electronic storage is 100% secure,
                 and we cannot guarantee absolute security of your information.
               </p>
             </section>
@@ -66,11 +66,11 @@ export default function PrivacyPolicyPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">5. Data Retention</h2>
               <p>
-                We retain your personal information for as long as necessary to provide our services and comply with our legal obligations. 
+                We retain your personal information for as long as necessary to provide our services and comply with our legal obligations.
                 Specific retention periods vary based on the type of information and purpose of processing.
               </p>
               <p>
-                You can request deletion of your account and associated data by contacting us, 
+                You can request deletion of your account and associated data by contacting us,
                 subject to legal requirements and ongoing business needs.
               </p>
             </section>
@@ -95,7 +95,7 @@ export default function PrivacyPolicyPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">7. Cookies and Tracking Technologies</h2>
               <p>
-                We use cookies and similar tracking technologies to enhance your experience on our platform. 
+                We use cookies and similar tracking technologies to enhance your experience on our platform.
                 Cookies help us remember your preferences, analyze platform usage, and provide personalized content.
               </p>
               <p>
@@ -106,7 +106,7 @@ export default function PrivacyPolicyPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">8. Third-Party Services</h2>
               <p>
-                We may use third-party services for analytics, payment processing, and other business functions. 
+                We may use third-party services for analytics, payment processing, and other business functions.
                 These third parties may collect information on our behalf, subject to their own privacy policies.
               </p>
               <p>
@@ -115,7 +115,7 @@ export default function PrivacyPolicyPage() {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">9. Children's Privacy</h2>
+              <h2 className="text-2xl font-semibold mb-4">9. Children&apos;s Privacy</h2>
               <p>
                 Our services are not directed to children under the age of 18. We do not knowingly collect personal information from children under 18.
               </p>
@@ -127,7 +127,7 @@ export default function PrivacyPolicyPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">10. International Transfer</h2>
               <p>
-                Your information may be transferred to and processed in countries other than your country of residence. 
+                Your information may be transferred to and processed in countries other than your country of residence.
                 These countries may have different data protection laws than those in your jurisdiction.
               </p>
               <p>
@@ -135,14 +135,13 @@ export default function PrivacyPolicyPage() {
               </p>
             </section>
 
-            <section>
-              <h2 className="text-2xl font-semibold mb-4">11. Contact Us</h2>
-              <p>
-                If you have questions about this Privacy Policy or how we handle your personal information, please contact us at:
-                <br />
-                Email: privacy@adaze.com
-                <br />
-                Address: Kenya
+            <section className="mb-8">
+              <h2 className="text-2xl font-semibold mb-4">Contact Us</h2>
+              <p className="text-muted-foreground">
+                If you have any questions about this Privacy Policy, please contact us at privacy@adaze.com.
+              </p>
+              <p className="text-muted-foreground mt-2">
+                We&apos;re committed to protecting your data and ensuring transparency in how we handle your information.
               </p>
             </section>
           </CardContent>

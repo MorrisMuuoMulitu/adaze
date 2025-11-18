@@ -5,8 +5,9 @@ import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { LanguageProvider } from '@/components/language-provider';
+import { RealtimeNotifications } from '@/components/notifications/realtime-notifications';
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-inter'
@@ -88,7 +89,7 @@ export default function RootLayout({
               <div className="min-h-screen bg-background text-foreground">
                 {children}
               </div>
-              <Toaster 
+              <Toaster
                 position="top-right"
                 toastOptions={{
                   style: {
@@ -98,6 +99,7 @@ export default function RootLayout({
                   }
                 }}
               />
+              <RealtimeNotifications />
             </LanguageProvider>
           </AuthProvider>
         </ThemeProvider>
