@@ -1,13 +1,22 @@
 import { MetadataRoute } from 'next';
-import { productService } from '@/lib/productService';
+import { createClient } from '@supabase/supabase-js';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://adazeconnect.com';
 
-  // Get all products
-  const products = await productService.getAllProducts();
+  // Create a direct client for server-side fetching during build
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
-  const productUrls = products.map((product) => ({
+  // Get all products
+  const { data: products } = await supabase
+    .from('products')
+    .select('id, updated_at')
+    .eq('status', 'active');
+
+  const productUrls = (products || []).map((product) => ({
     url: `${baseUrl}/products/${product.id}`,
     lastModified: new Date(product.updated_at),
   }));

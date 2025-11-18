@@ -6,88 +6,62 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/navbar';
 import { Hero } from '@/components/sections/hero';
-import { FeaturedProducts } from '@/components/sections/featured-products';
-import { HowItWorks } from '@/components/sections/how-it-works';
-import { Stats } from '@/components/sections/stats';
-import { Testimonials } from '@/components/sections/testimonials';
-import { WhyChooseUs } from '@/components/sections/why-choose-us';
-import { CTA } from '@/components/sections/cta';
-import { TrustBadges } from '@/components/sections/trust-badges';
+import { ProductGrid } from '@/components/sections/product-grid';
 import { Footer } from '@/components/layout/footer';
 import { AuthModal } from '@/components/auth/auth-modal';
-import { OnboardingTour } from '@/components/onboarding/onboarding-tour';
 import { OnboardingTourEnhanced } from '@/components/onboarding-tour-enhanced';
 import { KeyboardShortcuts } from '@/components/keyboard-shortcuts';
 import { PWAPrompt } from '@/components/pwa/pwa-prompt';
 import { LiveChat } from '@/components/chat/live-chat';
 import { NotificationCenter } from '@/components/notifications/notification-center';
-import { User } from '@/types';
-import { Product as DBProduct } from '@/lib/productService';
-import { UserDashboard } from '@/components/sections/user-dashboard';
 import { useAuth } from '@/components/auth/auth-provider';
 
 export default function Home() {
   const router = useRouter();
   const supabase = createClient();
   const [authModal, setAuthModal] = useState<'login' | 'register' | null>(null);
-  const { user } = useAuth(); // New useAuth hook
+  const { user } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [products, setProducts] = useState<DBProduct[]>([]);
-  const [productsLoading, setProductsLoading] = useState(true);
-  const [productsError, setProductsError] = useState<string | null>(null);
 
   // Check for suspension/deletion error in URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const error = params.get('error');
-    
+
     if (error === 'account_suspended') {
-      // Show error toast
       import('sonner').then(({ toast }) => {
         toast.error('Account Suspended', {
           description: 'Your account has been suspended. Please contact support for assistance.',
           duration: 8000,
         });
       });
-      
-      // Clean up URL
       window.history.replaceState({}, '', '/');
     } else if (error === 'account_deleted') {
-      // Show error toast for deleted account
       import('sonner').then(({ toast }) => {
         toast.error('Account Not Found', {
           description: 'This account has been deleted. Please create a new account if you wish to continue.',
           duration: 8000,
         });
       });
-      
-      // Clean up URL
       window.history.replaceState({}, '', '/');
     }
   }, []);
 
-  // Handle OAuth callback on homepage (fallback)
+  // Handle OAuth callback
   useEffect(() => {
     const handleOAuthCallback = async () => {
       const params = new URLSearchParams(window.location.search);
       const code = params.get('code');
-      
+
       if (code) {
         try {
-          const { createClient } = await import('@/lib/supabase/client');
-          const supabase = createClient();
-          
-          // Exchange code for session
           const { error } = await supabase.auth.exchangeCodeForSession(code);
-          
           if (error) {
             console.error('OAuth error:', error);
             router.push('/?error=auth_failed');
           } else {
-            // Clear the code from URL
             window.history.replaceState({}, '', '/');
-            // Refresh to get user data
             window.location.reload();
           }
         } catch (error) {
@@ -95,9 +69,8 @@ export default function Home() {
         }
       }
     };
-    
     handleOAuthCallback();
-  }, [router]);
+  }, [router, supabase.auth]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -107,7 +80,6 @@ export default function Home() {
         setShowOnboarding(true);
       }
     }, 1000);
-
     return () => clearTimeout(timer);
   }, [user]);
 
@@ -116,7 +88,6 @@ export default function Home() {
     const checkRoleAndRedirect = async () => {
       if (!user) return;
 
-      // Get role from profiles table (not metadata!)
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
@@ -124,59 +95,19 @@ export default function Home() {
         .single();
 
       const role = profile?.role;
-      
-      if (role === 'admin') {
-        // Admins go to admin dashboard
-        router.push('/admin');
-      } else if (role === 'buyer') {
-        // Buyers go directly to marketplace
-        router.push('/marketplace');
-      } else if (role === 'trader') {
-        // Traders go to their dashboard
-        router.push('/dashboard/trader');
-      } else if (role === 'transporter') {
-        // Transporters go to their dashboard
-        router.push('/dashboard/transporter');
-      } else if (role === 'wholesaler') {
-        // Wholesalers go to their dashboard
-        router.push('/dashboard/wholesaler');
-      }
+
+      if (role === 'admin') router.push('/admin');
+      else if (role === 'buyer') router.push('/marketplace');
+      else if (role === 'trader') router.push('/dashboard/trader');
+      else if (role === 'transporter') router.push('/dashboard/transporter');
+      else if (role === 'wholesaler') router.push('/dashboard/wholesaler');
     };
 
     checkRoleAndRedirect();
   }, [user, router, supabase]);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch('/api/products');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data: DBProduct[] = await response.json();
-        setProducts(data);
-      } catch (error) {
-        setProductsError('Failed to fetch products.');
-        console.error('Failed to fetch products:', error);
-      } finally {
-        setProductsLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
   const handleAuthSuccess = () => {
     setAuthModal(null);
-    // Onboarding logic can be triggered based on user profile data from the database
-  };
-
-  const handleOnboardingComplete = () => {
-    setShowOnboarding(false);
-    if (user) {
-      // You might want to set a flag in your database that onboarding is complete
-      localStorage.setItem(`adaze-onboarded-${user.id}`, 'true');
-    }
   };
 
   if (isLoading) {
@@ -188,7 +119,7 @@ export default function Home() {
           className="text-center space-y-4"
         >
           <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <motion.h2 
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -196,14 +127,6 @@ export default function Home() {
           >
             ADAZE
           </motion.h2>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="text-muted-foreground text-sm sm:text-base"
-          >
-            Loading your marketplace experience...
-          </motion.p>
         </motion.div>
       </div>
     );
@@ -212,7 +135,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar onAuthClick={setAuthModal} />
-      
+
       <motion.main
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -221,14 +144,9 @@ export default function Home() {
         {!user ? (
           <>
             <Hero onGetStarted={() => setAuthModal('register')} />
-            <TrustBadges />
-            <FeaturedProducts products={products} loading={productsLoading} error={productsError} />
-            <HowItWorks />
-            <Stats />
-            <CTA onAuthClick={() => setAuthModal('register')} />
+            <ProductGrid />
           </>
         ) : (
-          // Show a welcome message before redirecting
           <div className="min-h-screen flex items-center justify-center">
             <div className="text-center max-w-md">
               <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
@@ -238,66 +156,29 @@ export default function Home() {
               <p className="text-muted-foreground mb-6">
                 Redirecting to your dashboard...
               </p>
-              <p className="text-sm text-muted-foreground">
-                You&apos;ll be redirected automatically, or{' '}
-                <button 
-                  onClick={() => {
-                    const redirectBasedOnRole = async () => {
-                      const { data: profile } = await supabase
-                        .from('profiles')
-                        .select('role')
-                        .eq('id', user.id)
-                        .single();
-                      
-                      const role = profile?.role;
-                      if (role === 'admin') {
-                        router.push('/admin');
-                      } else if (role === 'buyer') {
-                        router.push('/marketplace');
-                      } else if (role === 'trader') {
-                        router.push('/dashboard/trader');
-                      } else if (role === 'transporter') {
-                        router.push('/dashboard/transporter');
-                      } else if (role === 'wholesaler') {
-                        router.push('/dashboard/wholesaler');
-                      } else {
-                        router.push('/marketplace'); // default
-                      }
-                    };
-                    redirectBasedOnRole();
-                  }}
-                  className="text-primary hover:underline"
-                >
-                  click here
-                </button>{' '}
-                to continue
-              </p>
             </div>
           </div>
         )}
       </motion.main>
 
       <Footer />
-      
-      {/* Modals and Overlays */}
-      <AuthModal 
-        type={authModal} 
-        isOpen={!!authModal} 
+
+      <AuthModal
+        type={authModal}
+        isOpen={!!authModal}
         onClose={() => setAuthModal(null)}
         onSuccess={handleAuthSuccess}
       />
-      
+
       {showOnboarding && (
-        <OnboardingTourEnhanced 
+        <OnboardingTourEnhanced
           onComplete={() => setShowOnboarding(false)}
         />
       )}
-      
-      {/* Keyboard Shortcuts (for logged in users) */}
+
       {user && <KeyboardShortcuts />}
-      
       <PWAPrompt />
-      
+
       {user && (
         <>
           <LiveChat user={{

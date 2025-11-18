@@ -70,11 +70,13 @@ export class ErrorHandler {
   }
 
   static showErrorToast(error: AppError, customMessage?: string): void {
+    if (typeof window === 'undefined') return;
     const message = customMessage || error.message;
     toast.error(message);
   }
 
   static showSuccessToast(message: string): void {
+    if (typeof window === 'undefined') return;
     toast.success(message);
   }
 }

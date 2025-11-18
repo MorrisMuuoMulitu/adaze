@@ -97,7 +97,7 @@ export function TwoFactorSetup() {
       // Generate OTPAuth URL
       const issuer = 'Adaze Marketplace';
       const otpauthUrl = `otpauth://totp/${issuer}:${user.email}?secret=${newSecret}&issuer=${issuer}`;
-      
+
       // Generate QR code as data URL
       const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl, {
         width: 256,
@@ -107,7 +107,7 @@ export function TwoFactorSetup() {
           light: '#ffffff',
         },
       });
-      
+
       setQrCode(qrCodeDataUrl);
 
       toast({
@@ -157,7 +157,7 @@ export function TwoFactorSetup() {
       if (error) throw error;
 
       setShowBackupCodes(true);
-      
+
       toast({
         title: 'Success!',
         description: '2FA has been enabled on your account',
@@ -275,7 +275,7 @@ export function TwoFactorSetup() {
                     <p className="font-medium text-green-900">2FA is Active</p>
                     <p className="text-sm text-green-700 mt-1">
                       Your account is protected with two-factor authentication.
-                      You'll need to enter a code from your authenticator app when signing in.
+                      You&apos;ll need to enter a code from your authenticator app when signing in.
                     </p>
                   </div>
                 </div>
@@ -340,9 +340,9 @@ export function TwoFactorSetup() {
                 <div className="p-6 bg-white border-2 border-dashed rounded-lg text-center">
                   {qrCode && (
                     <div className="mb-4">
-                      <img 
-                        src={qrCode} 
-                        alt="QR Code for 2FA" 
+                      <img
+                        src={qrCode}
+                        alt="QR Code for 2FA"
                         className="mx-auto"
                         style={{ width: '256px', height: '256px' }}
                       />
@@ -431,7 +431,7 @@ export function TwoFactorSetup() {
                 Copy All Codes
               </Button>
               <Button onClick={() => setShowBackupCodes(false)}>
-                I've Saved My Codes
+                I&apos;ve Saved My Codes
               </Button>
             </div>
 
