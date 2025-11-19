@@ -9,6 +9,8 @@ import { createClient } from '@/lib/supabase/server';
  * Body: { orderId, phoneNumber, amount }
  */
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const { orderId, phoneNumber, amount } = await request.json();
