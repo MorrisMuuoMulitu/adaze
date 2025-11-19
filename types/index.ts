@@ -63,4 +63,5 @@ export interface Product {
   specifications: {
     [key: string]: string;
   };
+  is_featured?: boolean;
 }

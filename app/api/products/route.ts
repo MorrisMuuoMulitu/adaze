@@ -57,7 +57,8 @@ export async function GET(request: Request) {
         *,
         trader:profiles!trader_id (
           is_suspended,
-          location
+          location,
+          full_name
         )
       `)
       .eq('status', 'active');

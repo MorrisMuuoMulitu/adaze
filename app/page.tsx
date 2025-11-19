@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/navbar';
 import { Hero } from '@/components/sections/hero';
 import { ProductGrid } from '@/components/sections/product-grid';
+import { FeaturedProducts } from '@/components/sections/featured-products';
 import { Footer } from '@/components/layout/footer';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { OnboardingTourEnhanced } from '@/components/onboarding-tour-enhanced';
@@ -144,6 +145,7 @@ export default function Home() {
         {!user ? (
           <>
             <Hero onGetStarted={() => setAuthModal('register')} />
+            <FeaturedProducts />
             <ProductGrid />
           </>
         ) : (

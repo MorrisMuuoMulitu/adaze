@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { Product as DBProduct } from '@/lib/productService';
-import { FeaturedProducts } from '@/components/sections/featured-products';
+import { ProductCard } from '@/components/products/product-card';
+import { ProductSkeleton } from '@/components/products/product-skeleton';
 import { AdvancedFilters, FilterOptions } from '@/components/marketplace/advanced-filters';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -194,11 +195,14 @@ export default function MarketplacePage() {
         </div>
 
         {/* Products */}
-        <FeaturedProducts
-          products={filteredProducts}
-          loading={false}
-          error={null}
-        />
+        {/* Products */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {filteredProducts.map((product, index) => (
+            <div key={product.id}>
+              <ProductCard product={product} index={index} />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

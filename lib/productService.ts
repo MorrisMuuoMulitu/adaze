@@ -35,7 +35,8 @@ class ProductService {
         .select(`
           *,
           trader:profiles!trader_id (
-            is_suspended
+            is_suspended,
+            full_name
           )
         `)
         .eq('status', 'active') // Only approved products
