@@ -16,6 +16,7 @@ import { MpesaPaymentButton } from '@/components/mpesa-payment-button';
 import { Package, ArrowLeft, MapPin, Phone, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/layout/navbar';
+import { AuthModal } from '@/components/auth/auth-modal';
 
 interface CartItem {
   id: string;
@@ -30,16 +31,29 @@ export default function CheckoutPage() {
   const { user } = useAuth();
   const router = useRouter();
   const supabase = createClient();
-  
+
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
-  
+
   // Delivery details
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Auth modal state
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalType, setAuthModalType] = useState<'login' | 'register'>('login');
+
+  const handleAuthClick = (type: 'login' | 'register') => {
+    setAuthModalType(type);
+    setShowAuthModal(true);
+  };
+
+  const handleCloseAuthModal = () => {
+    setShowAuthModal(false);
+  };
 
   useEffect(() => {
     if (!user) {
@@ -88,7 +102,7 @@ export default function CheckoutPage() {
     try {
       // Group items by trader (seller)
       const itemsByTrader = new Map<string, CartItem[]>();
-      
+
       for (const item of cartItems) {
         const { data: product } = await supabase
           .from('products')
@@ -107,10 +121,10 @@ export default function CheckoutPage() {
 
       // Create separate orders for each trader
       const orderIds: string[] = [];
-      
+
       for (const [traderId, items] of itemsByTrader) {
         const orderTotal = items.reduce((sum, item) => sum + (item.product_price * item.quantity), 0);
-        
+
         const { data: order, error: orderError } = await supabase
           .from('orders')
           .insert({
@@ -172,7 +186,13 @@ export default function CheckoutPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar onAuthClick={() => {}} />
+        <Navbar onAuthClick={handleAuthClick} />
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={handleCloseAuthModal}
+          initialType={authModalType}
+          onSuccess={handleCloseAuthModal}
+        />
         <div className="container mx-auto px-4 py-8">
           <p className="text-center">Loading...</p>
         </div>
@@ -182,7 +202,13 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar onAuthClick={() => {}} />
+      <Navbar onAuthClick={handleAuthClick} />
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={handleCloseAuthModal}
+        initialType={authModalType}
+        onSuccess={handleCloseAuthModal}
+      />
       <main className="container mx-auto px-4 py-8 max-w-6xl">
         <Button
           variant="ghost"
@@ -259,8 +285,8 @@ export default function CheckoutPage() {
                   <div key={item.id} className="flex items-center gap-3">
                     <div className="relative w-16 h-16 flex-shrink-0">
                       {item.product_image_url ? (
-                        <Image 
-                          src={item.product_image_url} 
+                        <Image
+                          src={item.product_image_url}
                           alt={item.product_name}
                           width={64}
                           height={64}
@@ -320,7 +346,7 @@ export default function CheckoutPage() {
                       <p className="text-sm text-green-800 font-medium">✅ Order Created!</p>
                       <p className="text-xs text-green-600 mt-1">Complete payment below</p>
                     </div>
-                    
+
                     <MpesaPaymentButton
                       orderId={orderId}
                       amount={total}

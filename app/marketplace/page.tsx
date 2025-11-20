@@ -62,7 +62,7 @@ export default function MarketplacePage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedTrader, setSelectedTrader] = useState<string | null>(null);
-  const [traders, setTraders] = useState<Array<{id: string, name: string}>>([]);
+  const [traders, setTraders] = useState<Array<{ id: string, name: string }>>([]);
   const [sortBy, setSortBy] = useState('newest');
   const [priceRange, setPriceRange] = useState([0, 10000]);
   const [maxPrice, setMaxPrice] = useState(10000);
@@ -122,13 +122,12 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     if (!user) {
-      setLoading(false);
-      return;
+      // Allow public access, just don't fetch user-specific data
     }
 
     const fetchData = async () => {
       setLoading(true);
-      
+
       try {
         const allProducts = await productService.getAllProducts();
         setProducts(allProducts);
@@ -147,27 +146,31 @@ export default function MarketplacePage() {
           .select('id, full_name')
           .in('id', uniqueTraderIds)
           .eq('role', 'trader');
-        
+
         if (traderProfiles) {
           setTraders(traderProfiles.map(t => ({ id: t.id, name: t.full_name })));
         }
 
-        const initialWishlistStatus: Record<string, boolean> = {};
-        for (const product of allProducts) {
-          initialWishlistStatus[product.id] = await wishlistService.isInWishlist(user.id, product.id);
+        if (user) {
+          const initialWishlistStatus: Record<string, boolean> = {};
+          for (const product of allProducts) {
+            initialWishlistStatus[product.id] = await wishlistService.isInWishlist(user.id, product.id);
+          }
+          setWishlistStatus(initialWishlistStatus);
+
+          const count = await cartService.getCartCount(user.id);
+          setCartCount(count);
         }
-        setWishlistStatus(initialWishlistStatus);
-        
-        const count = await cartService.getCartCount(user.id);
-        setCartCount(count);
       } catch (error) {
         console.error('Error fetching data:', error);
         setError('Failed to load products. Please try again later.');
-        try {
-          const count = await cartService.getCartCount(user.id);
-          setCartCount(count);
-        } catch (cartError) {
-          console.error('Error fetching cart count:', cartError);
+        if (user) {
+          try {
+            const count = await cartService.getCartCount(user.id);
+            setCartCount(count);
+          } catch (cartError) {
+            console.error('Error fetching cart count:', cartError);
+          }
         }
       } finally {
         setLoading(false);
@@ -202,10 +205,10 @@ export default function MarketplacePage() {
 
   const addToCart = async (productId: string) => {
     if (!user) {
-      router.push('/');
+      handleAuthClick('login');
       return;
     }
-    
+
     try {
       const cartItem = await cartService.addToCart(user.id, productId, 1);
       if (cartItem) {
@@ -213,10 +216,10 @@ export default function MarketplacePage() {
       } else {
         toast.success('Added to cart!');
       }
-      
+
       const count = await cartService.getCartCount(user.id);
       setCartCount(count);
-      
+
       window.dispatchEvent(new CustomEvent('cartUpdated'));
     } catch (error) {
       console.error('Error adding to cart:', error);
@@ -235,12 +238,12 @@ export default function MarketplacePage() {
   // Build category options (use predefined categories)
   const categoryOptions = useMemo(() => {
     const options = [{ value: 'all', label: 'All Categories' }];
-    
+
     // Add all predefined categories
     PRODUCT_CATEGORIES.forEach(cat => {
       options.push({ value: cat.value, label: cat.label });
     });
-    
+
     return options;
   }, []);
 
@@ -273,7 +276,7 @@ export default function MarketplacePage() {
     }
 
     // Price range filter
-    filtered = filtered.filter(product => 
+    filtered = filtered.filter(product =>
       product.price >= priceRange[0] && product.price <= priceRange[1]
     );
 
@@ -340,13 +343,13 @@ export default function MarketplacePage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar onAuthClick={handleAuthClick} />
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={handleCloseAuthModal} 
-        initialType={authModalType} 
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={handleCloseAuthModal}
+        initialType={authModalType}
         onSuccess={handleCloseAuthModal}
       />
-      
+
       {/* Quick View Dialog */}
       <Dialog open={!!quickViewProduct} onOpenChange={() => setQuickViewProduct(null)}>
         <DialogContent className="max-w-3xl">
@@ -359,8 +362,8 @@ export default function MarketplacePage() {
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="relative h-64 md:h-full bg-gray-200 rounded-lg overflow-hidden">
                   {quickViewProduct.image_url ? (
-                    <Image 
-                      src={quickViewProduct.image_url} 
+                    <Image
+                      src={quickViewProduct.image_url}
                       alt={quickViewProduct.name}
                       fill
                       className="object-cover"
@@ -441,7 +444,7 @@ export default function MarketplacePage() {
                     className="pl-10"
                   />
                 </div>
-                
+
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger className="w-full sm:w-[200px]">
                     <Filter className="h-4 w-4 mr-2" />
@@ -585,8 +588,8 @@ export default function MarketplacePage() {
                       <div className="relative">
                         <div className="h-48 bg-gray-200 relative overflow-hidden">
                           {product.image_url ? (
-                            <Image 
-                              src={product.image_url} 
+                            <Image
+                              src={product.image_url}
                               alt={product.name}
                               width={400}
                               height={300}
@@ -599,8 +602,8 @@ export default function MarketplacePage() {
                             </div>
                           )}
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               variant="secondary"
                               onClick={() => setQuickViewProduct(product)}
                             >
@@ -610,9 +613,9 @@ export default function MarketplacePage() {
                           </div>
                         </div>
                         <div className="absolute top-2 right-2 flex gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="secondary" 
+                          <Button
+                            size="sm"
+                            variant="secondary"
                             className="rounded-full p-2 shadow-lg"
                             onClick={() => handleToggleWishlist(product.id)}
                           >
@@ -639,17 +642,17 @@ export default function MarketplacePage() {
                             <span>{product.rating?.toFixed(1) || 'N/A'}</span>
                           </div>
                         </div>
-                        
+
                         <div className="flex space-x-2">
-                          <Button 
-                            className="flex-1" 
+                          <Button
+                            className="flex-1"
                             onClick={() => addToCart(product.id)}
                           >
                             <ShoppingCart className="h-4 w-4 mr-2" />
                             Add
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => router.push(`/products/${product.id}`)}
                           >

@@ -126,10 +126,10 @@ export default function CartPage() {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar onAuthClick={handleAuthClick} />
-        <AuthModal 
-          isOpen={showAuthModal} 
-          onClose={handleCloseAuthModal} 
-          initialType={authModalType} 
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={handleCloseAuthModal}
+          initialType={authModalType}
           onSuccess={handleCloseAuthModal}
         />
         <main className="flex-grow flex items-center justify-center">
@@ -172,10 +172,10 @@ export default function CartPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar onAuthClick={handleAuthClick} />
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={handleCloseAuthModal} 
-        initialType={authModalType} 
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={handleCloseAuthModal}
+        initialType={authModalType}
         onSuccess={handleCloseAuthModal}
       />
       <main className="flex-grow py-12">
@@ -206,8 +206,8 @@ export default function CartPage() {
                       <CardContent className="p-4 flex items-center space-x-4">
                         <div className="relative w-24 h-24 flex-shrink-0">
                           {item.product_image_url ? (
-                            <Image 
-                              src={item.product_image_url} 
+                            <Image
+                              src={item.product_image_url}
                               alt={item.product_name}
                               width={96}
                               height={96}
@@ -223,18 +223,18 @@ export default function CartPage() {
                           <h2 className="text-lg font-semibold">{item.product_name}</h2>
                           <p className="text-muted-foreground text-sm">KSh {item.product_price.toFixed(2)}</p>
                           <div className="flex items-center mt-2">
-                            <Button 
-                              variant="outline" 
-                              size="icon" 
+                            <Button
+                              variant="outline"
+                              size="icon"
                               className="h-8 w-8"
                               onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                             >
                               <Minus className="h-4 w-4" />
                             </Button>
                             <span className="mx-2 text-lg font-medium">{item.quantity}</span>
-                            <Button 
-                              variant="outline" 
-                              size="icon" 
+                            <Button
+                              variant="outline"
+                              size="icon"
                               className="h-8 w-8"
                               onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                             >
@@ -242,9 +242,9 @@ export default function CartPage() {
                             </Button>
                           </div>
                         </div>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className="text-red-500 hover:text-red-700"
                           onClick={() => handleRemoveItem(item.id)}
                         >
@@ -273,11 +273,18 @@ export default function CartPage() {
                         <span>Total</span>
                         <span>KSh {subtotal.toFixed(2)}</span>
                       </div>
-                      <Button 
+                      <Button
                         className="w-full african-gradient text-white hover:opacity-90 h-12"
                         onClick={() => router.push('/checkout')}
                       >
                         Proceed to Checkout
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => router.push('/marketplace')}
+                      >
+                        Continue Shopping
                       </Button>
                     </CardContent>
                   </Card>

@@ -38,6 +38,11 @@ export function QuickViewModal({ product, open, onOpenChange }: QuickViewModalPr
     if (!product) return null;
 
     const handleAddToCart = () => {
+        if (!user) {
+            window.dispatchEvent(new CustomEvent('TRIGGER_AUTH_MODAL', { detail: { type: 'login' } }));
+            return;
+        }
+
         setIsAdding(true);
         // Map product to CartItem structure if needed, or just pass as is if compatible
         // lib/cart.ts expects Product which has id (number in lib/cart.ts? let's check)

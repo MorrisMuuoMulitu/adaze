@@ -114,7 +114,20 @@ export function Navbar({ onAuthClick }: NavbarProps) {
       setWishlistItemCount(0);
       setNotificationCount(0);
     }
-  }, [user]);
+
+    // Global event listener for triggering auth modal
+    const handleAuthTrigger = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const type = customEvent.detail?.type || 'login';
+      onAuthClick(type);
+    };
+
+    window.addEventListener('TRIGGER_AUTH_MODAL', handleAuthTrigger);
+
+    return () => {
+      window.removeEventListener('TRIGGER_AUTH_MODAL', handleAuthTrigger);
+    };
+  }, [user, onAuthClick]);
 
   const handleLogout = async () => {
     try {
@@ -123,7 +136,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
         const { terminateSession } = await import('@/lib/login-tracker');
         await terminateSession(user.id);
       }
-      
+
       await supabase.auth.signOut();
       // Always redirect to landing page after logout
       window.location.href = '/';
@@ -172,7 +185,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
   };
 
   return (
-    <motion.nav 
+    <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
@@ -182,7 +195,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
         <div className="flex justify-between items-center h-14 sm:h-16">
           {/* Logo */}
           <Link href="/" passHref>
-            <motion.div 
+            <motion.div
               className="flex items-center space-x-2 cursor-pointer"
               whileHover={{ scale: 1.05 }}
             >
@@ -225,151 +238,151 @@ export function Navbar({ onAuthClick }: NavbarProps) {
 
           {/* Desktop Actions */}
           <div className="hidden lg:flex items-center space-x-2">
-                  <ThemeToggle />
-                  <LanguageToggle />
-                  
-                  {user ? (
-                    <div className="flex items-center space-x-2">
-                      {/* Quick Actions - Only show for buyers */}
-                      {userRole === 'buyer' && (
-                        <>
-                          <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button" asChild>
-                            <Link href="/wishlist">
-                              <Heart className="h-4 w-4" />
-                              {wishlistItemCount > 0 && (
-                                <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">{wishlistItemCount}</Badge>
-                              )}
-                            </Link>
-                          </Button>
-                          
-                          <CartSidebar 
-                            cartCount={cartItemCount} 
-                            onCartUpdate={setCartItemCount} 
-                          />
-                        </>
-                      )}
-                      
-                      <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button">
-                        <Bell className="h-4 w-4" />
-                        {notificationCount > 0 && (
-                          <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-red-500">{notificationCount}</Badge>
+            <ThemeToggle />
+            <LanguageToggle />
+
+            {user ? (
+              <div className="flex items-center space-x-2">
+                {/* Quick Actions - Only show for buyers */}
+                {userRole === 'buyer' && (
+                  <>
+                    <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button" asChild>
+                      <Link href="/wishlist">
+                        <Heart className="h-4 w-4" />
+                        {wishlistItemCount > 0 && (
+                          <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">{wishlistItemCount}</Badge>
                         )}
-                      </Button>
+                      </Link>
+                    </Button>
 
-                      <Button variant="ghost" size="sm" className="w-9 h-9 p-0 mobile-button">
-                        <MessageCircle className="h-4 w-4" />
-                      </Button>
+                    <CartSidebar
+                      cartCount={cartItemCount}
+                      onCartUpdate={setCartItemCount}
+                    />
+                  </>
+                )}
 
-                      {/* User Menu */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="relative h-8 w-8 rounded-full mobile-button">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={user.user_metadata.avatar_url} alt={userName} />
-                              <AvatarFallback className={getRoleColor(userRole)}>
-                                {userName?.charAt(0) || 'U'}
-                              </AvatarFallback>
-                            </Avatar>
-                            {isVerified && (
-                              <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
-                            )}
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-64" align="end" forceMount>
-                          <DropdownMenuLabel className="font-normal">
-                            <div className="flex flex-col space-y-2">
-                              <div className="flex items-center space-x-2">
-                                <p className="text-sm font-medium leading-none truncate">
-                                  {userName}
-                                </p>
-                                {isVerified && (
-                                  <Badge variant="secondary" className="text-xs">Verified</Badge>
-                                )}
-                              </div>
-                              <p className="text-xs leading-none text-muted-foreground truncate">
-                                {user.email}
-                              </p>
-                              <div className="flex items-center space-x-2">
-                                <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                                  {getRoleIcon(userRole)}
-                                  <span className="capitalize">{userRole}</span>
-                                </div>
-                                <span className="text-xs text-muted-foreground">•</span>
-                                <span className="text-xs text-muted-foreground">{user.user_metadata.location}</span>
-                              </div>
-                            </div>
-                          </DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem asChild>
-                            <Link href="/">
-                              <ShoppingBag className="mr-2 h-4 w-4" />
-                              <span>Home</span>
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/dashboard/${userRole}`}>
-                              <LayoutDashboard className="mr-2 h-4 w-4" />
-                              <span>Dashboard</span>
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href="/profile">
-                              <User className="mr-2 h-4 w-4" />
-                              <span>Profile</span>
-                            </Link>
-                          </DropdownMenuItem>
-                          {userRole === 'buyer' && (
-                            <>
-                              <DropdownMenuItem asChild>
-                                <Link href="/wishlist">
-                                  <Heart className="mr-2 h-4 w-4" />
-                                  <span>Wishlist</span>
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem asChild>
-                                <Link href="/orders">
-                                  <Package className="mr-2 h-4 w-4" />
-                                  <span>My Orders</span>
-                                </Link>
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                          <DropdownMenuItem asChild>
-                            <Link href="/settings">
-                              <Settings className="mr-2 h-4 w-4" />
-                              <span>Settings</span>
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Wallet className="mr-2 h-4 w-4" />
-                            <span>Wallet</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
-                            <LogOut className="mr-2 h-4 w-4" />
-                            <span>Log out</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      <Button 
-                        variant="ghost" 
-                        onClick={() => onAuthClick('login')}
-                        className="mobile-button"
-                      >
-                        {t('nav.login')}
-                      </Button>
-                      <Button 
-                        onClick={() => onAuthClick('register')}
-                        className="african-gradient text-white hover:opacity-90 mobile-button"
-                      >
-                        {t('nav.get_started')}
-                      </Button>
-                    </div>
+                <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button">
+                  <Bell className="h-4 w-4" />
+                  {notificationCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-red-500">{notificationCount}</Badge>
                   )}
-                </div>
+                </Button>
+
+                <Button variant="ghost" size="sm" className="w-9 h-9 p-0 mobile-button">
+                  <MessageCircle className="h-4 w-4" />
+                </Button>
+
+                {/* User Menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full mobile-button">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.user_metadata.avatar_url} alt={userName} />
+                        <AvatarFallback className={getRoleColor(userRole)}>
+                          {userName?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      {isVerified && (
+                        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-64" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <p className="text-sm font-medium leading-none truncate">
+                            {userName}
+                          </p>
+                          {isVerified && (
+                            <Badge variant="secondary" className="text-xs">Verified</Badge>
+                          )}
+                        </div>
+                        <p className="text-xs leading-none text-muted-foreground truncate">
+                          {user.email}
+                        </p>
+                        <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                            {getRoleIcon(userRole)}
+                            <span className="capitalize">{userRole}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">•</span>
+                          <span className="text-xs text-muted-foreground">{user.user_metadata.location}</span>
+                        </div>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/">
+                        <ShoppingBag className="mr-2 h-4 w-4" />
+                        <span>Home</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/dashboard/${userRole}`}>
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        <span>Dashboard</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Profile</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    {userRole === 'buyer' && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link href="/wishlist">
+                            <Heart className="mr-2 h-4 w-4" />
+                            <span>Wishlist</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/orders">
+                            <Package className="mr-2 h-4 w-4" />
+                            <span>My Orders</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    <DropdownMenuItem asChild>
+                      <Link href="/settings">
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Settings</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Wallet className="mr-2 h-4 w-4" />
+                      <span>Wallet</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => onAuthClick('login')}
+                  className="mobile-button"
+                >
+                  {t('nav.login')}
+                </Button>
+                <Button
+                  onClick={() => onAuthClick('register')}
+                  className="african-gradient text-white hover:opacity-90 mobile-button"
+                >
+                  {t('nav.get_started')}
+                </Button>
+              </div>
+            )}
+          </div>
 
           {/* Mobile Actions */}
           <div className="flex lg:hidden items-center space-x-2">
@@ -381,7 +394,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                     <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-red-500">{notificationCount}</Badge>
                   )}
                 </Button>
-                
+
                 {userRole === 'buyer' && (
                   <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button" asChild>
                     <Link href="/cart">
@@ -392,7 +405,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                 )}
               </>
             )}
-            
+
             <ThemeToggle />
             <Button
               variant="ghost"
@@ -437,7 +450,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                     <span>{item.name}</span>
                   </a>
                 ))}
-                
+
                 {user && (
                   <div className="flex items-center space-x-3 px-2 pt-2 border-t">
                     <Avatar className="h-10 w-10">
@@ -452,15 +465,15 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                     </div>
                   </div>
                 )}
-                
+
                 <div className="flex items-center space-x-2 px-2 pt-4 border-t">
                   <LanguageToggle />
                 </div>
-                
+
                 {!user && (
                   <div className="flex flex-col space-y-3 px-2 pt-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => {
                         onAuthClick('login');
                         setIsMenuOpen(false);
@@ -469,7 +482,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                     >
                       {t('nav.login')}
                     </Button>
-                    <Button 
+                    <Button
                       onClick={() => {
                         onAuthClick('register');
                         setIsMenuOpen(false);

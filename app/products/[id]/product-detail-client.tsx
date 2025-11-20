@@ -17,6 +17,9 @@ import { createClient } from '@/lib/supabase/client';
 import { wishlistService } from '@/lib/wishlistService';
 import { ProductReviews } from '@/components/reviews/product-reviews';
 
+import { Navbar } from '@/components/layout/navbar';
+import { AuthModal } from '@/components/auth/auth-modal';
+
 export default function ProductDetailClient({ product: initialProduct }: { product: Product }) {
   const { user } = useAuth();
   const router = useRouter();
@@ -30,9 +33,22 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   const [traderInfo, setTraderInfo] = useState<{ name: string; averageRating: number | null } | null>(null);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
+  // Auth modal state
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalType, setAuthModalType] = useState<'login' | 'register'>('login');
+
+  const handleAuthClick = (type: 'login' | 'register') => {
+    setAuthModalType(type);
+    setShowAuthModal(true);
+  };
+
+  const handleCloseAuthModal = () => {
+    setShowAuthModal(false);
+  };
+
   useEffect(() => {
     if (!product) return;
-
+    // ... existing code ...
     const fetchExtraData = async () => {
       // Fetch trader info
       const supabase = createClient();
@@ -76,7 +92,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
   const addToCart = async () => {
     if (!user) {
-      router.push('/');
+      handleAuthClick('login');
       return;
     }
 
@@ -97,10 +113,10 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
   const handleToggleWishlist = async () => {
     if (!user || !product) {
-      toast.error('Please log in to manage your wishlist.');
+      handleAuthClick('login');
       return;
     }
-
+    // ... existing code ...
     try {
       if (isWishlisted) {
         await wishlistService.removeFromWishlist(user.id, product.id);
@@ -140,222 +156,231 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Button
-            variant="outline"
-            onClick={() => router.back()}
-            className="mb-6"
+    <div className="min-h-screen bg-background">
+      <Navbar onAuthClick={handleAuthClick} />
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={handleCloseAuthModal}
+        initialType={authModalType}
+        onSuccess={handleCloseAuthModal}
+      />
+      <div className="py-12">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Products
-          </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.back()}
+              className="mb-6"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Products
+            </Button>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Product Image */}
-            <div className="flex flex-col items-center">
-              <div className="w-full h-96 bg-gray-200 rounded-xl overflow-hidden">
-                {product.image_url ? (
-                  <Image
-                    src={product.image_url}
-                    alt={product.name}
-                    width={600}
-                    height={600}
-                    className="w-full h-full object-cover"
-                    priority
-                  />
-                ) : (
-                  <div className="w-full h-full bg-muted flex items-center justify-center">
-                    <Package className="h-24 w-24 text-gray-400" />
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-4 flex space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleToggleWishlist}
-                >
-                  <Heart className={`h-4 w-4 mr-2 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
-                  Wishlist
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    // Share functionality (not implemented yet)
-                    toast.info('Link copied to clipboard');
-                  }}
-                >
-                  Share
-                </Button>
-              </div>
-            </div>
-
-            {/* Product Info */}
-            <div>
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h1 className="text-3xl font-bold">{product.name}</h1>
-                  <div className="flex items-center mt-2">
-                    <div className="flex items-center">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                      <span className="font-medium">{product.rating.toFixed(1)}</span>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              {/* Product Image */}
+              <div className="flex flex-col items-center">
+                <div className="w-full h-96 bg-gray-200 rounded-xl overflow-hidden">
+                  {product.image_url ? (
+                    <Image
+                      src={product.image_url}
+                      alt={product.name}
+                      width={600}
+                      height={600}
+                      className="w-full h-full object-cover"
+                      priority
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                      <Package className="h-24 w-24 text-gray-400" />
                     </div>
-                    <span className="text-muted-foreground mx-2">•</span>
-                    <span className="text-muted-foreground">In stock: {product.stock_quantity}</span>
-                  </div>
+                  )}
                 </div>
 
-                <div className="text-3xl font-bold text-primary">
-                  KSh {product.price.toFixed(2)}
+                <div className="mt-4 flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleToggleWishlist}
+                  >
+                    <Heart className={`h-4 w-4 mr-2 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
+                    Wishlist
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      // Share functionality (not implemented yet)
+                      toast.info('Link copied to clipboard');
+                    }}
+                  >
+                    Share
+                  </Button>
                 </div>
               </div>
 
-              <p className="text-lg text-muted-foreground mb-6">
-                {product.description}
-              </p>
+              {/* Product Info */}
+              <div>
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h1 className="text-3xl font-bold">{product.name}</h1>
+                    <div className="flex items-center mt-2">
+                      <div className="flex items-center">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
+                        <span className="font-medium">{product.rating.toFixed(1)}</span>
+                      </div>
+                      <span className="text-muted-foreground mx-2">•</span>
+                      <span className="text-muted-foreground">In stock: {product.stock_quantity}</span>
+                    </div>
+                  </div>
 
-              {/* Seller Info Card - Prominent */}
-              <Card className="mb-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Sold by</p>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => router.push(`/marketplace?trader=${product.trader_id}`)}
-                          className="text-xl font-bold hover:text-primary transition-colors"
+                  <div className="text-3xl font-bold text-primary">
+                    KSh {product.price.toFixed(2)}
+                  </div>
+                </div>
+
+                <p className="text-lg text-muted-foreground mb-6">
+                  {product.description}
+                </p>
+
+                {/* Seller Info Card - Prominent */}
+                <Card className="mb-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Sold by</p>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => router.push(`/marketplace?trader=${product.trader_id}`)}
+                            className="text-xl font-bold hover:text-primary transition-colors"
+                          >
+                            {traderInfo?.name || 'Loading...'}
+                          </button>
+                          {traderInfo?.averageRating !== null && (
+                            <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded">
+                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                              <span className="font-medium">{traderInfo?.averageRating.toFixed(1)}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => router.push(`/marketplace?trader=${product.trader_id}`)}
+                      >
+                        View All Products
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="space-y-4 mb-8">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Category:</span>
+                    <span className="font-medium">{product.category}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Delivery:</span>
+                    <span className="font-medium">Standard (3-5 days)</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Available:</span>
+                    <Badge variant={product.stock_quantity > 0 ? 'default' : 'destructive'}>
+                      {product.stock_quantity > 0 ? 'In Stock' : 'Out of Stock'}
+                    </Badge>
+                  </div>
+                </div>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center space-x-4">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={decrementQuantity}
+                          disabled={quantity <= 1}
                         >
-                          {traderInfo?.name || 'Loading...'}
-                        </button>
-                        {traderInfo?.averageRating !== null && (
-                          <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                            <span className="font-medium">{traderInfo?.averageRating.toFixed(1)}</span>
-                          </div>
-                        )}
+                          <span className="text-lg">-</span>
+                        </Button>
+
+                        <span className="text-xl font-medium w-12 text-center">
+                          {quantity}
+                        </span>
+
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={incrementQuantity}
+                          disabled={quantity >= product.stock_quantity}
+                        >
+                          <span className="text-lg">+</span>
+                        </Button>
+                      </div>
+
+                      <div className="text-xl font-bold">
+                        Total: KSh {(product.price * quantity).toFixed(2)}
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => router.push(`/marketplace?trader=${product.trader_id}`)}
-                    >
-                      View All Products
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
 
-              <div className="space-y-4 mb-8">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Category:</span>
-                  <span className="font-medium">{product.category}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Delivery:</span>
-                  <span className="font-medium">Standard (3-5 days)</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Available:</span>
-                  <Badge variant={product.stock_quantity > 0 ? 'default' : 'destructive'}>
-                    {product.stock_quantity > 0 ? 'In Stock' : 'Out of Stock'}
-                  </Badge>
-                </div>
-              </div>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex space-x-4">
                       <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={decrementQuantity}
-                        disabled={quantity <= 1}
+                        className="flex-1 py-6 text-lg"
+                        onClick={addToCart}
+                        disabled={product.stock_quantity <= 0}
                       >
-                        <span className="text-lg">-</span>
+                        <ShoppingCart className="h-5 w-5 mr-2" />
+                        Add to Cart
                       </Button>
 
-                      <span className="text-xl font-medium w-12 text-center">
-                        {quantity}
-                      </span>
-
                       <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={incrementQuantity}
-                        disabled={quantity >= product.stock_quantity}
+                        className="py-6 px-8 text-lg"
+                        onClick={() => {
+                          addToCart();
+                          router.push('/cart');
+                        }}
+                        disabled={product.stock_quantity <= 0}
                       >
-                        <span className="text-lg">+</span>
+                        <Check className="h-5 w-5 mr-2" />
+                        Buy Now
                       </Button>
                     </div>
+                  </CardContent>
+                </Card>
 
-                    <div className="text-xl font-bold">
-                      Total: KSh {(product.price * quantity).toFixed(2)}
-                    </div>
-                  </div>
-
-                  <div className="flex space-x-4">
-                    <Button
-                      className="flex-1 py-6 text-lg"
-                      onClick={addToCart}
-                      disabled={product.stock_quantity <= 0}
-                    >
-                      <ShoppingCart className="h-5 w-5 mr-2" />
-                      Add to Cart
-                    </Button>
-
-                    <Button
-                      className="py-6 px-8 text-lg"
-                      onClick={() => {
-                        addToCart();
-                        router.push('/cart');
-                      }}
-                      disabled={product.stock_quantity <= 0}
-                    >
-                      <Check className="h-5 w-5 mr-2" />
-                      Buy Now
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="mt-8">
-                <h3 className="text-lg font-semibold mb-4">Product Details</h3>
-                <ul className="space-y-2">
-                  <li className="flex">
-                    <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
-                    <span>High quality product</span>
-                  </li>
-                  <li className="flex">
-                    <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
-                    <span>Free shipping on orders over KSh 2000</span>
-                  </li>
-                  <li className="flex">
-                    <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
-                    <span>30-day money-back guarantee</span>
-                  </li>
-                </ul>
+                <div className="mt-8">
+                  <h3 className="text-lg font-semibold mb-4">Product Details</h3>
+                  <ul className="space-y-2">
+                    <li className="flex">
+                      <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
+                      <span>High quality product</span>
+                    </li>
+                    <li className="flex">
+                      <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
+                      <span>Free shipping on orders over KSh 2000</span>
+                    </li>
+                    <li className="flex">
+                      <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
+                      <span>30-day money-back guarantee</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Reviews Section */}
-          <div className="mt-12">
-            <ProductReviews
-              productId={product.id}
-              traderId={product.trader_id}
-            />
-          </div>
-        </motion.div>
+            {/* Reviews Section */}
+            <div className="mt-12">
+              <ProductReviews
+                productId={product.id}
+                traderId={product.trader_id}
+              />
+            </div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
