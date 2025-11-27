@@ -105,7 +105,7 @@ export async function GET(request: Request) {
     }
 
     console.log(`API /api/products: Fetched ${data?.length || 0} products (Page ${page})`);
-
+    
     // Filter out products from suspended traders
     const activeProducts = (data || []).filter(
       (product: any) => !product.trader?.is_suspended

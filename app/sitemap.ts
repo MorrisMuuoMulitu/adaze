@@ -22,26 +22,63 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   return [
+    // Homepage - highest priority
     {
       url: baseUrl,
       lastModified: new Date(),
+      changeFrequency: 'daily' as const,
+      priority: 1.0,
     },
+    // Main marketplace pages
     {
       url: `${baseUrl}/marketplace`,
       lastModified: new Date(),
+      changeFrequency: 'hourly' as const,
+      priority: 0.9,
+    },
+    // Information pages
+    {
+      url: `${baseUrl}/about`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
     },
     {
       url: `${baseUrl}/contact`,
       lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
     },
+    {
+      url: `${baseUrl}/help`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/guidelines`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.5,
+    },
+    // Legal pages
     {
       url: `${baseUrl}/privacy`,
       lastModified: new Date(),
+      changeFrequency: 'yearly' as const,
+      priority: 0.3,
     },
     {
       url: `${baseUrl}/terms`,
       lastModified: new Date(),
+      changeFrequency: 'yearly' as const,
+      priority: 0.3,
     },
-    ...productUrls,
+    // Product pages - dynamic, medium-high priority
+    ...productUrls.map((product) => ({
+      ...product,
+      changeFrequency: 'daily' as const,
+      priority: 0.8,
+    })),
   ];
 }

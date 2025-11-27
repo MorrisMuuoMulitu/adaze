@@ -8,9 +8,7 @@ import { Navbar } from '@/components/layout/navbar';
 import { Hero } from '@/components/sections/hero';
 import { ProductGrid } from '@/components/sections/product-grid';
 import { FeaturedProducts } from '@/components/sections/featured-products';
-import { Footer } from '@/components/layout/footer';
 import { AuthModal } from '@/components/auth/auth-modal';
-import { OnboardingTourEnhanced } from '@/components/onboarding-tour-enhanced';
 import { KeyboardShortcuts } from '@/components/keyboard-shortcuts';
 import { PWAPrompt } from '@/components/pwa/pwa-prompt';
 import { LiveChat } from '@/components/chat/live-chat';
@@ -22,7 +20,6 @@ export default function Home() {
   const supabase = createClient();
   const [authModal, setAuthModal] = useState<'login' | 'register' | null>(null);
   const { user } = useAuth();
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Check for suspension/deletion error in URL
@@ -76,10 +73,6 @@ export default function Home() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
-      const hasCompletedOnboarding = localStorage.getItem('adaze-onboarding-completed');
-      if (!hasCompletedOnboarding && !user) {
-        setShowOnboarding(true);
-      }
     }, 1000);
     return () => clearTimeout(timer);
   }, [user]);
@@ -163,20 +156,12 @@ export default function Home() {
         )}
       </motion.main>
 
-      <Footer />
-
       <AuthModal
         type={authModal}
         isOpen={!!authModal}
         onClose={() => setAuthModal(null)}
         onSuccess={handleAuthSuccess}
       />
-
-      {showOnboarding && (
-        <OnboardingTourEnhanced
-          onComplete={() => setShowOnboarding(false)}
-        />
-      )}
 
       {user && <KeyboardShortcuts />}
       <PWAPrompt />
