@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight, TrendingUp, Shield, Zap, Users, Package, Star } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 
@@ -48,11 +49,17 @@ export function Hero({ onGetStarted }: HeroProps) {
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
   return (
-    <section ref={containerRef} className="relative overflow-hidden bg-gradient-to-br from-background via-primary/5 to-accent/5 pt-24 pb-16 md:pt-32 md:pb-24">
-      {/* Enhanced Background with Animated Gradients */}
+    <section ref={containerRef} className="relative overflow-hidden bg-background pt-24 pb-16 md:pt-32 md:pb-24">
+      {/* Cinematic Background Image with Overlay */}
       <div className="absolute inset-0 -z-10">
-        {/* Grid Pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e5e7eb15_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb15_1px,transparent_1px)] bg-[size:32px_32px]"></div>
+        <Image
+          src="/hero-fashion-bg.jpg"
+          alt="Premium Fashion Background"
+          fill
+          className="object-cover opacity-20 dark:opacity-30"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-primary/10"></div>
 
         {/* Animated Gradient Orbs */}
         <motion.div
@@ -65,7 +72,7 @@ export function Hero({ onGetStarted }: HeroProps) {
             repeat: Infinity,
             ease: "linear"
           }}
-          className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-primary/20 to-accent/20 rounded-full blur-3xl"
+          className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-primary/30 to-accent/30 rounded-full blur-[120px] opacity-50"
         ></motion.div>
         <motion.div
           animate={{
@@ -77,7 +84,7 @@ export function Hero({ onGetStarted }: HeroProps) {
             repeat: Infinity,
             ease: "linear"
           }}
-          className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-accent/15 to-primary/15 rounded-full blur-3xl"
+          className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-accent/25 to-primary/25 rounded-full blur-[120px] opacity-50"
         ></motion.div>
       </div>
 

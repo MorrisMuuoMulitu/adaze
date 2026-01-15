@@ -80,66 +80,87 @@
 
 /* Custom Utilities */
 .glass-panel {
-  @apply bg-white/80 backdrop-blur-xl border border-slate-200/60 shadow-xl;
+  @apply bg-white/70 backdrop-blur-2xl border border-white/20 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)];
 }
 
 .dark .glass-panel {
-  @apply bg-slate-900/80 border-slate-700/60;
+  @apply bg-slate-900/70 border-slate-700/30;
 }
 
 .text-gradient {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-teal-500;
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-primary animate-shimmer;
+  background-size: 200% auto;
 }
 
 .professional-gradient {
   @apply bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900;
 }
 
+/* Premium Typography */
+h1, h2, h3, h4, h5, h6 {
+  @apply tracking-tight font-black;
+}
+
 /* Smooth Transitions */
 * {
-  @apply transition-colors duration-200;
+  @apply transition-all duration-300 ease-in-out;
 }
 
 /* Animations */
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-15px) rotate(1deg); }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes glow {
+  0%, 100% { opacity: 0.5; filter: blur(80px); }
+  50% { opacity: 0.8; filter: blur(100px); }
 }
 
 .animate-float {
-  animation: float 6s ease-in-out infinite;
+  animation: float 8s ease-in-out infinite;
 }
 
 .animate-shimmer {
-  animation: shimmer 3s linear infinite;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(16, 185, 129, 0.1),
-    transparent
-  );
-  background-size: 200% 100%;
+  animation: shimmer 12s linear infinite;
+}
+
+.animate-glow {
+  animation: glow 10s ease-in-out infinite;
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.5s ease-out forwards;
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Product Card Hover Effects */
 .product-card {
-  @apply transition-all duration-300 hover:shadow-2xl hover:-translate-y-1;
+  @apply transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)] hover:-translate-y-2;
+}
+
+.dark .product-card {
+  @apply hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)];
 }
 
 .african-gradient {
-  @apply bg-gradient-to-r from-emerald-600 to-teal-600;
+  @apply bg-gradient-to-r from-primary to-accent;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/30 transition-colors;
 }

@@ -63,24 +63,29 @@ export async function GET(request: Request) {
       `)
       .eq('status', 'active');
 
+    const searchParams = new URL(request.url).searchParams;
+    const category = searchParams.get('category');
+    const minPrice = searchParams.get('minPrice');
+    const maxPrice = searchParams.get('maxPrice');
+    const sortBy = searchParams.get('sortBy') || 'newest';
+
     // Apply filters
-    if (request.url.includes('category') && new URL(request.url).searchParams.get('category')) {
-       query = query.eq('category', new URL(request.url).searchParams.get('category'));
+    if (category) {
+       query = query.eq('category', category);
     }
     
-    if (request.url.includes('minPrice')) {
-       const min = parseInt(new URL(request.url).searchParams.get('minPrice') || '0');
+    if (minPrice) {
+       const min = parseInt(minPrice);
        if (!isNaN(min)) query = query.gte('price', min);
     }
 
-    if (request.url.includes('maxPrice')) {
-       const max = parseInt(new URL(request.url).searchParams.get('maxPrice') || '1000000');
+    if (maxPrice) {
+       const max = parseInt(maxPrice);
        if (!isNaN(max)) query = query.lte('price', max);
     }
 
     // Apply sorting
-    const sortParam = new URL(request.url).searchParams.get('sortBy') || 'newest';
-    switch (sortParam) {
+    switch (sortBy) {
       case 'price_asc':
         query = query.order('price', { ascending: true });
         break;

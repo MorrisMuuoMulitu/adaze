@@ -14,6 +14,7 @@ import { PWAPrompt } from '@/components/pwa/pwa-prompt';
 import { LiveChat } from '@/components/chat/live-chat';
 import { NotificationCenter } from '@/components/notifications/notification-center';
 import { useAuth } from '@/components/auth/auth-provider';
+import { ShoppingBag } from 'lucide-react';
 
 export default function Home() {
   const router = useRouter();
@@ -70,57 +71,102 @@ export default function Home() {
     handleOAuthCallback();
   }, [router, supabase.auth]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [user]);
-
   // Redirect logged-in users based on role
   useEffect(() => {
     const checkRoleAndRedirect = async () => {
-      if (!user) return;
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
 
-      const role = profile?.role;
+        const role = profile?.role;
 
-      if (role === 'admin') router.push('/admin');
-      else if (role === 'buyer') router.push('/marketplace');
-      else if (role === 'trader') router.push('/dashboard/trader');
-      else if (role === 'transporter') router.push('/dashboard/transporter');
-      else if (role === 'wholesaler') router.push('/dashboard/wholesaler');
+        if (role === 'admin') router.push('/admin');
+        else if (role === 'buyer') router.push('/marketplace');
+        else if (role === 'trader') router.push('/dashboard/trader');
+        else if (role === 'transporter') router.push('/dashboard/transporter');
+        else if (role === 'wholesaler') router.push('/dashboard/wholesaler');
+        else router.push('/marketplace'); // Fallback
+      } catch (error) {
+        console.error('Role check error:', error);
+        setIsLoading(false);
+      }
     };
 
-    checkRoleAndRedirect();
+    if (user !== undefined) {
+      checkRoleAndRedirect();
+    }
   }, [user, router, supabase]);
 
   const handleAuthSuccess = () => {
     setAuthModal(null);
   };
 
-  if (isLoading) {
+  if (isLoading || (user && !isLoading)) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        {/* Animated Background Elements */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{
+            scale: [1, 1.2, 1],
+            rotate: [0, 90, 0],
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+          className="absolute -top-24 -right-24 w-96 h-96 bg-primary/10 rounded-full blur-[100px]"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.3, 1],
+            rotate: [0, -90, 0],
+          }}
+          transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+          className="absolute -bottom-24 -left-24 w-96 h-96 bg-accent/10 rounded-full blur-[100px]"
+        />
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center space-y-4"
+          transition={{ duration: 0.5 }}
+          className="text-center space-y-8 relative z-10"
         >
-          <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
-          >
-            ADAZE
-          </motion.h2>
+          <div className="relative w-24 h-24 mx-auto">
+            <div className="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+              className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full"
+            ></motion.div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <ShoppingBag className="h-8 w-8 text-primary" />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <motion.h2
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-3xl font-black tracking-tighter bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer"
+              style={{ backgroundSize: '200% auto' }}
+            >
+              ADAZE
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="text-muted-foreground font-medium"
+            >
+              {user ? 'Preparing your personalized experience...' : 'Crafting excellence...'}
+            </motion.p>
+          </div>
         </motion.div>
       </div>
     );

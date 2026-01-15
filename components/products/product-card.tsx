@@ -111,7 +111,7 @@ export function ProductCard({
             </CardContent>
 
             <CardFooter className="p-4 pt-0">
-                <Button className="w-full gap-2" asChild>
+                <Button className="w-full gap-2 african-gradient hover:opacity-90 shadow-lg hover:shadow-primary/20 transition-all duration-300" asChild>
                     <Link href={`/products/${product.id}`}>
                         <ShoppingCart className="h-4 w-4" />
                         Buy Now
