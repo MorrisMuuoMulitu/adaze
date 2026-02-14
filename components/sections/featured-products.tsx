@@ -70,26 +70,13 @@ export function FeaturedProducts() {
 
   if (loading) {
     return (
-      <section className="py-20 bg-gradient-to-b from-muted/30 via-background to-muted/20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e5e7eb10_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb10_1px,transparent_1px)] bg-[size:40px_40px]"></div>
-        <div className="container mx-auto px-4 md:px-6 relative z-10">
-          <div className="text-center mb-16">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-4"
-            >
-              <Package className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-primary">Curated Collection</span>
-            </motion.div>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              Featured Products
-            </h2>
-            <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-medium">
-              Hand-picked selections just for you
-            </p>
+      <section className="py-24 bg-background relative overflow-hidden">
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="text-left mb-16">
+            <div className="h-4 w-32 bg-muted animate-pulse mb-4" />
+            <div className="h-12 w-96 bg-muted animate-pulse" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[...Array(4)].map((_, i) => (
               <ProductSkeleton key={i} />
             ))}
@@ -100,56 +87,39 @@ export function FeaturedProducts() {
   }
 
   if (error || featuredProducts.length === 0) {
-    return null; // Don't show section if error or no products
+    return null;
   }
 
   return (
-    <section className="py-20 bg-gradient-to-b from-muted/30 via-background to-muted/20 relative overflow-hidden">
-      {/* Enhanced Background Pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e5e7eb10_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb10_1px,transparent_1px)] bg-[size:40px_40px]"></div>
-
-      {/* Subtle gradient orb */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-primary/5 to-accent/5 rounded-full blur-3xl"></div>
-
-      <div className="container mx-auto px-4 md:px-6 relative z-10">
-        {/* Enhanced Section Header */}
-        <div className="text-center mb-16">
+    <section className="py-32 bg-background border-t border-border/50 relative overflow-hidden">
+      <div className="container mx-auto px-6 relative z-10">
+        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-full mb-4 shadow-lg backdrop-blur-sm"
-          >
-            <Package className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Curated Collection
-            </span>
-          </motion.div>
-
-          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent mb-6"
+            className="max-w-2xl"
           >
-            Featured Products
-          </motion.h2>
+            <div className="text-[10px] font-black tracking-[0.4em] uppercase text-accent mb-4">
+              EDITORIAL CHOICE
+            </div>
+            <h2 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-none">
+              The <span className="text-muted-foreground/30">Edit.</span>
+            </h2>
+            <p className="mt-6 text-lg text-muted-foreground font-medium uppercase tracking-widest">
+              A curated selection of the season&apos;s most defining pieces.
+            </p>
+          </motion.div>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-medium"
+          <Button
+            asChild
+            className="btn-premium h-14 px-10 rounded-none text-[10px] font-black tracking-widest uppercase hidden md:flex"
           >
-            Hand-picked selections just for you
-          </motion.p>
+            <Link href="/marketplace">VIEW ALL PIECES</Link>
+          </Button>
         </div>
 
-        {/* Enhanced Product Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {featuredProducts.map((product, index) => (
             <motion.div
               key={product.id}
@@ -157,35 +127,20 @@ export function FeaturedProducts() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              whileHover={{ y: -8 }}
-              className="group"
             >
               <ProductCard product={product} index={index} />
             </motion.div>
           ))}
         </div>
 
-        {/* Enhanced CTA Button */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="text-center mt-16"
-        >
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button
-              size="lg"
-              asChild
-              className="h-14 px-10 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white font-bold shadow-xl hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300"
-            >
-              <Link href="/marketplace">
-                <Package className="h-5 w-5 mr-2" />
-                Browse All Products
-              </Link>
-            </Button>
-          </motion.div>
-        </motion.div>
+        <div className="mt-16 md:hidden">
+          <Button
+            asChild
+            className="btn-premium w-full h-14 rounded-none text-[10px] font-black tracking-widest uppercase"
+          >
+            <Link href="/marketplace">VIEW ALL PIECES</Link>
+          </Button>
+        </div>
       </div>
     </section>
   );

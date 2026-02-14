@@ -70,88 +70,94 @@ export function AdvancedFilters({ onFilterChange, className }: AdvancedFiltersPr
 
     return (
         <div className={className}>
-            <div className="flex items-center justify-between mb-4 md:hidden">
-                <Button variant="outline" onClick={() => setIsOpen(!isOpen)} className="w-full">
+            <div className="flex items-center justify-between mb-8 md:hidden">
+                <Button
+                    variant="outline"
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="w-full rounded-none border-border h-12 text-[10px] font-black tracking-widest uppercase"
+                >
                     <Filter className="w-4 h-4 mr-2" />
                     Filters & Sort
                 </Button>
             </div>
 
-            <div className={`${isOpen ? 'block' : 'hidden'} md:block space-y-6`}>
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                            <Filter className="w-5 h-5" />
-                            Filters
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        {/* Category Filter */}
-                        <div className="space-y-2">
-                            <Label>Category</Label>
-                            <Select value={category} onValueChange={setCategory}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select Category" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {CATEGORIES.map((cat) => (
-                                        <SelectItem key={cat} value={cat}>
-                                            {cat}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+            <div className={`${isOpen ? 'block' : 'hidden'} md:block space-y-12`}>
+                <div className="space-y-10">
+                    <div className="flex items-center gap-3 pb-4 border-b border-border/50">
+                        <Filter className="w-4 h-4 text-accent" />
+                        <h3 className="text-[10px] font-black tracking-[0.3em] uppercase">Refine Selection</h3>
+                    </div>
 
-                        {/* Price Range Filter */}
-                        <div className="space-y-2">
-                            <Label>Price Range (KSh)</Label>
-                            <div className="flex items-center gap-2">
-                                <Input
-                                    type="number"
-                                    placeholder="Min"
-                                    value={minPrice}
-                                    onChange={(e) => setMinPrice(e.target.value)}
-                                    className="w-full"
-                                />
-                                <span className="text-muted-foreground">-</span>
-                                <Input
-                                    type="number"
-                                    placeholder="Max"
-                                    value={maxPrice}
-                                    onChange={(e) => setMaxPrice(e.target.value)}
-                                    className="w-full"
-                                />
-                            </div>
-                        </div>
+                    {/* Category Filter */}
+                    <div className="space-y-4">
+                        <Label className="text-[9px] font-black tracking-widest uppercase text-muted-foreground">Category</Label>
+                        <Select value={category} onValueChange={setCategory}>
+                            <SelectTrigger className="rounded-none border-border h-11 text-[11px] font-bold uppercase tracking-widest">
+                                <SelectValue placeholder="Select Category" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-none border-border">
+                                {CATEGORIES.map((cat) => (
+                                    <SelectItem key={cat} value={cat} className="text-[10px] font-bold uppercase tracking-widest">
+                                        {cat}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
 
-                        {/* Sort By */}
-                        <div className="space-y-2">
-                            <Label>Sort By</Label>
-                            <Select value={sortBy} onValueChange={setSortBy}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Sort By" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="newest">Newest Arrivals</SelectItem>
-                                    <SelectItem value="price_asc">Price: Low to High</SelectItem>
-                                    <SelectItem value="price_desc">Price: High to Low</SelectItem>
-                                    <SelectItem value="rating">Top Rated</SelectItem>
-                                </SelectContent>
-                            </Select>
+                    {/* Price Range Filter */}
+                    <div className="space-y-4">
+                        <Label className="text-[9px] font-black tracking-widest uppercase text-muted-foreground">Price Range (KSh)</Label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <Input
+                                type="number"
+                                placeholder="MIN"
+                                value={minPrice}
+                                onChange={(e) => setMinPrice(e.target.value)}
+                                className="rounded-none border-border h-11 text-[11px] font-bold uppercase tracking-widest placeholder:text-muted-foreground/30"
+                            />
+                            <Input
+                                type="number"
+                                placeholder="MAX"
+                                value={maxPrice}
+                                onChange={(e) => setMaxPrice(e.target.value)}
+                                className="rounded-none border-border h-11 text-[11px] font-bold uppercase tracking-widest placeholder:text-muted-foreground/30"
+                            />
                         </div>
+                    </div>
 
-                        <div className="flex flex-col gap-2 pt-2">
-                            <Button onClick={handleApplyFilters} className="w-full">
-                                Apply Filters
-                            </Button>
-                            <Button variant="ghost" onClick={handleReset} className="w-full text-muted-foreground">
-                                <X className="w-4 h-4 mr-2" />
-                                Reset
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+                    {/* Sort By */}
+                    <div className="space-y-4">
+                        <Label className="text-[9px] font-black tracking-widest uppercase text-muted-foreground">Ordering</Label>
+                        <Select value={sortBy} onValueChange={setSortBy}>
+                            <SelectTrigger className="rounded-none border-border h-11 text-[11px] font-bold uppercase tracking-widest">
+                                <SelectValue placeholder="Sort By" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-none border-border">
+                                <SelectItem value="newest" className="text-[10px] font-bold uppercase tracking-widest">Newest Arrivals</SelectItem>
+                                <SelectItem value="price_asc" className="text-[10px] font-bold uppercase tracking-widest">Price: Low to High</SelectItem>
+                                <SelectItem value="price_desc" className="text-[10px] font-bold uppercase tracking-widest">Price: High to Low</SelectItem>
+                                <SelectItem value="rating" className="text-[10px] font-bold uppercase tracking-widest">Top Rated</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="flex flex-col gap-3 pt-6">
+                        <Button
+                            onClick={handleApplyFilters}
+                            className="btn-premium rounded-none h-14 text-[10px] font-black tracking-widest uppercase"
+                        >
+                            Update Results
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            onClick={handleReset}
+                            className="rounded-none h-12 text-[10px] font-bold tracking-widest uppercase text-muted-foreground hover:text-foreground"
+                        >
+                            Clear All
+                        </Button>
+                    </div>
+                </div>
             </div>
         </div>
     );

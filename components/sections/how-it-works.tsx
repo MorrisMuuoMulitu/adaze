@@ -47,23 +47,28 @@ export function HowItWorks() {
   const router = useRouter();
 
   return (
-    <section id="how-it-works" className="py-12 sm:py-16 lg:py-20 bg-muted/30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="how-it-works" className="py-24 sm:py-32 bg-background border-y border-border/50">
+      <div className="max-w-7xl mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-12 sm:mb-16"
+          className="flex flex-col md:flex-row justify-between items-end gap-12 mb-20"
         >
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
-            How ADAZE Works
-          </h2>
-          <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
-            From discovery to delivery, we&apos;ve made buying and selling second-hand fashion simple and secure
+          <div className="max-w-2xl">
+            <div className="text-[10px] font-black tracking-[0.4em] uppercase text-accent mb-6">
+              THE EXPERIENCE
+            </div>
+            <h2 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-[0.9]">
+              How it <span className="text-muted-foreground/30 italic">Works.</span>
+            </h2>
+          </div>
+          <p className="text-lg text-muted-foreground/60 max-w-md font-medium tracking-tight">
+            From discovery to worldwide delivery, we have refined every touchpoint of your fashion journey.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-border/50 border border-border/50">
           {steps.map((step, index) => (
             <motion.div
               key={step.title}
@@ -71,78 +76,75 @@ export function HowItWorks() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="relative group"
+              className="bg-background p-12 space-y-8 hover:bg-muted/5 transition-colors group relative overflow-hidden"
             >
-              {/* Connection line for desktop */}
-              {index < steps.length - 1 && index % 3 !== 2 && (
-                <div className="hidden lg:block absolute top-8 -right-4 w-8 h-0.5 bg-gradient-to-r from-primary/50 to-transparent z-0" />
-              )}
-              
-              <div className="relative bg-card/50 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border hover:shadow-xl transition-all duration-300 group-hover:-translate-y-2 card-shadow hover:card-shadow-lg">
-                {/* Step number */}
-                <div className="absolute -top-2 -left-2 sm:-top-3 sm:-left-3 w-6 h-6 sm:w-8 sm:h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-xs sm:text-sm font-bold">
-                  {index + 1}
-                </div>
+              {/* Scanline Effect */}
+              <div className="absolute inset-0 bg-scanline opacity-[0.02] pointer-events-none" />
 
-                {/* Icon */}
-                <div className="mb-4 sm:mb-6">
-                  <div className={`inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br ${step.color} p-0.5 group-hover:scale-110 transition-transform duration-300`}>
-                    <div className="w-full h-full bg-background rounded-xl sm:rounded-2xl flex items-center justify-center">
-                      <step.icon className="h-6 w-6 sm:h-8 sm:w-8 text-foreground" />
-                    </div>
+              <div className="relative z-10 space-y-12">
+                <div className="flex justify-between items-start">
+                  <div className="w-12 h-12 border border-border flex items-center justify-center transition-colors group-hover:border-accent group-hover:bg-accent/5">
+                    <step.icon className="h-5 w-5 text-accent" />
                   </div>
+                  <span className="text-4xl font-black font-mono opacity-5 text-foreground group-hover:opacity-10 transition-opacity">
+                    0{index + 1}
+                  </span>
                 </div>
 
-                {/* Content */}
-                <div className="space-y-2 sm:space-y-3">
-                  <h3 className="text-lg sm:text-xl font-semibold group-hover:text-primary transition-colors">
+                <div className="space-y-4">
+                  <h3 className="text-xl font-black tracking-tighter uppercase group-hover:text-accent transition-colors">
                     {step.title}
                   </h3>
-                  <p className="text-muted-foreground leading-relaxed text-sm sm:text-base">
+                  <p className="text-muted-foreground/60 leading-relaxed font-medium tracking-tight">
                     {step.description}
                   </p>
                 </div>
-
-                {/* Hover effect */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${step.color} opacity-0 group-hover:opacity-5 rounded-xl sm:rounded-2xl transition-opacity duration-300 -z-10`} />
               </div>
+
+              {/* Hover highlight line */}
+              <div className="absolute bottom-0 left-0 w-full h-[1px] bg-accent/0 group-hover:bg-accent/50 transition-all duration-700 transform translate-y-2 group-hover:translate-y-0" />
             </motion.div>
           ))}
         </div>
 
-        {/* CTA Section */}
+        {/* Brand Statement CTA */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.6 }}
-          className="text-center mt-12 sm:mt-16"
+          transition={{ duration: 0.8 }}
+          className="mt-24 border border-border/50 p-12 lg:p-24 text-center relative overflow-hidden"
         >
-          <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 border">
-            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-4">
-              Ready to Start Your Journey?
-            </h3>
-            <p className="text-muted-foreground text-base sm:text-lg mb-6 sm:mb-8 max-w-2xl mx-auto">
-              Join thousands of satisfied customers who have transformed their shopping experience with ADAZE
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => router.push('/marketplace')}
-                className="px-6 sm:px-8 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity h-12 mobile-button"
-              >
-                Start Shopping Now
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="px-6 sm:px-8 py-3 bg-accent text-accent-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity h-12 mobile-button"
-              >
-                Get Started
-              </motion.button>
+          <div className="relative z-10 space-y-12">
+            <div className="max-w-3xl mx-auto space-y-6">
+              <h3 className="text-4xl md:text-5xl font-black tracking-tighter uppercase leading-[0.9]">
+                The Future of <span className="text-accent italic">Sustainable</span> Luxury.
+              </h3>
+              <p className="text-muted-foreground/60 text-lg font-medium tracking-tight">
+                Join the thousands of curators and seekers who have transformed their wardrobe with ADAZE.
+              </p>
             </div>
+
+            <div className="flex flex-col sm:flex-row gap-6 justify-center">
+              <Button
+                onClick={() => router.push('/marketplace')}
+                className="btn-premium h-14 px-12 text-[10px] font-black tracking-[0.3em] uppercase rounded-none"
+              >
+                Start Exploring
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="h-14 px-12 rounded-none border-border font-black text-[10px] tracking-[0.3em] uppercase hover:bg-muted/50 transition-all"
+              >
+                Learn More
+              </Button>
+            </div>
+          </div>
+
+          {/* Background Text Decor */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-[18vw] font-black text-muted-foreground/5 leading-none select-none pointer-events-none uppercase tracking-tighter whitespace-nowrap">
+            ADAZE ELITE
           </div>
         </motion.div>
       </div>

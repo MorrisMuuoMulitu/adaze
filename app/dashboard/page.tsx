@@ -34,7 +34,9 @@ export default function Dashboard() {
         const { role } = data;
         console.log("User role is:", role);
         console.log("Redirecting to /dashboard/" + role);
-        if (role === 'buyer') {
+        if (role === 'admin') {
+          router.push('/admin');
+        } else if (role === 'buyer') {
           router.push('/dashboard/buyer');
         } else if (role === 'trader') {
           router.push('/dashboard/trader');

@@ -164,7 +164,7 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       <Navbar onAuthClick={handleAuthClick} />
       <AuthModal
         isOpen={showAuthModal}
@@ -172,131 +172,125 @@ export default function OrdersPage() {
         initialType={authModalType}
         onSuccess={handleCloseAuthModal}
       />
-      <div className="py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+
+      <main className="py-24 px-6">
+        <div className="max-w-6xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
           >
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+            {/* Minimalist Header */}
+            <div className="mb-16 border-b border-border/50 pb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
               <div>
-                <h1 className="text-3xl font-bold">Your Orders</h1>
-                <p className="text-muted-foreground">View your purchase history and track order status.</p>
+                <div className="text-[10px] font-black tracking-[0.3em] uppercase text-accent mb-2">
+                  PURCHASE HISTORY
+                </div>
+                <h1 className="text-4xl md:text-6xl font-black tracking-tighter uppercase">
+                  Orders<span className="text-muted-foreground/30">.</span>
+                </h1>
               </div>
-              <div className="mt-4 md:mt-0">
-                <Button onClick={() => router.push('/marketplace')}>
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Continue Shopping
-                </Button>
-              </div>
+              <Button
+                onClick={() => router.push('/marketplace')}
+                className="btn-premium rounded-none h-14 px-8 text-[10px] font-black tracking-widest uppercase"
+              >
+                Continue Shopping
+              </Button>
             </div>
 
             {orders.length === 0 ? (
-              <div className="text-center py-12">
-                <Package className="h-12 w-12 mx-auto text-muted-foreground" />
-                <h3 className="mt-4 text-xl font-semibold">No orders found</h3>
-                <p className="text-muted-foreground mt-2">You have not placed any orders yet.</p>
-                <Button className="mt-4" onClick={() => router.push('/marketplace')}>
-                  Start Shopping
+              <div className="text-center py-32 border border-dashed border-border/50">
+                <Package className="h-12 w-12 mx-auto mb-6 text-muted-foreground/30" />
+                <h2 className="text-lg font-bold uppercase tracking-widest mb-4 text-muted-foreground">No orders yet</h2>
+                <Button
+                  onClick={() => router.push('/marketplace')}
+                  className="btn-premium rounded-none h-14 px-10 text-[10px] font-black tracking-widest uppercase"
+                >
+                  Start Your Collection
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {orders.map((order) => (
-                  <Card key={order.id} className="overflow-hidden">
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-xl">{order.title}</CardTitle>
-                        <Badge variant={getStatusBadgeVariant(order.status)} className="flex items-center gap-1 capitalize">
-                          {getStatusIcon(order.status)}
-                          {order.status.replace('_', ' ')}
-                        </Badge>
+                  <motion.div
+                    key={order.id}
+                    className="border border-border/50 bg-muted/5 p-6 flex flex-col gap-6"
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="text-[10px] font-black tracking-widest text-muted-foreground mb-1">
+                          #{order.id.slice(0, 8).toUpperCase()}
+                        </div>
+                        <h3 className="text-sm font-black uppercase tracking-tight">{order.title}</h3>
                       </div>
-                      <CardDescription>{order.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <DollarSign className="h-4 w-4 mr-2" />
-                          <span>KSh {order.amount.toFixed(2)}</span>
-                        </div>
+                      <div className={`text-[9px] font-black tracking-[0.2em] uppercase py-1 px-3 border border-current ${order.status === 'delivered' ? 'text-green-500' :
+                          order.status === 'pending' ? 'text-accent' :
+                            'text-muted-foreground'
+                        }`}>
+                        {order.status.replace('_', ' ')}
+                      </div>
+                    </div>
 
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <User className="h-4 w-4 mr-2" />
-                          <span>Trader: {order.profiles?.full_name || 'N/A'}</span>
-                        </div>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-end border-b border-border/30 pb-4">
+                        <div className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">Total Amount</div>
+                        <div className="text-xl font-black tracking-tighter">KSH {order.amount.toLocaleString()}</div>
+                      </div>
 
-                        {order.transporters && (
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Truck className="h-4 w-4 mr-2" />
-                            <span>Transporter: {order.transporters.full_name}</span>
+                      <div className="space-y-2">
+                        <div className="text-[9px] font-black tracking-widest text-muted-foreground uppercase">Items</div>
+                        {order.order_items.map((item, idx) => (
+                          <div key={idx} className="flex justify-between text-[11px] font-bold">
+                            <span className="uppercase">{item.products.name} <span className="text-muted-foreground/50">×{item.quantity}</span></span>
+                            <span>KSH {(item.quantity * item.price_at_time).toLocaleString()}</span>
                           </div>
-                        )}
+                        ))}
+                      </div>
 
-                        <div className="text-sm text-muted-foreground">
-                          <h4 className="font-semibold mb-1">Products:</h4>
-                          {order.order_items.map((item, index) => (
-                            <div key={index} className="flex justify-between text-xs pl-4">
-                              <span>{item.products.name} (x{item.quantity})</span>
-                              <span>KSh {(item.quantity * item.price_at_time).toFixed(2)}</span>
-                            </div>
-                          ))}
+                      <div className="pt-4 border-t border-border/30 space-y-2">
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase">
+                          <User className="h-3 w-3" />
+                          <span>Trader: {order.profiles?.full_name || 'Anonymous'}</span>
                         </div>
-
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <MapPin className="h-4 w-4 mr-2" />
-                          <span>Shipping: {order.shipping_address}</span>
-                        </div>
-
-                        {order.billing_address && (
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4 mr-2" />
-                            <span>Billing: {order.billing_address}</span>
-                          </div>
-                        )}
-
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4 mr-2" />
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase">
+                          <Calendar className="h-3 w-3" />
                           <span>{new Date(order.created_at).toLocaleDateString()}</span>
                         </div>
-
-                        {/* Retry Payment Button for Pending Payments */}
-                        {order.status === 'pending' && (
-                          <div className="mt-4">
-                            <RetryPaymentButton
-                              orderId={order.id}
-                              amount={order.amount}
-                              orderStatus={order.status}
-                              paymentStatus="pending"
-                              onPaymentSuccess={() => {
-                                // Refresh orders after payment
-                                window.location.reload();
-                              }}
-                            />
-                          </div>
-                        )}
-
-                        {order.status === 'delivered' && (
-                          <Button
-                            className="w-full mt-4"
-                            onClick={() => {
-                              setSelectedOrderForReview(order);
-                              setShowReviewModal(true);
-                            }}
-                          >
-                            Leave Review
-                          </Button>
-                        )}
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+
+                    <div className="mt-auto pt-4">
+                      {order.status === 'pending' && (
+                        <RetryPaymentButton
+                          orderId={order.id}
+                          amount={order.amount}
+                          orderStatus={order.status}
+                          paymentStatus="pending"
+                          onPaymentSuccess={() => window.location.reload()}
+                        />
+                      )}
+
+                      {order.status === 'delivered' && (
+                        <Button
+                          className="w-full h-12 rounded-none text-[10px] font-black tracking-widest uppercase btn-premium"
+                          onClick={() => {
+                            setSelectedOrderForReview(order);
+                            setShowReviewModal(true);
+                          }}
+                        >
+                          LEAVE REVIEW
+                        </Button>
+                      )}
+                    </div>
+                  </motion.div>
                 ))}
               </div>
             )}
           </motion.div>
         </div>
-      </div>
+      </main>
+
       {selectedOrderForReview && (
         <ReviewModal
           isOpen={showReviewModal}

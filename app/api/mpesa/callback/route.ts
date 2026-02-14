@@ -87,16 +87,101 @@ export async function POST(request: NextRequest) {
 
       // Update order status to confirmed
       if (transaction?.order_id) {
-        await supabase
+        // Fetch order details for notification and auto-assignment
+        const { data: order } = await supabase
           .from('orders')
-          .update({
-            status: 'confirmed',
-            payment_status: 'paid',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', transaction.order_id);
+          .select('*, profiles:trader_id(full_name)')
+          .eq('id', transaction.order_id)
+          .single();
 
-        console.log('Order confirmed:', transaction.order_id);
+        if (order) {
+          // 1. Mark as confirmed and paid
+          await supabase
+            .from('orders')
+            .update({
+              status: 'confirmed',
+              payment_status: 'paid',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', transaction.order_id);
+
+          console.log('Order marked as paid:', transaction.order_id);
+
+          // 2. Clear user's cart (as a safety measure)
+          await supabase
+            .from('cart')
+            .delete()
+            .eq('user_id', order.buyer_id);
+
+          // 3. Attempt Auto-Assignment of Transporter
+          try {
+            // Extract city from shipping address (simple approach)
+            const shippingAddressParts = (order.shipping_address || '').split(',').map((part: string) => part.trim());
+            const targetCity = shippingAddressParts[shippingAddressParts.length - 2] || shippingAddressParts[0];
+
+            // Find available transporters
+            const { data: transporters } = await supabase
+              .from('profiles')
+              .select('id, full_name, location')
+              .eq('role', 'transporter')
+              .eq('is_suspended', false);
+
+            if (transporters && transporters.length > 0) {
+              // Priority: same city, otherwise random
+              const cityTransporters = transporters.filter(t => t.location?.toLowerCase() === targetCity?.toLowerCase());
+              const assignedTransporter = cityTransporters.length > 0 
+                ? cityTransporters[Math.floor(Math.random() * cityTransporters.length)]
+                : transporters[Math.floor(Math.random() * transporters.length)];
+
+              if (assignedTransporter) {
+                await supabase
+                  .from('orders')
+                  .update({
+                    transporter_id: assignedTransporter.id,
+                    status: 'confirmed', // Still confirmed, but now has a transporter
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('id', order.id);
+                
+                // Notify Transporter
+                await supabase.from('notifications').insert({
+                  user_id: assignedTransporter.id,
+                  title: 'New Delivery Available',
+                  message: `You have been assigned a new delivery for order "${order.title}".`,
+                  type: 'info',
+                  related_order_id: order.id
+                });
+                
+                console.log(`✅ Auto-assigned transporter ${assignedTransporter.full_name} to order ${order.id}`);
+              }
+            }
+          } catch (assignError) {
+            console.error('Error during transporter auto-assignment:', assignError);
+          }
+
+          // 4. Notify Buyer & Trader
+          const notifications = [
+            {
+              user_id: order.buyer_id,
+              title: 'Order Confirmed',
+              message: `Your payment was successful. Order "${order.title}" is now being processed.`,
+              type: 'success',
+              related_order_id: order.id
+            }
+          ];
+
+          if (order.trader_id) {
+            notifications.push({
+              user_id: order.trader_id,
+              title: 'New Paid Order',
+              message: `Payment received for "${order.title}". Please prepare the items for delivery.`,
+              type: 'info',
+              related_order_id: order.id
+            });
+          }
+
+          await supabase.from('notifications').insert(notifications);
+        }
       }
 
       console.log('=== M-Pesa Callback END (Success) ===');

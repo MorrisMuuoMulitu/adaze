@@ -15,19 +15,21 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { 
-  Eye, 
-  EyeOff, 
-  Mail, 
-  Lock, 
-  User, 
-  Phone, 
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User,
+  Phone,
   MapPin,
   Store,
   ShoppingBag,
   Truck,
   ArrowLeft,
   Shield,
+  ShieldCheck,
+  Terminal,
   Zap,
   Heart
 } from 'lucide-react';
@@ -39,9 +41,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { toast } from 'sonner';
 
 const loginSchema = z.object({
-  email: z.string().email({ message: "Invalid email address" }),
-  password: z.string().min(1, { message: "Password is required" }),
-  role: z.enum(["buyer", "trader", "transporter", "wholesaler"]),
+  email: z.string().email('Valid identity manifest required'),
+  password: z.string().min(1, 'Security sequence required'),
+  role: z.string().optional(),
 });
 
 const registerSchema = z.object({
@@ -85,13 +87,14 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showAdminAccess, setShowAdminAccess] = useState(false);
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
-      role: "buyer",
+      role: undefined,
     },
   });
 
@@ -157,6 +160,14 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
       });
       const result = await response.json();
       if (response.ok) {
+        // Track the session
+        try {
+          const { createActiveSession } = await import('@/lib/login-tracker');
+          await createActiveSession(result.user.id);
+        } catch (sessionError) {
+          console.error('Failed to track session:', sessionError);
+        }
+
         onSuccess(result.user);
         toast.success('Karibu tena!', {
           description: 'Great to see you again.'
@@ -216,7 +227,7 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
         },
         body: JSON.stringify(data),
       });
-      
+
       addLog('📨 [AUTH MODAL] Response received:', {
         status: response.status,
         statusText: response.statusText,
@@ -226,25 +237,25 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
 
       const result = await response.json();
       addLog('📦 [AUTH MODAL] Response data:', result);
-      
+
       if (response.ok) {
         addLog('✅ [AUTH MODAL] Registration successful!', {
           userId: result.user?.id,
           email: result.user?.email,
           profile: result.profile
         });
-        
+
         // Email verification is disabled - proceed directly
         onSuccess(result.user);
         toast.success('Account created successfully!', {
           description: 'Welcome to ADAZE! Redirecting...',
           duration: 3000
         });
-        
+
         addLog('🔄 [AUTH MODAL] Redirecting to /dashboard...');
         // Small delay for toast to show
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         // Redirect to dashboard after successful registration
         window.location.href = '/dashboard';
       } else {
@@ -254,27 +265,27 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
           message: result.message,
           error: result.error
         });
-        
+
         console.error('⚠️⚠️⚠️ REGISTRATION FAILED - MODAL STAYING OPEN SO YOU CAN COPY LOGS ⚠️⚠️⚠️');
         console.error('📋 Full error details:', result);
         console.error('💾 Logs saved to localStorage - Type: localStorage.getItem("registration_debug_logs")');
-        
+
         // CRITICAL: Do NOT call any navigation, onSuccess, onClose, or window.location
         // This prevents page refresh
         console.error('🛑 [DEBUG] NOT calling onClose, onSuccess, or any navigation');
         console.error('🛑 [DEBUG] NOT setting loading to false yet to prevent any re-render issues');
-        
+
         // Show error toast but DON'T close modal or redirect
         toast.error('❌ Registration failed - Check console logs!', {
           description: result.message || 'Please check your credentials and try again.',
           duration: 10000 // Show for 10 seconds
         });
-        
+
         // Keep modal open by NOT calling onClose or onSuccess
         console.error('🛑 [AUTH MODAL] Modal staying open so you can copy the error logs above');
         console.error('🛑 [AUTH MODAL] Logs are also saved - Open console and type:');
         console.error('    JSON.parse(localStorage.getItem("registration_debug_logs"))');
-        
+
         // Explicitly prevent any further execution
         setLoading(false);
         return; // STOP HERE - don't continue to finally block
@@ -289,23 +300,23 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
         };
         logs.push(`💥 [AUTH MODAL] Registration error: ${JSON.stringify(errorLog)}`);
         localStorage.setItem('registration_debug_logs', JSON.stringify(logs));
-        
+
         console.error('💥 [AUTH MODAL] Registration error:', errorLog);
         console.error('⚠️⚠️⚠️ UNEXPECTED ERROR - MODAL STAYING OPEN SO YOU CAN COPY LOGS ⚠️⚠️⚠️');
         console.error('💾 Logs saved to localStorage - Type: localStorage.getItem("registration_debug_logs")');
-        
+
         // CRITICAL: Do NOT call any navigation, onSuccess, onClose, or window.location
         console.error('🛑 [DEBUG] NOT calling onClose, onSuccess, or any navigation');
-        
+
         toast.error('❌ An error occurred - Check console logs!', {
           description: error.message || 'Please try again later.',
           duration: 10000
         });
-        
+
         console.error('🛑 [AUTH MODAL] Modal staying open so you can copy the error logs above');
         console.error('🛑 [AUTH MODAL] Logs are also saved - Open console and type:');
         console.error('    JSON.parse(localStorage.getItem("registration_debug_logs"))');
-        
+
         // Set loading false and STOP
         setLoading(false);
         return; // STOP HERE - prevent finally block from running
@@ -335,673 +346,535 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md max-w-[95vw] max-h-[95vh] overflow-y-auto">
-        <DialogHeader className="space-y-3">
-          <DialogTitle className="text-center text-xl sm:text-2xl">
-            {showForgotPassword ? 'Reset Your Password' : authType === 'login' ? 'Karibu Back to ADAZE' : 'Join ADAZE Kenya'}
-          </DialogTitle>
-          <DialogDescription className="text-center text-sm sm:text-base">
-            {showForgotPassword 
-              ? 'Enter your email and we\'ll send you a link to reset your password'
-              : authType === 'login' 
-                ? 'Sign in to your account to continue shopping in Kenya'
-                : 'Create your account and start your mitumba journey across Kenya'
-            }
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-md max-w-[95vw] max-h-[95vh] overflow-y-auto rounded-none border-border/50 bg-background p-0 overflow-hidden shadow-2xl selection:bg-accent/30 selection:text-white group">
+        {/* Progress Scanner */}
+        {loading && (
+          <motion.div
+            initial={{ left: "-100%" }}
+            animate={{ left: "100%" }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+            className="absolute top-0 left-0 w-1/2 h-[1px] bg-accent z-[60] shadow-[0_0_10px_rgba(var(--accent),0.5)]"
+          />
+        )}
 
-        <AnimatePresence mode="wait">
-          {showForgotPassword ? (
+        {/* Scanline Effect */}
+        <div className="absolute inset-0 bg-scanline opacity-[0.04] pointer-events-none z-50" />
+
+        <div className="relative z-10 p-8 sm:p-10">
+          {/* Aesthetic Session ID */}
+          <div className="absolute top-8 right-8 text-[7px] font-mono text-accent opacity-20 pointer-events-none tracking-[0.2em] hidden sm:block">
+            X-AUTH-SID // {Math.random().toString(16).slice(2, 8).toUpperCase()}
+          </div>
+
+          <DialogHeader className="space-y-4 mb-8 text-left">
             <motion.div
-              key="forgot-password"
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="space-y-4"
+              className="text-[10px] font-black tracking-[0.4em] uppercase text-accent/60"
             >
-              <div className="space-y-2">
-                <Label htmlFor="reset-email">Email Address</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="reset-email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={resetEmail}
-                    onChange={(e) => setResetEmail(e.target.value)}
-                    className="pl-10 h-12"
-                  />
-                </div>
-              </div>
-
-              <Button
-                className="w-full african-gradient text-white hover:opacity-90 h-12"
-                disabled={loading || !resetEmail}
-                onClick={async () => {
-                  setLoading(true);
-                  try {
-                    const supabase = await import('@/lib/supabase/client').then(m => m.createClient());
-                    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-                      redirectTo: `${window.location.origin}/auth/reset-password`,
-                    });
-                    
-                    if (error) throw error;
-                    
-                    toast.success('Check your email!', {
-                      description: 'We\'ve sent you a password reset link'
-                    });
-                    setShowForgotPassword(false);
-                    setResetEmail('');
-                  } catch (error: any) {
-                    toast.error('Failed to send reset email', {
-                      description: error.message
-                    });
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-              >
-                {loading ? 'Sending...' : 'Send Reset Link'}
-              </Button>
-
-              <Button
-                variant="ghost"
-                className="w-full"
-                onClick={() => {
-                  setShowForgotPassword(false);
-                  setResetEmail('');
-                }}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Login
-              </Button>
+              {showForgotPassword
+                ? 'SECURITY // RECOVERY'
+                : authType === 'login'
+                  ? 'COMMUNICATIONS // GATEWAY'
+                  : 'NEW_ENTITY // PROTOCOL'}
             </motion.div>
-          ) : authType === 'login' ? (
-            <Form {...loginForm}>
-              <motion.form
-                key="login"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                onSubmit={loginForm.handleSubmit(onLoginSubmit)}
-                className="space-y-4"
-              >
-                <FormField
-                  control={loginForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input placeholder="your@email.com" {...field} className="pl-10 h-12 focus-ring" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={loginForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input type={showPassword ? 'text' : 'password'} placeholder="Enter your password" {...field} className="pl-10 pr-12 h-12 focus-ring" />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-1 top-1 h-10 w-10 p-0 mobile-button"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={loginForm.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Login as</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex space-x-4"
-                        >
-                          {userTypes.map(userType => (
-                            <FormItem key={userType.value} className="flex items-center space-x-2">
-                              <FormControl>
-                                <RadioGroupItem value={userType.value} id={`login-${userType.value}`} />
-                              </FormControl>
-                              <FormLabel htmlFor={`login-${userType.value}`}>{userType.label}</FormLabel>
-                            </FormItem>
-                          ))}
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <DialogTitle className="text-4xl sm:text-5xl font-black tracking-tighter uppercase leading-[0.9]">
+              {showForgotPassword ? (
+                <>Reset <span className="font-serif italic text-muted-foreground/30 lowercase">Access.</span></>
+              ) : authType === 'login' ? (
+                <>Secure <span className="font-serif italic text-muted-foreground/30 lowercase">Access.</span></>
+              ) : (
+                <>Establish <span className="font-serif italic text-muted-foreground/30 lowercase">Rank.</span></>
+              )}
+            </DialogTitle>
+            <DialogDescription className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-40 mt-2 leading-relaxed">
+              {showForgotPassword
+                ? 'Authenticate identity via secure repository link.'
+                : authType === 'login'
+                  ? 'Dispatch credentials to synchronize your command center archive.'
+                  : 'Execute initialization sequence to join the commercial force.'
+              }
+            </DialogDescription>
+          </DialogHeader>
 
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="remember" className="focus-ring" />
-                    <Label htmlFor="remember" className="text-sm">Remember me</Label>
+          <AnimatePresence mode="wait">
+            {showForgotPassword ? (
+              <motion.div
+                key="forgot-password"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                className="space-y-6"
+              >
+                <div className="space-y-3">
+                  <Label htmlFor="reset-email" className="text-[9px] font-black tracking-widest uppercase opacity-60">Identity Link</Label>
+                  <div className="relative group/input">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-accent opacity-30 group-focus-within/input:opacity-100 transition-opacity" />
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      placeholder="USER@COLLECTIVE.COM"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      className="pl-12 h-14 rounded-none border-border/50 bg-muted/5 focus-ring uppercase font-mono text-[11px] font-bold tracking-widest"
+                    />
                   </div>
-                  <Button 
-                    type="button"
-                    variant="link" 
-                    size="sm" 
-                    className="p-0 h-auto text-primary hover:text-primary/80"
-                    onClick={() => setShowForgotPassword(true)}
-                  >
-                    Forgot password?
-                  </Button>
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full african-gradient text-white hover:opacity-90 transition-all duration-300 h-12 mobile-button"
-                  disabled={loading}
+                <Button
+                  className="w-full btn-premium h-14 rounded-none text-[10px] font-black tracking-[0.4em] uppercase"
+                  disabled={loading || !resetEmail}
+                  onClick={async () => {
+                    setLoading(true);
+                    try {
+                      const supabase = await import('@/lib/supabase/client').then(m => m.createClient());
+                      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+                        redirectTo: `${window.location.origin}/auth/reset-password`,
+                      });
+
+                      if (error) throw error;
+
+                      toast.success('Manifest Dispatched', {
+                        description: 'Check your restricted access inbox.'
+                      });
+                      setShowForgotPassword(false);
+                      setResetEmail('');
+                    } catch (error: any) {
+                      toast.error('Dispatch Failed');
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
                 >
-                  {loading ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Signing in...</span>
-                    </div>
-                  ) : (
-                    'Sign In'
-                  )}
+                  {loading ? 'Transmitting...' : 'Dispatch Reset Sequence'}
                 </Button>
 
-                <Separator className="my-4" />
-
-                <div className="space-y-3">
-                  <p className="text-center text-sm text-muted-foreground">Or continue with</p>
-                  
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-12 border-2"
-                    onClick={async () => {
-                      setLoading(true);
-                      try {
-                        const { createClient } = await import('@/lib/supabase/client');
-                        const supabase = createClient();
-                        
-                        const { error } = await supabase.auth.signInWithOAuth({
-                          provider: 'google',
-                          options: {
-                            redirectTo: `${window.location.origin}/auth/callback`,
-                            queryParams: {
-                              access_type: 'offline',
-                              prompt: 'consent',
-                            }
-                          }
-                        });
-                        
-                        if (error) throw error;
-                        
-                        toast.info('Redirecting to Google...', {
-                          description: 'You\'ll be redirected back after signing in'
-                        });
-                      } catch (error: any) {
-                        toast.error('Failed to sign in with Google', {
-                          description: error.message
-                        });
-                        setLoading(false);
-                      }
-                    }}
-                    disabled={loading}
-                    aria-label="Sign in with Google"
-                  >
-                    <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                    </svg>
-                    Continue with Google
-                  </Button>
-                </div>
-
-                <Separator className="my-4" />
-
-                <p className="text-center text-sm text-muted-foreground">
-                  Don&apos;t have an account?{' '}
-                  <Button 
-                    type="button"
-                    variant="link" 
-                    size="sm" 
-                    className="p-0 h-auto text-primary hover:text-primary/80"
-                    onClick={() => {
-                      resetForm();
-                      setAuthType('register');
-                    }}
-                  >
-                    Sign up
-                  </Button>
-                </p>
-              </motion.form>
-            </Form>
-          ) : (
-            <Form {...registerForm}>
-              <motion.div
-                key="register"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-              >
-                {step === 1 && (
-                  <div className="space-y-6">
-                    <div className="text-center space-y-2">
-                      <h3 className="text-xl font-bold">Choose Your Account Type</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Select the option that best describes you
-                      </p>
-                      <div className="inline-flex px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
-                        Step 1 of 2
-                      </div>
-                    </div>
-
+                <button
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setResetEmail('');
+                  }}
+                  className="w-full flex items-center justify-center gap-2 text-[9px] font-black tracking-widest uppercase opacity-30 hover:opacity-100 transition-all mt-4 group/back"
+                >
+                  <ArrowLeft className="h-3 w-3 group-hover:-translate-x-1 transition-transform" />
+                  Return to Gateway
+                </button>
+              </motion.div>
+            ) : authType === 'login' ? (
+              <Form {...loginForm}>
+                <motion.form
+                  key="login"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                  onSubmit={loginForm.handleSubmit(onLoginSubmit)}
+                  className="space-y-6"
+                >
+                  <div className="space-y-5">
                     <FormField
-                      control={registerForm.control}
-                      name="role"
-                      render={({ field }) => (
-                        <FormItem className="space-y-3">
-                          <FormControl>
-                            <RadioGroup
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              className="space-y-3"
-                            >
-                              {userTypes.map((userType) => (
-                                <FormItem key={userType.value} className="relative">
-                                  <FormControl>
-                                    <RadioGroupItem
-                                      value={userType.value}
-                                      id={userType.value}
-                                      className="sr-only"
-                                      aria-label={`Select ${userType.label} account`}
-                                    />
-                                  </FormControl>
-                                  <Label
-                                    htmlFor={userType.value}
-                                    className={`flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-4 sm:p-6 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md mobile-button ${
-                                      field.value === userType.value
-                                        ? 'border-primary bg-primary/5 shadow-md ring-2 ring-primary/20'
-                                        : 'border-border hover:border-primary/50'
-                                    }`}
-                                  >
-                                    <div className={`p-3 rounded-xl bg-gradient-to-br ${userType.color} flex-shrink-0`}>
-                                      <userType.icon className="h-6 w-6 text-white" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="font-semibold text-base sm:text-lg">{userType.label}</div>
-                                      <div className="text-sm text-muted-foreground mb-2">
-                                        {userType.description}
-                                      </div>
-                                      <div className="flex flex-wrap gap-2">
-                                        {userType.features.map((feature, index) => (
-                                          <span 
-                                            key={index}
-                                            className="inline-flex items-center px-2 py-1 rounded-md bg-muted text-xs font-medium"
-                                          >
-                                            {index === 0 && <Heart className="h-3 w-3 mr-1" />}
-                                            {index === 1 && <Shield className="h-3 w-3 mr-1" />}
-                                            {index === 2 && <Zap className="h-3 w-3 mr-1" />}
-                                            {feature}
-                                          </span>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </Label>
-                                </FormItem>
-                              ))}
-                            </RadioGroup>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <Button 
-                      onClick={() => setStep(2)}
-                      className="w-full african-gradient text-white hover:opacity-90 h-12 mobile-button"
-                    >
-                      Continue
-                    </Button>
-
-                    <div className="relative my-4">
-                      <Separator />
-                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">
-                        OR
-                      </span>
-                    </div>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full h-12 border-2"
-                      onClick={async () => {
-                        setLoading(true);
-                        try {
-                          const { createClient } = await import('@/lib/supabase/client');
-                          const supabase = createClient();
-                          
-                          const { error } = await supabase.auth.signInWithOAuth({
-                            provider: 'google',
-                            options: {
-                              redirectTo: `${window.location.origin}/auth/callback`,
-                              queryParams: {
-                                access_type: 'offline',
-                                prompt: 'consent',
-                              }
-                            }
-                          });
-                          
-                          if (error) throw error;
-                          
-                          toast.info('Redirecting to Google...', {
-                            description: 'Sign up instantly with your Google account'
-                          });
-                        } catch (error: any) {
-                          toast.error('Failed to sign up with Google', {
-                            description: error.message
-                          });
-                          setLoading(false);
-                        }
-                      }}
-                      disabled={loading}
-                      aria-label="Quick sign up with Google"
-                    >
-                      <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                      </svg>
-                      Sign up with Google
-                    </Button>
-                  </div>
-                )}
-
-                {step === 2 && (
-                  <motion.form 
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      registerForm.handleSubmit(onRegisterSubmit)(e);
-                    }} 
-                    className="space-y-4"
-                  >
-                    <div className="flex items-center space-x-2 mb-6">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setStep(1)}
-                        className="p-2 mobile-button"
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                      </Button>
-                      <div>
-                        <h3 className="font-semibold text-lg">Account Details</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Fill in your information for Kenya
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <FormField
-                        control={registerForm.control}
-                        name="firstName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>First Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="John" {...field} className="h-12 focus-ring" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={registerForm.control}
-                        name="lastName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Last Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Doe" {...field} className="h-12 focus-ring" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={registerForm.control}
+                      control={loginForm.control}
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email Address</FormLabel>
+                          <FormLabel className="text-[9px] font-black tracking-widest uppercase opacity-60">Manifest Identifier</FormLabel>
                           <FormControl>
-                            <div className="relative">
-                              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                              <Input type="email" placeholder="your@email.com" {...field} className="pl-10 h-12 focus-ring" />
+                            <div className="relative group/input">
+                              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-accent opacity-30 group-focus-within/input:opacity-100 transition-opacity" />
+                              <Input placeholder="USER@COLLECTIVE.COM" {...field} className="pl-12 h-14 rounded-none border-border/50 bg-muted/5 focus-ring uppercase font-mono text-[11px] font-bold tracking-widest" />
                             </div>
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-[9px] uppercase font-black text-destructive tracking-widest mt-1" />
                         </FormItem>
                       )}
                     />
-
                     <FormField
-                      control={registerForm.control}
-                      name="phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phone Number</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                              <Input type="tel" placeholder="+254 700 123 456" {...field} className="pl-10 h-12 focus-ring" />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={registerForm.control}
-                      name="location"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>County/Location in Kenya</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                              <select {...field} className="w-full pl-10 pr-4 h-12 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-                                <option value="">Select your county</option>
-                                {kenyanCounties.map((county) => (
-                                  <option key={county} value={county}>{county}</option>
-                                ))}
-                              </select>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={registerForm.control}
+                      control={loginForm.control}
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel className="text-[9px] font-black tracking-widest uppercase opacity-60">Security Sequence</FormLabel>
                           <FormControl>
-                            <div className="relative">
-                              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                              <Input type={showPassword ? 'text' : 'password'} placeholder="Create a strong password" {...field} className="pl-10 pr-12 h-12 focus-ring" />
-                              <Button
+                            <div className="relative group/input">
+                              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-accent opacity-30 group-focus-within/input:opacity-100 transition-opacity" />
+                              <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...field} className="pl-12 pr-12 h-14 rounded-none border-border/50 bg-muted/5 focus-ring font-mono text-[11px] font-bold tracking-widest" />
+                              <button
                                 type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="absolute right-1 top-1 h-10 w-10 p-0 mobile-button"
+                                className="absolute right-4 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-100 transition-opacity"
                                 onClick={() => setShowPassword(!showPassword)}
                               >
                                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                              </Button>
+                              </button>
                             </div>
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-[9px] uppercase font-black text-destructive tracking-widest mt-1" />
                         </FormItem>
                       )}
                     />
 
-                    <FormField
-                      control={registerForm.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Confirm Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="Confirm your password" {...field} className="h-12 focus-ring" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                    {/* System Access Override */}
+                    <AnimatePresence>
+                      {showAdminAccess && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="pt-2 overflow-hidden"
+                        >
+                          <div className="p-4 border border-accent/30 bg-accent/5 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="text-[8px] font-black tracking-[0.3em] uppercase text-accent">Authority Core // Detected</div>
+                              <Terminal className="h-3 w-3 text-accent animate-pulse" />
+                            </div>
+                            <FormField
+                              control={loginForm.control}
+                              name="role"
+                              render={({ field }) => (
+                                <button
+                                  type="button"
+                                  onClick={() => field.onChange(field.value === 'admin' ? undefined : 'admin')}
+                                  className={`w-full flex items-center justify-between p-3 border transition-all ${field.value === 'admin'
+                                    ? 'border-accent bg-accent text-white shadow-[0_0_15px_rgba(var(--accent),0.3)]'
+                                    : 'border-white/10 opacity-40 hover:opacity-100'
+                                    }`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <ShieldCheck className="h-4 w-4" />
+                                    <span className="text-[9px] font-black tracking-widest uppercase">Elevate to Admin</span>
+                                  </div>
+                                  {field.value === 'admin' && <div className="text-[8px] font-mono">ACTIVE</div>}
+                                </button>
+                              )}
+                            />
+                          </div>
+                        </motion.div>
                       )}
-                    />
+                    </AnimatePresence>
+                  </div>
 
-                    <FormField
-                      control={registerForm.control}
-                      name="agreeToTerms"
-                      render={({ field }) => (
-                        <FormItem className="flex items-start space-x-2 pt-2">
-                          <FormControl>
-                            <Checkbox checked={field.value} onCheckedChange={field.onChange} id="terms" className="mt-1 focus-ring" />
-                          </FormControl>
-                          <Label htmlFor="terms" className="text-sm leading-relaxed">
-                            I agree to the{' '}
-                            <Button variant="link" size="sm" className="p-0 h-auto text-primary hover:text-primary/80">
-                              Terms of Service
-                            </Button>
-                            {' '}and{' '}
-                            <Button variant="link" size="sm" className="p-0 h-auto text-primary hover:text-primary/80">
-                              Privacy Policy
-                            </Button>
-                            {' '}for Kenya operations
-                          </Label>
-                        </FormItem>
-                      )}
-                    />
+                  <div className="flex items-center justify-between py-3 border-y border-border/10">
+                    <div className="flex items-center space-x-3 group/check">
+                      <Checkbox id="remember" className="rounded-none border-border/50 data-[state=checked]:bg-accent data-[state=checked]:border-accent" />
+                      <Label htmlFor="remember" className="text-[9px] font-black tracking-widest uppercase opacity-40 group-hover/check:opacity-100 cursor-pointer transition-opacity">Persistent Link</Label>
+                    </div>
+                    <button
+                      type="button"
+                      className="text-[9px] font-black tracking-widest uppercase text-accent/60 hover:text-accent transition-colors"
+                      onClick={() => setShowForgotPassword(true)}
+                    >
+                      Sequence Recovery?
+                    </button>
+                  </div>
 
-                    <Button 
-                      type="submit" 
-                      className="w-full african-gradient text-white hover:opacity-90 h-12 mobile-button"
+                  <div className="space-y-4">
+                    <Button
+                      type="submit"
+                      className="w-full btn-premium h-16 rounded-none text-[12px] font-black tracking-[0.4em] uppercase"
                       disabled={loading}
                     >
                       {loading ? (
-                        <div className="flex items-center space-x-2">
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          <span>Creating Account...</span>
+                        <div className="flex items-center space-x-3">
+                          <div className="w-3 h-3 border-[1.5px] border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Synchronizing...</span>
                         </div>
                       ) : (
-                        'Create Account'
+                        'Initialize Session'
                       )}
                     </Button>
 
-                    <div className="relative my-6">
-                      <Separator />
-                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">
-                        OR
-                      </span>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminAccess(!showAdminAccess)}
+                      className="w-full text-center text-[8px] font-black tracking-[0.2em] uppercase opacity-20 hover:opacity-100 hover:text-accent transition-all py-2"
+                    >
+                      {showAdminAccess ? '[ Deactivate Terminal ]' : '[ System Command? ]'}
+                    </button>
+                  </div>
 
+                  <div className="pt-2">
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full h-12 border-2"
+                      className="w-full h-12 rounded-none border-border/50 text-[10px] font-black tracking-[0.3em] uppercase hover:bg-accent/5 transition-colors"
                       onClick={async () => {
                         setLoading(true);
                         try {
                           const { createClient } = await import('@/lib/supabase/client');
                           const supabase = createClient();
-                          
                           const { error } = await supabase.auth.signInWithOAuth({
                             provider: 'google',
-                            options: {
-                              redirectTo: `${window.location.origin}/auth/callback`,
-                              queryParams: {
-                                access_type: 'offline',
-                                prompt: 'consent',
-                              }
-                            }
+                            options: { redirectTo: `${window.location.origin}/auth/callback` }
                           });
-                          
                           if (error) throw error;
-                          
-                          toast.info('Redirecting to Google...', {
-                            description: 'You\'ll be redirected back after signing in'
-                          });
                         } catch (error: any) {
-                          toast.error('Failed to sign up with Google', {
-                            description: error.message
-                          });
+                          toast.error('OAuth Failed');
                           setLoading(false);
                         }
                       }}
                       disabled={loading}
-                      aria-label="Sign up with Google"
                     >
-                      <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                      <svg className="h-4 w-4 mr-3" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="currentColor" opacity="0.4" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="currentColor" opacity="0.4" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                        <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                       </svg>
-                      Continue with Google
+                      Google Authentication
                     </Button>
+                  </div>
 
-                    <Separator className="my-6" />
+                  <div className="pt-8 text-center">
+                    <button
+                      type="button"
+                      className="text-[10px] font-black tracking-widest uppercase opacity-40 hover:opacity-100 hover:text-accent transition-all duration-300"
+                      onClick={() => {
+                        resetForm();
+                        setAuthType('register');
+                      }}
+                    >
+                      New Entity? <span className="underline underline-offset-4 decoration-accent/30 italic ml-1">Establish Rank →</span>
+                    </button>
+                  </div>
+                </motion.form>
+              </Form>
+            ) : (
+              <Form {...registerForm}>
+                <motion.div
+                  key="register"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                >
+                  {step === 1 && (
+                    <div className="space-y-8">
+                      <div className="flex items-center justify-between border-b border-border/10 pb-4">
+                        <div className="text-[10px] font-black tracking-[0.3em] uppercase text-accent">Phase 01 // Identity Vector</div>
+                        <div className="text-[8px] font-mono opacity-20 hidden sm:block uppercase">Selection Core Necessary</div>
+                      </div>
 
-                    <p className="text-center text-sm text-muted-foreground">
-                      Already have an account?{' '}
-                      <Button 
-                        type="button"
-                        variant="link" 
-                        size="sm" 
-                        className="p-0 h-auto text-primary hover:text-primary/80"
-                        onClick={() => {
-                          resetForm();
-                          setAuthType('login');
-                        }}
+                      <FormField
+                        control={registerForm.control}
+                        name="role"
+                        render={({ field }) => (
+                          <FormItem className="space-y-4">
+                            <FormControl>
+                              <div className="grid grid-cols-1 gap-2">
+                                {userTypes.map((userType) => (
+                                  <button
+                                    key={userType.value}
+                                    type="button"
+                                    onClick={() => field.onChange(userType.value)}
+                                    className={`relative flex flex-col sm:flex-row items-center sm:items-center text-left gap-6 p-6 border transition-all group/role overflow-hidden ${field.value === userType.value
+                                      ? 'border-accent bg-accent/5 ring-1 ring-accent/20'
+                                      : 'border-border/50 hover:border-accent/30 opacity-40 hover:opacity-100'
+                                      }`}
+                                  >
+                                    <div className={`p-4 rounded-none bg-muted/5 group-hover/role:bg-accent/5 transition-colors`}>
+                                      <userType.icon className={`h-6 w-6 transition-transform group-hover/role:scale-110 ${field.value === userType.value ? 'text-accent' : 'text-muted-foreground'}`} />
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="text-xs font-black tracking-widest uppercase mb-1">{userType.label}</div>
+                                      <div className="text-[10px] font-bold tracking-tight uppercase opacity-50 italic">
+                                        {userType.description}
+                                      </div>
+                                    </div>
+                                    {field.value === userType.value && (
+                                      <motion.div
+                                        layoutId="activeRole"
+                                        className="absolute top-2 right-2 flex gap-1"
+                                      >
+                                        {[1, 2, 3].map(i => (
+                                          <div key={i} className="w-[2px] h-3 bg-accent/40" />
+                                        ))}
+                                      </motion.div>
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <Button
+                        onClick={() => setStep(2)}
+                        className="w-full btn-premium h-16 rounded-none text-[12px] font-black tracking-[0.4em] uppercase shadow-lg shadow-accent/5"
+                        disabled={!registerForm.watch('role')}
                       >
-                        Sign in
+                        Proceed to Phase 02
                       </Button>
-                    </p>
-                  </motion.form>
-                )}
-              </motion.div>
-            </Form>
-          )}
-        </AnimatePresence>
+
+                      <div className="pt-4 text-center">
+                        <button
+                          type="button"
+                          className="text-[10px] font-black tracking-widest uppercase opacity-40 hover:opacity-100 hover:text-accent transition-all duration-300"
+                          onClick={() => {
+                            resetForm();
+                            setAuthType('login');
+                          }}
+                        >
+                          Existing Entity? <span className="underline underline-offset-4 decoration-accent/30 italic ml-1">Secure Access →</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {step === 2 && (
+                    <motion.form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        registerForm.handleSubmit(onRegisterSubmit)(e);
+                      }}
+                      className="space-y-4"
+                    >
+                      <div className="flex items-center justify-between border-b border-border/10 pb-4 mb-2">
+                        <button
+                          type="button"
+                          onClick={() => setStep(1)}
+                          className="flex items-center gap-2 text-[10px] font-black tracking-widest uppercase opacity-30 hover:opacity-100 transition-all hover:-translate-x-1"
+                        >
+                          <ArrowLeft className="h-3 w-3" />
+                          Phase 01
+                        </button>
+                        <div className="text-[10px] font-black tracking-[0.3em] uppercase text-accent">Phase 02 // Credentials</div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={registerForm.control}
+                          name="firstName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-[9px] font-black tracking-widest uppercase opacity-60">Legal Forename</FormLabel>
+                              <FormControl>
+                                <Input placeholder="IDENTITY" {...field} className="h-12 rounded-none border-border/50 bg-muted/5 focus-ring uppercase font-mono text-[11px] font-bold tracking-widest" />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={registerForm.control}
+                          name="lastName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-[9px] font-black tracking-widest uppercase opacity-60">Legal Surname</FormLabel>
+                              <FormControl>
+                                <Input placeholder="COLLECTIVE" {...field} className="h-12 rounded-none border-border/50 bg-muted/5 focus-ring uppercase font-mono text-[11px] font-bold tracking-widest" />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={registerForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[9px] font-black tracking-widest uppercase opacity-60">Manifest Identifier</FormLabel>
+                            <FormControl>
+                              <Input type="email" placeholder="USER@COLLECTIVE.COM" {...field} className="h-12 rounded-none border-border/50 bg-muted/5 focus-ring uppercase font-mono text-[11px] font-bold tracking-widest" />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={registerForm.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[9px] font-black tracking-widest uppercase opacity-60">Contact Terminal</FormLabel>
+                            <FormControl>
+                              <Input type="tel" placeholder="+254 --- --- ---" {...field} className="h-12 rounded-none border-border/50 bg-muted/5 focus-ring font-mono text-[11px] font-bold tracking-widest" />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={registerForm.control}
+                        name="location"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[9px] font-black tracking-widest uppercase opacity-60">Regional Sector</FormLabel>
+                            <FormControl>
+                              <div className="relative group/select">
+                                <select
+                                  {...field}
+                                  className="w-full h-12 rounded-none border border-border/50 bg-muted/5 focus-ring uppercase font-mono text-[11px] font-bold tracking-widest px-4 appearance-none cursor-pointer"
+                                >
+                                  <option value="" className="bg-background text-muted-foreground">SELECT REGION</option>
+                                  {kenyanCounties.map((county) => (
+                                    <option key={county} value={county}>{county.toUpperCase()}</option>
+                                  ))}
+                                </select>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-30">▼</div>
+                              </div>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={registerForm.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-[9px] font-black tracking-widest uppercase opacity-60">Sequence</FormLabel>
+                              <FormControl>
+                                <Input type="password" placeholder="••••••••" {...field} className="h-12 rounded-none border-border/50 bg-muted/5 focus-ring font-mono text-[11px] font-bold tracking-widest" />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={registerForm.control}
+                          name="confirmPassword"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-[9px] font-black tracking-widest uppercase opacity-60">Verify</FormLabel>
+                              <FormControl>
+                                <Input type="password" placeholder="••••••••" {...field} className="h-12 rounded-none border-border/50 bg-muted/5 focus-ring font-mono text-[11px] font-bold tracking-widest" />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={registerForm.control}
+                        name="agreeToTerms"
+                        render={({ field }) => (
+                          <FormItem className="flex items-start space-x-3 pt-3">
+                            <FormControl>
+                              <Checkbox checked={field.value} onCheckedChange={field.onChange} id="terms" className="mt-1 rounded-none border-border/50 data-[state=checked]:bg-accent data-[state=checked]:border-accent" />
+                            </FormControl>
+                            <Label htmlFor="terms" className="text-[9px] font-black tracking-widest uppercase opacity-30 leading-relaxed cursor-pointer hover:opacity-100 italic">
+                              Accept <span className="text-accent underline underline-offset-2 decoration-accent/30">System Protocols</span> and Privacy Manifest.
+                            </Label>
+                          </FormItem>
+                        )}
+                      />
+
+                      <Button
+                        type="submit"
+                        className="w-full btn-premium h-16 rounded-none text-[12px] font-black tracking-[0.4em] uppercase mt-4"
+                        disabled={loading}
+                      >
+                        {loading ? 'Initializing Entity...' : 'Establish Profile'}
+                      </Button>
+                    </motion.form>
+                  )}
+                </motion.div>
+              </Form>
+            )}
+          </AnimatePresence>
+        </div>
       </DialogContent>
     </Dialog>
   );

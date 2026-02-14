@@ -35,11 +35,11 @@ export default function TransporterDashboardPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [averageRating, setAverageRating] = useState<number | null>(null);
-  
+
   // Date range state
   const [dateFrom, setDateFrom] = useState<Date>(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
   const [dateTo, setDateTo] = useState<Date>(new Date());
-  
+
   // Filters state
   const [filters, setFilters] = useState<FilterValues>({});
   const [activeFilterCount, setActiveFilterCount] = useState(0);
@@ -163,13 +163,13 @@ export default function TransporterDashboardPage() {
         // Calculate weekly earnings (last 7 days)
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
-        const weeklyEarnings = earningsData?.filter(delivery => 
+        const weeklyEarnings = earningsData?.filter(delivery =>
           new Date(delivery.created_at) >= weekAgo
         ).reduce((sum, delivery) => sum + ((delivery.amount || 0) * 0.1), 0) || 0;
 
         // Calculate average commission per delivery
-        const averageCommission = earningsData && earningsData.length > 0 
-          ? totalEarnings / earningsData.length 
+        const averageCommission = earningsData && earningsData.length > 0
+          ? totalEarnings / earningsData.length
           : 0;
 
         // Generate earnings chart data
@@ -230,25 +230,25 @@ export default function TransporterDashboardPage() {
   // Filter deliveries based on filters
   const filteredDeliveries = useMemo(() => {
     let result = recentDeliveries;
-    
+
     if (filters.status) {
       result = result.filter(d => d.status === filters.status);
     }
-    
+
     if (filters.minAmount !== undefined) {
       result = result.filter(d => d.amount >= filters.minAmount!);
     }
-    
+
     if (filters.maxAmount !== undefined) {
       result = result.filter(d => d.amount <= filters.maxAmount!);
     }
-    
+
     if (filters.search) {
-      result = result.filter(d => 
+      result = result.filter(d =>
         d.id.toLowerCase().includes(filters.search!.toLowerCase())
       );
     }
-    
+
     return result;
   }, [recentDeliveries, filters]);
 
@@ -287,136 +287,123 @@ export default function TransporterDashboardPage() {
   }
 
   if (!user || !profile) {
+    ```
     router.push('/');
     return null;
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold capitalize flex items-center gap-3">
-                {profile.role} Dashboard
-                <Badge variant="secondary" className="capitalize text-sm px-3 py-1">
-                  {profile.role}
-                </Badge>
-              </h1>
-              <p className="text-muted-foreground mt-1">Welcome back, {profile.full_name || user.email}! 🚚</p>
+    <div className="min-h-screen bg-background text-foreground">
+      <Navbar onAuthClick={() => { }} />
+      <main className="container mx-auto px-6 py-24 space-y-12">
+        {/* Editorial Header */}
+        <div className="flex flex-col md:flex-row justify-between items-end border-b border-border/50 pb-12 gap-8">
+          <div>
+            <div className="text-[10px] font-black tracking-[0.4em] uppercase text-accent mb-4">
+              {profile.role} LOGISTICS
             </div>
-            <div className="mt-4 md:mt-0 flex items-center space-x-2">
-              <Button onClick={() => router.push('/profile')} variant="outline" size="sm">
-                <User className="h-4 w-4 mr-2" />
-                Profile
-              </Button>
-              <LogoutButton variant="outline" size="sm" />
-            </div>
+            <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-none">
+              Command <span className="text-muted-foreground/30">Center.</span>
+            </h1>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground mt-6">
+              Welcome back, {profile.full_name || user.email}. Performance: <span className="text-green-500">OPTIMAL</span>
+            </p>
           </div>
+          <div className="flex items-center gap-4">
+            <Button onClick={() => router.push('/profile')} variant="outline" className="rounded-none border-border/50 text-[10px] font-black tracking-widest uppercase h-10">
+              <User className="h-3 w-3 mr-2" />
+              Settings
+            </Button>
+            <LogoutButton variant="outline" className="rounded-none border-border/50 text-[10px] font-black tracking-widest uppercase h-10" />
+          </div>
+        </div>
 
-          {/* Toolbar with DateRangePicker, Filters, and Export */}
-          <div className="flex flex-wrap items-center gap-3 mb-6">
-            <DateRangePicker
-              from={dateFrom}
-              to={dateTo}
-              onDateChange={(from, to) => {
-                setDateFrom(from);
-                setDateTo(to);
-              }}
-            />
-            <AdvancedFilters
-              onApply={handleApplyFilters}
-              statusOptions={[
-                { value: 'confirmed', label: 'Confirmed' },
-                { value: 'shipped', label: 'In Transit' },
-                { value: 'delivered', label: 'Delivered' }
-              ]}
-              activeFiltersCount={activeFilterCount}
-            />
-            <ExportDataButton
-              data={filteredDeliveries}
-              filename={`transporter-deliveries-${new Date().toISOString().split('T')[0]}`}
-              columns={['id', 'created_at', 'amount', 'status']}
-            />
-          </div>
+        {/* Toolbar with DateRangePicker, Filters, and Export */}
+        <div className="flex flex-wrap items-center gap-4 py-6 border-y border-border/20">
+          <DateRangePicker
+            from={dateFrom}
+            to={dateTo}
+            onDateChange={(from, to) => {
+              setDateFrom(from);
+              setDateTo(to);
+            }}
+          />
+          <AdvancedFilters
+            onApply={handleApplyFilters}
+            statusOptions={[
+              { value: 'confirmed', label: 'Confirmed' },
+              { value: 'shipped', label: 'In Transit' },
+              { value: 'delivered', label: 'Delivered' }
+            ]}
+            activeFiltersCount={activeFilterCount}
+          />
+          <ExportDataButton
+            data={filteredDeliveries}
+            filename={`transporter - deliveries - ${ new Date().toISOString().split('T')[0] } `}
+            columns={['id', 'created_at', 'amount', 'status']}
+          />
+        </div>
 
           {/* 3-Column Grid Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left: Stats and Charts (2 columns) */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Package className="h-5 w-5" />
-                      Available Deliveries
-                    </CardTitle>
-                    <CardDescription>Ready to accept</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-bold mb-2">{stats.availableDeliveries}</p>
-                    <Button onClick={() => router.push('/transporter/available-deliveries')} className="mt-2 w-full" size="sm">
-                      View Available
-                    </Button>
-                  </CardContent>
-                </Card>
+        {/* Precision Stats Grid */}
+        <div className="grid gap-px bg-border/50 border border-border/50 md:grid-cols-2 lg:grid-cols-4">
+          <div className="bg-background p-8 hover:bg-muted/5 transition-colors">
+            <div className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase mb-6 flex items-center justify-between">
+              Deliveries
+              <Package className="h-4 w-4 text-accent" />
+            </div>
+            <div className="text-4xl font-black tracking-tighter mb-4 font-mono">
+              {stats.availableDeliveries}
+            </div>
+            <div className="flex gap-4">
+              <Button onClick={() => router.push('/transporter/available-deliveries')} variant="link" className="p-0 h-auto text-[9px] font-black tracking-widest uppercase text-accent hover:no-underline">
+                Accept Tasks <ArrowRight className="h-3 w-3 ml-2" />
+              </Button>
+            </div>
+          </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Truck className="h-5 w-5" />
-                      Active Deliveries
-                    </CardTitle>
-                    <CardDescription>In selected period</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-bold mb-2">{stats.activeDeliveries}</p>
-                    <ComparisonMetric
-                      current={stats.activeDeliveries}
-                      previous={prevStats.activeDeliveries}
-                    />
-                  </CardContent>
-                </Card>
+          <div className="bg-background p-8 hover:bg-muted/5 transition-colors">
+            <div className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase mb-6 flex items-center justify-between">
+              Active
+              <Truck className="h-4 w-4 text-accent" />
+            </div>
+            <div className="text-4xl font-black tracking-tighter mb-4 font-mono">
+              {stats.activeDeliveries}
+            </div>
+            <div className="flex gap-4 text-[9px] font-black tracking-widest uppercase opacity-40">
+              <ComparisonMetric current={stats.activeDeliveries} previous={prevStats.activeDeliveries} />
+            </div>
+          </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5" />
-                      Completed Deliveries
-                    </CardTitle>
-                    <CardDescription>In selected period</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-bold mb-2">{stats.completedDeliveries}</p>
-                    <ComparisonMetric
-                      current={stats.completedDeliveries}
-                      previous={prevStats.completedDeliveries}
-                    />
-                  </CardContent>
-                </Card>
+          <div className="bg-background p-8 hover:bg-muted/5 transition-colors">
+            <div className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase mb-6 flex items-center justify-between">
+              Completed
+              <BarChart3 className="h-4 w-4 text-accent" />
+            </div>
+            <div className="text-4xl font-black tracking-tighter mb-4 font-mono">
+              {stats.completedDeliveries}
+            </div>
+            <div className="flex gap-4 text-[9px] font-black tracking-widest uppercase opacity-40">
+              <ComparisonMetric current={stats.completedDeliveries} previous={prevStats.completedDeliveries} />
+            </div>
+          </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Star className="h-5 w-5" />
-                      Total Earnings
-                    </CardTitle>
-                    <CardDescription>10% commission</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-bold mb-2">KSh {stats.totalEarnings.toLocaleString()}</p>
-                    <ComparisonMetric
-                      current={stats.totalEarnings}
-                      previous={prevStats.totalEarnings}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
+          <div className="bg-background p-8 hover:bg-muted/5 transition-colors">
+            <div className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase mb-6 flex items-center justify-between">
+              Earnings
+              <Star className="h-4 w-4 text-accent" />
+            </div>
+            <div className="text-4xl font-black tracking-tighter mb-4 font-mono text-accent">
+              {stats.totalEarnings.toLocaleString()}
+            </div>
+            <div className="flex gap-4 text-[9px] font-black tracking-widest uppercase opacity-40">
+              <ComparisonMetric current={stats.totalEarnings} previous={prevStats.totalEarnings} />
+            </div>
+          </div>
+        </div>
 
               {/* Earnings Chart */}
               <Card className="border-l-4 border-l-blue-500">
@@ -450,7 +437,7 @@ export default function TransporterDashboardPage() {
                       <YAxis 
                         stroke="#6b7280"
                         style={{ fontSize: '12px' }}
-                        tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`}
+                        tickFormatter={(value) => `${ (value / 1000).toFixed(0) } K`}
                       />
                       <Tooltip 
                         contentStyle={{ 
@@ -460,7 +447,7 @@ export default function TransporterDashboardPage() {
                           boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                         }}
                         formatter={(value: any, name: string) => {
-                          if (name === 'earnings') return [`KSh ${value.toLocaleString()}`, 'Earnings'];
+                          if (name === 'earnings') return [`KSh ${ value.toLocaleString() } `, 'Earnings'];
                           if (name === 'deliveries') return [value, 'Deliveries'];
                           return [value, name];
                         }}
@@ -476,7 +463,7 @@ export default function TransporterDashboardPage() {
                       >
                         {earningsData.map((entry, index) => (
                           <Cell 
-                            key={`cell-${index}`} 
+                            key={`cell - ${ index } `} 
                             fill={entry.earnings > 0 ? '#3b82f6' : '#e5e7eb'}
                           />
                         ))}
@@ -533,35 +520,33 @@ export default function TransporterDashboardPage() {
                 </CardContent>
               </Card>
 
-              {/* Quick Actions */}
-              <div>
-                <h2 className="text-xl font-bold mb-4">Quick Actions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Button onClick={() => router.push('/transporter/available-deliveries')} size="lg" className="h-16">
-                    <Package className="h-5 w-5 mr-2" />
-                    Browse Available
-                  </Button>
-                  <Button onClick={() => router.push('/transporter/my-deliveries')} size="lg" variant="outline" className="h-16">
-                    <Truck className="h-5 w-5 mr-2" />
-                    My Active Deliveries
-                  </Button>
-                  <Button onClick={() => router.push('/transporter')} size="lg" variant="outline" className="h-16">
-                    <MapPin className="h-5 w-5 mr-2" />
-                    View All Routes
-                  </Button>
-                </div>
+            {/* Quick Actions */}
+            <div className="space-y-6">
+              <h3 className="text-[10px] font-black tracking-[0.3em] uppercase opacity-50">Logistics Actions</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border/50 border border-border/50">
+                <Button onClick={() => router.push('/transporter/available-deliveries')} className="bg-background hover:bg-muted/5 transition-colors h-24 rounded-none flex flex-col gap-2 items-center justify-center text-[10px] font-black tracking-widest uppercase border-0">
+                  <Package className="h-5 w-5 text-accent" />
+                  Browse Pool
+                </Button>
+                <Button onClick={() => router.push('/transporter/my-deliveries')} className="bg-background hover:bg-muted/5 transition-colors h-24 rounded-none flex flex-col gap-2 items-center justify-center text-[10px] font-black tracking-widest uppercase border-0">
+                  <Truck className="h-5 w-5 text-accent" />
+                  Active Shipments
+                </Button>
+                <Button onClick={() => router.push('/transporter')} className="bg-background hover:bg-muted/5 transition-colors h-24 rounded-none flex flex-col gap-2 items-center justify-center text-[10px] font-black tracking-widest uppercase border-0">
+                  <MapPin className="h-5 w-5 text-accent" />
+                  Route Map
+                </Button>
               </div>
             </div>
-
-            {/* Right: Activity Feed (1 column) */}
-            <div>
-              <ActivityFeed
-                activities={activities}
-              />
-            </div>
           </div>
-        </motion.div>
-      </div>
+
+          {/* Right: Activity Feed (1 column) */}
+          <div className="lg:col-span-1 border-l border-border/50 pl-12 h-fit space-y-8">
+            <h3 className="text-[10px] font-black tracking-[0.3em] uppercase opacity-50">Delivery History</h3>
+            <ActivityFeed activities={activities} />
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

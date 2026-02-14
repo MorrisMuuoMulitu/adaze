@@ -130,194 +130,196 @@ export default function AdminDashboard() {
 
   if (!isAdmin || loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
         <Navbar onAuthClick={() => { }} />
-        <div className="container mx-auto px-4 py-8">
-          <p className="text-center">{loading ? 'Loading...' : 'Access Denied'}</p>
+        <div className="flex-grow flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+            <div className="text-[10px] font-black tracking-[0.3em] uppercase opacity-50">
+              {loading ? 'Authenticating Command Center...' : 'Access Restricted'}
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+    <div className="min-h-screen bg-background text-foreground">
       <Navbar onAuthClick={() => { }} />
-      <main className="container mx-auto px-4 py-8 space-y-8">
-        {/* Header with Gradient */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 p-8 text-white shadow-2xl">
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                <Users className="h-6 w-6" />
-              </div>
-              <h1 className="text-4xl font-bold">Adaze Admin Dashboard</h1>
+      <main className="container mx-auto px-6 py-24 space-y-12">
+        {/* Editorial Header */}
+        <div className="flex flex-col md:flex-row justify-between items-end border-b border-border/50 pb-12 gap-8">
+          <div>
+            <div className="text-[10px] font-black tracking-[0.4em] uppercase text-accent mb-4">
+              SYSTEM ADMINISTRATION
             </div>
-            <p className="text-blue-100 text-lg">Manage your platform with superpowers 👑</p>
+            <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-none">
+              Control <span className="text-muted-foreground/30">Panel.</span>
+            </h1>
           </div>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24"></div>
-        </div>
-
-        {/* Stats Grid with Gradient Cards */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-blue-100">Total Users</CardTitle>
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                <Users className="h-5 w-5" />
+          <div className="flex items-center gap-6">
+            <div className="text-right">
+              <div className="text-[10px] font-black tracking-widest text-muted-foreground uppercase mb-1">System Status</div>
+              <div className="flex items-center gap-2 justify-end">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                <span className="text-[10px] font-black tracking-widest uppercase text-foreground">Operational</span>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{stats.totalUsers}</div>
-              <p className="text-xs text-blue-100 mt-2">
-                {stats.totalBuyers} buyers • {stats.totalTraders} traders • {stats.totalTransporters} transporters
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-purple-100">Total Products</CardTitle>
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                <Package className="h-5 w-5" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{stats.totalProducts}</div>
-              <p className="text-xs text-purple-100 mt-2">
-                {stats.activeProducts} active • {stats.pendingProducts} pending
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600 text-white hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-100">Total Orders</CardTitle>
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                <ShoppingBag className="h-5 w-5" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{stats.totalOrders}</div>
-              <p className="text-xs text-green-100 mt-2">
-                {stats.pendingOrders} pending • {stats.completedOrders} completed
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-500 to-orange-600 text-white hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-amber-100">Total Revenue</CardTitle>
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                <DollarSign className="h-5 w-5" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">KSh {stats.totalRevenue.toLocaleString()}</div>
-              <p className="text-xs text-amber-100 mt-2">
-                Today: KSh {stats.todayRevenue.toLocaleString()}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tabs for different sections */}
-        <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="analytics">
-              <BarChart3 className="h-4 w-4 mr-1" />
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
-                      <TrendingUp className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <CardTitle>Platform Growth</CardTitle>
-                      <CardDescription>Your marketplace is thriving</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Total Users</span>
-                      <span className="font-bold text-blue-600">{stats.totalUsers}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Total Products</span>
-                      <span className="font-bold text-purple-600">{stats.totalProducts}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Total Orders</span>
-                      <span className="font-bold text-green-600">{stats.totalOrders}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {stats.pendingProducts > 0 && (
-                <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 to-orange-50">
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl">
-                        <AlertCircle className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-amber-900">Pending Approvals</CardTitle>
-                        <CardDescription>Products awaiting your review</CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-4xl font-bold text-amber-600 mb-2">
-                      {stats.pendingProducts}
-                    </div>
-                    <p className="text-sm text-amber-700">
-                      Click on Products tab to review and approve
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
             </div>
-          </TabsContent>
+          </div>
+        </div>
 
-          <TabsContent value="analytics">
-            <AnalyticsDashboard />
-          </TabsContent>
+        {/* Precision Stats Grid */}
+        <div className="grid gap-px bg-border/50 border border-border/50 md:grid-cols-2 lg:grid-cols-4">
+          <div className="bg-background p-8 hover:bg-muted/5 transition-colors">
+            <div className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase mb-6 flex items-center justify-between">
+              Total Users
+              <Users className="h-4 w-4 text-accent" />
+            </div>
+            <div className="text-4xl font-black tracking-tighter mb-4 font-mono">
+              {stats.totalUsers.toLocaleString()}
+            </div>
+            <div className="flex gap-4 text-[9px] font-black tracking-widest uppercase opacity-40">
+              <span>{stats.totalTraders} TRADERS</span>
+              <span>•</span>
+              <span>{stats.totalBuyers} BUYERS</span>
+            </div>
+          </div>
 
-          <TabsContent value="users">
-            <UserManagement />
-          </TabsContent>
+          <div className="bg-background p-8 hover:bg-muted/5 transition-colors">
+            <div className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase mb-6 flex items-center justify-between">
+              Inventory
+              <Package className="h-4 w-4 text-accent" />
+            </div>
+            <div className="text-4xl font-black tracking-tighter mb-4 font-mono">
+              {stats.totalProducts.toLocaleString()}
+            </div>
+            <div className="flex gap-4 text-[9px] font-black tracking-widest uppercase opacity-40">
+              <span className="text-accent">{stats.pendingProducts} PENDING APPROVAL</span>
+            </div>
+          </div>
 
-          <TabsContent value="products">
-            <ProductManagement />
-          </TabsContent>
+          <div className="bg-background p-8 hover:bg-muted/5 transition-colors">
+            <div className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase mb-6 flex items-center justify-between">
+              Order Volume
+              <ShoppingBag className="h-4 w-4 text-accent" />
+            </div>
+            <div className="text-4xl font-black tracking-tighter mb-4 font-mono">
+              {stats.totalOrders.toLocaleString()}
+            </div>
+            <div className="flex gap-4 text-[9px] font-black tracking-widest uppercase opacity-40">
+              <span>{stats.completedOrders} DELIVERED</span>
+            </div>
+          </div>
 
-          <TabsContent value="orders">
-            <OrderManagement />
-          </TabsContent>
+          <div className="bg-background p-8 hover:bg-muted/5 transition-colors">
+            <div className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase mb-6 flex items-center justify-between">
+              Revenue (KSH)
+              <DollarSign className="h-4 w-4 text-accent" />
+            </div>
+            <div className="text-4xl font-black tracking-tighter mb-4 font-mono text-accent">
+              {stats.totalRevenue.toLocaleString()}
+            </div>
+            <div className="flex gap-4 text-[9px] font-black tracking-widest uppercase opacity-40">
+              <span>TODAY: {stats.todayRevenue.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
 
-          <TabsContent value="security">
-            <SecurityMonitoring />
-          </TabsContent>
+        {/* Management Interface */}
+        <div className="space-y-8">
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="bg-transparent h-auto p-0 flex flex-wrap gap-8 border-b border-border/50 rounded-none w-full mb-8">
+              {[
+                { value: 'overview', label: 'Overview' },
+                { value: 'analytics', label: 'Analytics' },
+                { value: 'users', label: 'Users' },
+                { value: 'products', label: 'Products' },
+                { value: 'orders', label: 'Orders' },
+                { value: 'security', label: 'Security' },
+                { value: 'settings', label: 'Settings' }
+              ].map((tab) => (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:text-foreground text-[10px] font-black tracking-[0.2em] uppercase px-0 py-4 transition-all"
+                >
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-          <TabsContent value="settings">
-            <AdminSettings />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="overview" className="space-y-12">
+              <div className="grid gap-8 md:grid-cols-2">
+                <div className="border border-border/50 p-8 space-y-8">
+                  <div className="flex items-center gap-4">
+                    <TrendingUp className="h-5 w-5 text-accent" />
+                    <h3 className="text-sm font-black tracking-widest uppercase">Performance Summary</h3>
+                  </div>
+                  <div className="space-y-4">
+                    {[
+                      { label: 'Active Sellers', value: stats.totalTraders },
+                      { label: 'Verified Transporters', value: stats.totalTransporters },
+                      { label: 'Live Listings', value: stats.activeProducts },
+                    ].map((item) => (
+                      <div key={item.label} className="flex justify-between items-end border-b border-border/20 pb-2">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{item.label}</span>
+                        <span className="text-lg font-black font-mono">{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {stats.pendingProducts > 0 && (
+                  <div className="bg-accent/5 border border-accent/20 p-8 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-4 mb-8">
+                        <AlertCircle className="h-5 w-5 text-accent" />
+                        <h3 className="text-sm font-black tracking-widest uppercase">Tasks Required</h3>
+                      </div>
+                      <div className="text-5xl font-black tracking-tighter text-accent font-mono mb-2">
+                        {stats.pendingProducts}
+                      </div>
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                        Items awaiting authentication and quality review.
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => document.querySelector('[value="products"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))}
+                      className="btn-premium rounded-none h-12 text-[10px] font-black tracking-widest uppercase mt-8 w-full"
+                    >
+                      Authenticate Items
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="analytics" className="mt-0">
+              <div className="border border-border/50 p-8"><AnalyticsDashboard /></div>
+            </TabsContent>
+
+            <TabsContent value="users" className="mt-0">
+              <div className="border border-border/50 p-8"><UserManagement /></div>
+            </TabsContent>
+
+            <TabsContent value="products" className="mt-0">
+              <div className="border border-border/50 p-8"><ProductManagement /></div>
+            </TabsContent>
+
+            <TabsContent value="orders" className="mt-0">
+              <div className="border border-border/50 p-8"><OrderManagement /></div>
+            </TabsContent>
+
+            <TabsContent value="security" className="mt-0">
+              <div className="border border-border/50 p-8"><SecurityMonitoring /></div>
+            </TabsContent>
+
+            <TabsContent value="settings" className="mt-0">
+              <div className="border border-border/50 p-8"><AdminSettings /></div>
+            </TabsContent>
+          </Tabs>
+        </div>
       </main>
     </div>
   );

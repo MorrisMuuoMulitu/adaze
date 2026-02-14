@@ -5,8 +5,8 @@ export async function POST(request: Request) {
   const { email, password, role } = await request.json();
 
   // Basic validation
-  if (!email || !password || !role) {
-    return NextResponse.json({ message: 'Missing email, password, or role' }, { status: 400 });
+  if (!email || !password) {
+    return NextResponse.json({ message: 'Missing email or password' }, { status: 400 });
   }
 
   const supabase = await createClient();
@@ -73,11 +73,12 @@ export async function POST(request: Request) {
   }
 
   // 5. Check if the user's stored role matches the role they are trying to log in with
-  if (profileData.role !== role) {
+  // Allow admins to bypass this check, and only check if a specific role was requested
+  if (role && profileData.role !== role && profileData.role !== 'admin') {
     // Sign out the user as they are trying to access an unauthorized role
     await supabase.auth.signOut();
     return NextResponse.json({ 
-      message: `Access denied. You are registered as a ${profileData.role}, not a ${role}. Please select the correct role.` 
+      message: `Access denied. You are registered as a ${profileData.role}, not a ${role}.` 
     }, { status: 403 });
   }
 

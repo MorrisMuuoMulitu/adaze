@@ -111,381 +111,279 @@ export default function TransporterRegistrationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Card>
-            <CardHeader className="text-center">
-              <div className="flex justify-center mb-4">
-                <div className="p-4 bg-blue-100 rounded-full">
-                  <Truck className="h-12 w-12 text-blue-600" />
+    <div className="min-h-screen bg-background text-foreground selection:bg-accent/30 selection:text-white pb-24">
+      {/* Scanline Effect */}
+      <div className="fixed inset-0 bg-scanline opacity-[0.03] pointer-events-none z-50" />
+
+      <main className="container mx-auto px-6 pt-32 max-w-4xl relative z-10">
+        {/* Editorial Header */}
+        <div className="flex flex-col md:flex-row justify-between items-end border-b border-border/50 pb-12 mb-12 gap-8">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <div className="text-[10px] font-black tracking-[0.4em] uppercase text-accent mb-4">
+              LOGISTICS NETWORK
+            </div>
+            <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-[0.85]">
+              Join the <span className="text-muted-foreground/30 italic">Force.</span>
+            </h1>
+          </motion.div>
+
+          <div className="flex items-center gap-4">
+            <div className="text-right hidden md:block">
+              <div className="text-[10px] font-black tracking-widest uppercase opacity-40">System Status</div>
+              <div className="text-[10px] font-black tracking-widest uppercase text-green-500">Recruiting</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Step Indicator */}
+        <div className="grid grid-cols-3 gap-px bg-border/50 border border-border/50 mb-12">
+          {[1, 2, 3].map((s) => (
+            <div
+              key={s}
+              className={`p-6 text-center transition-colors ${step === s ? 'bg-accent/5' : 'bg-background hover:bg-muted/5'
+                }`}
+            >
+              <div className={`text-[10px] font-black tracking-widest uppercase mb-2 ${step === s ? 'text-accent' : 'opacity-30'
+                }`}>
+                Phase 0{s}
+              </div>
+              <div className={`h-1 mx-auto w-12 ${step >= s ? 'bg-accent' : 'bg-border/30'
+                }`} />
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-background border border-border/50 p-8 md:p-12 space-y-12">
+          {/* Step 1: Business Information */}
+          {step === 1 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-8"
+            >
+              <div className="space-y-2">
+                <h3 className="text-2xl font-black tracking-tighter uppercase">Operational Base.</h3>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">Define your logistical footprint</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                <div className="space-y-3">
+                  <Label htmlFor="businessName" className="text-[10px] font-black tracking-[0.2em] uppercase opacity-40">Business Name</Label>
+                  <Input
+                    id="businessName"
+                    name="businessName"
+                    value={formData.businessName}
+                    onChange={handleInputChange}
+                    placeholder="E.G. KEFA LOGISTICS"
+                    className="rounded-none border-0 border-b border-border focus-visible:ring-0 focus-visible:border-accent font-black text-xs h-12 px-0 bg-transparent uppercase"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="licenseNumber" className="text-[10px] font-black tracking-[0.2em] uppercase opacity-40">License Number</Label>
+                  <Input
+                    id="licenseNumber"
+                    name="licenseNumber"
+                    value={formData.licenseNumber}
+                    onChange={handleInputChange}
+                    placeholder="BNL-000000"
+                    className="rounded-none border-0 border-b border-border focus-visible:ring-0 focus-visible:border-accent font-black text-xs h-12 px-0 bg-transparent uppercase"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="vehicleType" className="text-[10px] font-black tracking-[0.2em] uppercase opacity-40">Vehicle Class</Label>
+                  <Select name="vehicleType" value={formData.vehicleType} onValueChange={(value) => setFormData(prev => ({ ...prev, vehicleType: value }))}>
+                    <SelectTrigger className="rounded-none border-0 border-b border-border focus:ring-0 font-black text-xs h-12 px-0 bg-transparent uppercase">
+                      <SelectValue placeholder="SELECT CLASS" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-none border-border">
+                      <SelectItem value="motorcycle" className="uppercase text-[10px] font-black tracking-widest">Motorcycle</SelectItem>
+                      <SelectItem value="pickup" className="uppercase text-[10px] font-black tracking-widest">Pickup / Van</SelectItem>
+                      <SelectItem value="lorry" className="uppercase text-[10px] font-black tracking-widest">Heavy Lorry</SelectItem>
+                      <SelectItem value="trailer" className="uppercase text-[10px] font-black tracking-widest">Articulated Trailer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="vehicleCapacity" className="text-[10px] font-black tracking-[0.2em] uppercase opacity-40">Payload Capacity (KG)</Label>
+                  <Input
+                    id="vehicleCapacity"
+                    name="vehicleCapacity"
+                    type="number"
+                    value={formData.vehicleCapacity}
+                    onChange={handleInputChange}
+                    placeholder="500"
+                    className="rounded-none border-0 border-b border-border focus-visible:ring-0 focus-visible:border-accent font-black text-xs h-12 px-0 bg-transparent"
+                  />
+                </div>
+
+                <div className="space-y-3 md:col-span-2">
+                  <Label htmlFor="operatingAreas" className="text-[10px] font-black tracking-[0.2em] uppercase opacity-40">Service Sectors</Label>
+                  <Textarea
+                    id="operatingAreas"
+                    name="operatingAreas"
+                    value={formData.operatingAreas}
+                    onChange={handleInputChange}
+                    placeholder="E.G. NAIROBI METRO, COASTAL REGION"
+                    className="rounded-none border-0 border-b border-border focus-visible:ring-0 focus-visible:border-accent font-black text-xs min-h-[80px] px-0 bg-transparent uppercase resize-none"
+                  />
                 </div>
               </div>
-              <CardTitle className="text-3xl font-bold">Transporter Registration</CardTitle>
-              <CardDescription>
-                Join ADAZE&apos;s transporter network and start earning today
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Step Indicator */}
-              <div className="flex justify-center mb-8">
-                <div className="flex items-center">
-                  {[1, 2, 3].map((s) => (
-                    <div key={s} className="flex items-center">
-                      <Badge
-                        variant={step === s ? 'default' : 'secondary'}
-                        className={`rounded-full w-10 h-10 flex items-center justify-center ${step >= s ? 'bg-blue-600' : 'bg-muted'
-                          }`}
-                      >
-                        {s}
-                      </Badge>
-                      {s < 3 && (
-                        <div className={`h-1 w-16 mx-2 ${step > s ? 'bg-blue-600' : 'bg-muted'
-                          }`}></div>
+            </motion.div>
+          )}
+
+          {/* Step 2: Contact Information */}
+          {step === 2 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-8"
+            >
+              <div className="space-y-2">
+                <h3 className="text-2xl font-black tracking-tighter uppercase">Direct Line.</h3>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">Verified communications only</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                <div className="space-y-3">
+                  <Label htmlFor="contactPerson" className="text-[10px] font-black tracking-[0.2em] uppercase opacity-40">Chief Officer</Label>
+                  <Input
+                    id="contactPerson"
+                    name="contactPerson"
+                    value={formData.contactPerson}
+                    onChange={handleInputChange}
+                    placeholder="FULL LEGAL NAME"
+                    className="rounded-none border-0 border-b border-border focus-visible:ring-0 focus-visible:border-accent font-black text-xs h-12 px-0 bg-transparent uppercase"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="contactPhone" className="text-[10px] font-black tracking-[0.2em] uppercase opacity-40">Verified Phone</Label>
+                  <Input
+                    id="contactPhone"
+                    name="contactPhone"
+                    value={formData.contactPhone}
+                    onChange={handleInputChange}
+                    placeholder="+254 --- --- ---"
+                    className="rounded-none border-0 border-b border-border focus-visible:ring-0 focus-visible:border-accent font-black text-xs h-12 px-0 bg-transparent"
+                  />
+                </div>
+
+                <div className="space-y-3 md:col-span-2">
+                  <Label htmlFor="insuranceDetails" className="text-[10px] font-black tracking-[0.2em] uppercase opacity-40">Insurance Underwriter & Policy</Label>
+                  <Textarea
+                    id="insuranceDetails"
+                    name="insuranceDetails"
+                    value={formData.insuranceDetails}
+                    onChange={handleInputChange}
+                    placeholder="COMPANY NAME, POLICY IDENTIFIER, COVERAGE LIMITS"
+                    className="rounded-none border-0 border-b border-border focus-visible:ring-0 focus-visible:border-accent font-black text-xs min-h-[80px] px-0 bg-transparent uppercase resize-none"
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 3: Documents */}
+          {step === 3 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-8"
+            >
+              <div className="space-y-2">
+                <h3 className="text-2xl font-black tracking-tighter uppercase">Verification Vault.</h3>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">Upload credentials for system validation</p>
+              </div>
+
+              <div className="grid gap-6">
+                {[
+                  { id: 'license', label: 'OPERATING LICENSE', state: documents.license },
+                  { id: 'insurance', label: 'INSURANCE CERTIFICATE', state: documents.insurance },
+                  { id: 'id', label: 'NATIONAL IDENTITY', state: documents.id }
+                ].map((doc) => (
+                  <div key={doc.id} className="relative group border border-border/50 p-6 flex items-center justify-between hover:border-accent/40 transition-colors">
+                    <div className="space-y-1">
+                      <Label htmlFor={doc.id} className="text-[10px] font-black tracking-[0.2em] uppercase block cursor-pointer">{doc.label}</Label>
+                      <p className="text-[9px] font-bold uppercase opacity-30">PDF, JPG OR PNG (MAX 5MB)</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {doc.state && (
+                        <div className="flex items-center gap-2 text-accent">
+                          <CheckCircle className="w-4 h-4" />
+                          <span className="text-[10px] font-black tracking-widest">READY</span>
+                        </div>
                       )}
+                      <div className="relative">
+                        <Input
+                          id={doc.id}
+                          type="file"
+                          className="hidden"
+                          onChange={(e) => handleFileChange(e, doc.id as any)}
+                        />
+                        <Button
+                          asChild
+                          variant="outline"
+                          className="rounded-none border-border/50 text-[9px] font-black tracking-widest uppercase cursor-pointer h-10 px-6 group-hover:border-accent group-hover:text-accent transition-colors"
+                        >
+                          <label htmlFor={doc.id}>
+                            <Upload className="w-3 h-3 mr-2" />
+                            {doc.state ? 'REPLACE' : 'SOURCE'}
+                          </label>
+                        </Button>
+                      </div>
                     </div>
-                  ))}
+                  </div>
+                ))}
+
+                <div className="bg-muted/5 border border-border/20 p-6 mt-6">
+                  <div className="flex items-start gap-4">
+                    <AlertCircle className="w-4 h-4 text-accent mt-0.5" />
+                    <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed opacity-60">
+                      BY SUBMITTING, YOU AGREE TO THE LOGISTICS CODE OF CONDUCT. SYSTEM VALIDATION TAKES 48-72 HOURS UPON RECEIPT OF ALL SOURCE DOCUMENTS.
+                    </p>
+                  </div>
                 </div>
               </div>
+            </motion.div>
+          )}
 
-              {/* Step 1: Business Information */}
-              {step === 1 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <h3 className="text-xl font-semibold mb-6">Business Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="businessName">Business Name *</Label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Truck className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <Input
-                          id="businessName"
-                          name="businessName"
-                          value={formData.businessName}
-                          onChange={handleInputChange}
-                          placeholder="e.g., Kefa Transport Services"
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
+          {/* Navigation */}
+          <div className="flex justify-between items-center pt-12 border-t border-border/20">
+            <Button
+              variant="link"
+              onClick={prevStep}
+              disabled={step === 1}
+              className={`p-0 h-auto text-[10px] font-black tracking-widest uppercase transition-opacity ${step === 1 ? 'opacity-0' : 'opacity-40 hover:opacity-100'
+                }`}
+            >
+              ← PREVIOUS PHASE
+            </Button>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="licenseNumber">Business License Number *</Label>
-                      <Input
-                        id="licenseNumber"
-                        name="licenseNumber"
-                        value={formData.licenseNumber}
-                        onChange={handleInputChange}
-                        placeholder="e.g., BNL2021001234"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="vehicleType">Vehicle Type *</Label>
-                      <Select name="vehicleType" value={formData.vehicleType} onValueChange={(value) => setFormData(prev => ({ ...prev, vehicleType: value }))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select vehicle type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pickup">Pickup/Daladala</SelectItem>
-                          <SelectItem value="van">Van (3-5 tons)</SelectItem>
-                          <SelectItem value="lorry">Lorry (6-12 tons)</SelectItem>
-                          <SelectItem value="trailer">Trailer (13+ tons)</SelectItem>
-                          <SelectItem value="motorcycle">Motorcycle</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="vehicleCapacity">Vehicle Capacity (kg) *</Label>
-                      <Input
-                        id="vehicleCapacity"
-                        name="vehicleCapacity"
-                        type="number"
-                        value={formData.vehicleCapacity}
-                        onChange={handleInputChange}
-                        placeholder="e.g., 500"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="operatingAreas">Operating Areas *</Label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <MapPin className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <Textarea
-                          id="operatingAreas"
-                          name="operatingAreas"
-                          value={formData.operatingAreas}
-                          onChange={handleInputChange}
-                          placeholder="e.g., Nairobi, Mombasa, Kisumu"
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="yearsExperience">Years of Experience *</Label>
-                      <Select name="yearsExperience" value={formData.yearsExperience} onValueChange={(value) => setFormData(prev => ({ ...prev, yearsExperience: value }))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select experience" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0-1">Less than 1 year</SelectItem>
-                          <SelectItem value="1-3">1-3 years</SelectItem>
-                          <SelectItem value="3-5">3-5 years</SelectItem>
-                          <SelectItem value="5+">More than 5 years</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 2: Contact Information */}
-              {step === 2 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <h3 className="text-xl font-semibold mb-6">Contact Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="contactPerson">Contact Person *</Label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Truck className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <Input
-                          id="contactPerson"
-                          name="contactPerson"
-                          value={formData.contactPerson}
-                          onChange={handleInputChange}
-                          placeholder="Full name"
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="contactPhone">Phone Number *</Label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <Input
-                          id="contactPhone"
-                          name="contactPhone"
-                          type="tel"
-                          value={formData.contactPhone}
-                          onChange={handleInputChange}
-                          placeholder="e.g., +254 712 345 678"
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="contactEmail">Email Address *</Label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <Input
-                          id="contactEmail"
-                          name="contactEmail"
-                          type="email"
-                          value={formData.contactEmail}
-                          onChange={handleInputChange}
-                          placeholder="e.g., contact@transporter.co.ke"
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="idNumber">National ID Number *</Label>
-                      <Input
-                        id="idNumber"
-                        name="idNumber"
-                        value={formData.idNumber}
-                        onChange={handleInputChange}
-                        placeholder="e.g., 12345678"
-                      />
-                    </div>
-
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="insuranceDetails">Insurance Details *</Label>
-                      <Textarea
-                        id="insuranceDetails"
-                        name="insuranceDetails"
-                        value={formData.insuranceDetails}
-                        onChange={handleInputChange}
-                        placeholder="Insurance company, policy number, coverage details"
-                      />
-                    </div>
-
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="bankAccount">Bank Account for Payments *</Label>
-                      <Input
-                        id="bankAccount"
-                        name="bankAccount"
-                        value={formData.bankAccount}
-                        onChange={handleInputChange}
-                        placeholder="e.g., KCB Acc No. 1234567890"
-                      />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 3: Documents */}
-              {step === 3 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <h3 className="text-xl font-semibold mb-6">Required Documents</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Please upload the following documents to complete your registration
-                  </p>
-
-                  <div className="space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="licenseUpload">Business License *</Label>
-                      <div className="flex items-center gap-4">
-                        <div className="relative flex-1">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                          <Input
-                            id="licenseUpload"
-                            type="file"
-                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                            onChange={(e) => handleFileChange(e, 'license')}
-                            className="pl-10"
-                          />
-                        </div>
-                        {documents.license && (
-                          <Badge variant="secondary" className="flex items-center gap-1">
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                            Uploaded
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="insuranceUpload">Insurance Certificate *</Label>
-                      <div className="flex items-center gap-4">
-                        <div className="relative flex-1">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                          <Input
-                            id="insuranceUpload"
-                            type="file"
-                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                            onChange={(e) => handleFileChange(e, 'insurance')}
-                            className="pl-10"
-                          />
-                        </div>
-                        {documents.insurance && (
-                          <Badge variant="secondary" className="flex items-center gap-1">
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                            Uploaded
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="idUpload">National ID Copy *</Label>
-                      <div className="flex items-center gap-4">
-                        <div className="relative flex-1">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                          <Input
-                            id="idUpload"
-                            type="file"
-                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                            onChange={(e) => handleFileChange(e, 'id')}
-                            className="pl-10"
-                          />
-                        </div>
-                        {documents.id && (
-                          <Badge variant="secondary" className="flex items-center gap-1">
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                            Uploaded
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-                      <div className="flex items-start gap-3">
-                        <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <h4 className="font-medium text-blue-900">Registration Process</h4>
-                          <p className="text-sm text-blue-700 mt-1">
-                            After submitting your application, our team will review your documents and credentials.
-                            You&apos;ll receive an email notification within 2-3 business days regarding your application status.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Navigation Buttons */}
-              <div className="flex justify-between mt-8">
-                <Button
-                  variant="outline"
-                  onClick={prevStep}
-                  disabled={step === 1}
-                >
-                  Previous
-                </Button>
-
-                {step < 3 ? (
-                  <Button onClick={nextStep}>
-                    Next
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={loadingSubmit}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {loadingSubmit ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-white"></div>
-                        Submitting...
-                      </>
-                    ) : (
-                      'Submit Application'
-                    )}
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
+            {step < 3 ? (
+              <Button
+                onClick={nextStep}
+                className="btn-premium h-14 px-12 text-[10px] font-black tracking-widest uppercase rounded-none"
+              >
+                PROCEED TO PHASE 0{step + 1}
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSubmit}
+                disabled={loadingSubmit}
+                className="btn-premium h-14 px-12 text-[10px] font-black tracking-widest uppercase rounded-none"
+              >
+                {loadingSubmit ? 'TRANSMITTING...' : 'FINALIZE COMMISSION'}
+              </Button>
+            )}
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

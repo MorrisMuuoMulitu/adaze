@@ -177,7 +177,10 @@ export default function CartPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-background relative overflow-hidden">
+      {/* Scanline Effect */}
+      <div className="fixed inset-0 bg-scanline opacity-[0.03] pointer-events-none z-50" />
+
       <Navbar onAuthClick={handleAuthClick} />
       <AuthModal
         isOpen={showAuthModal}
@@ -185,186 +188,173 @@ export default function CartPage() {
         initialType={authModalType}
         onSuccess={handleCloseAuthModal}
       />
-      <main className="flex-grow py-12 bg-gradient-to-b from-background via-muted/10 to-background relative overflow-hidden">
-        <div className="absolute top-0 right-1/3 w-[500px] h-[500px] bg-gradient-to-br from-primary/5 to-accent/5 rounded-full blur-3xl"></div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <main className="flex-grow py-32 px-6 relative z-10">
+        <div className="max-w-7xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
           >
-            {/* Enhanced Header */}
-            <div className="mb-10">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-full mb-4"
-              >
-                <ShoppingCartIcon className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  Your Shopping Bag
-                </span>
-              </motion.div>
-              <h1 className="text-4xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                Shopping Cart
-                {cartItems.length > 0 && <span className="text-primary ml-3">({cartItems.length})</span>}
-              </h1>
+            {/* Editorial Header */}
+            <div className="mb-20 border-b border-border/50 pb-12 flex flex-col md:flex-row justify-between items-end gap-8">
+              <div>
+                <div className="text-[10px] font-black tracking-[0.4em] uppercase text-accent mb-4">
+                  THE COLLECTION
+                </div>
+                <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-[0.85]">
+                  Your <span className="text-muted-foreground/30 italic">Manifest.</span>
+                </h1>
+              </div>
+              <div className="text-[10px] font-black tracking-widest uppercase text-muted-foreground/60">
+                // {cartItems.length} {cartItems.length === 1 ? 'PIECE' : 'PIECES'} READY FOR DISPATCH
+              </div>
             </div>
 
             {cartItems.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <Card className="text-center py-16 bg-gradient-to-br from-background to-muted/20 border-2 border-dashed border-muted-foreground/20 shadow-xl">
-                  <CardContent>
-                    <motion.div
-                      animate={{ y: [0, -10, 0] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                      className="mb-6"
-                    >
-                      <div className="w-24 h-24 mx-auto bg-gradient-to-br from-primary/20 to-accent/20 rounded-full flex items-center justify-center">
-                        <ShoppingCartIcon className="h-12 w-12 text-primary" />
-                      </div>
-                    </motion.div>
-                    <h2 className="text-2xl font-bold mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Your Cart is Empty</h2>
-                    <p className="text-muted-foreground mb-8 max-w-md mx-auto text-lg">
-                      Looks like you haven&apos;t added any items to your cart yet. Start exploring our amazing collection!
-                    </p>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button
-                        onClick={() => router.push('/marketplace')}
-                        size="lg"
-                        className="h-14 px-10 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white font-bold shadow-xl hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300"
-                      >
-                        <Package className="h-5 w-5 mr-2" />
-                        Start Shopping
-                      </Button>
-                    </motion.div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+              <div className="text-center py-40 border border-border/30 bg-muted/5 group">
+                <div className="relative w-16 h-16 mx-auto mb-8">
+                  <ShoppingCartIcon className="w-full h-full text-accent/20" />
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-x-[-10px] inset-y-[-10px] border-t border-accent/20 rounded-full"
+                  />
+                </div>
+                <h2 className="text-xl font-black uppercase tracking-tighter mb-6 text-muted-foreground/40">Repository is currently empty</h2>
+                <Button
+                  onClick={() => router.push('/marketplace')}
+                  className="btn-premium rounded-none h-14 px-12 text-[10px] font-black tracking-widest uppercase"
+                >
+                  Source New Pieces
+                </Button>
+              </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-24">
+                <div className="lg:col-span-7 space-y-12">
                   {cartItems.map((item, index) => (
                     <motion.div
                       key={item.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="flex gap-8 group pb-12 border-b border-border/20 last:border-0"
                     >
-                      <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 border-muted-foreground/10">
-                        <CardContent className="p-5 flex items-center space-x-5">
-                          <div className="relative w-28 h-28 flex-shrink-0 rounded-xl overflow-hidden">
-                            {item.product_image_url ? (
-                              <Image
-                                src={item.product_image_url}
-                                alt={item.product_name}
-                                width={112}
-                                height={112}
-                                className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
-                                <Package className="h-14 w-14 text-muted-foreground/50" />
-                              </div>
-                            )}
+                      <div className="relative w-36 h-48 bg-muted overflow-hidden shrink-0 border border-border/50">
+                        {item.product_image_url ? (
+                          <Image
+                            src={item.product_image_url}
+                            alt={item.product_name}
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-1000 grayscale group-hover:grayscale-0"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="h-8 w-8 text-muted-foreground/20" />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h2 className="text-lg font-bold truncate mb-1">{item.product_name}</h2>
-                            <p className="text-primary font-semibold text-xl mb-3">KSh {item.product_price.toFixed(2)}</p>
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center border-2 border-muted-foreground/20 rounded-lg overflow-hidden">
-                                <motion.button
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.9 }}
-                                  className="px-3 py-2 hover:bg-muted transition-colors"
-                                  onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                                >
-                                  <Minus className="h-4 w-4" />
-                                </motion.button>
-                                <span className="px-4 py-2 font-bold min-w-[3rem] text-center bg-muted/30">{item.quantity}</span>
-                                <motion.button
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.9 }}
-                                  className="px-3 py-2 hover:bg-muted transition-colors"
-                                  onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                                >
-                                  <Plus className="h-4 w-4" />
-                                </motion.button>
-                              </div>
-                              <span className="text-sm text-muted-foreground font-medium">
-                                Subtotal: <span className="text-foreground font-bold">KSh {(item.product_price * item.quantity).toFixed(2)}</span>
-                              </span>
+                        )}
+                        <div className="absolute inset-0 bg-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+
+                      <div className="flex-1 flex flex-col justify-between py-1">
+                        <div>
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <div className="text-[9px] font-black tracking-widest uppercase text-accent mb-1">Authentic Piece</div>
+                              <h2 className="text-2xl font-black uppercase tracking-tighter leading-tight">{item.product_name}</h2>
                             </div>
+                            <button
+                              onClick={() => handleRemoveItem(item.id)}
+                              className="w-10 h-10 flex items-center justify-center border border-border/50 hover:bg-destructive hover:text-white hover:border-destructive transition-all"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
-                          <motion.button
-                            whileHover={{ scale: 1.1, rotate: 5 }}
-                            whileTap={{ scale: 0.9 }}
-                            className="p-3 rounded-full hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500 hover:text-red-700 transition-colors"
-                            onClick={() => handleRemoveItem(item.id)}
-                          >
-                            <Trash2 className="h-5 w-5" />
-                          </motion.button>
-                        </CardContent>
-                      </Card>
+                          <div className="text-xl font-black font-mono tracking-tighter text-muted-foreground/80">
+                            KSH {item.product_price.toLocaleString()}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-8 mt-8">
+                          <div className="flex items-center border border-border h-10 w-32">
+                            <button
+                              className="flex-1 h-full flex items-center justify-center hover:bg-muted font-black"
+                              onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                            >
+                              -
+                            </button>
+                            <span className="w-10 text-[11px] font-black text-center font-mono border-x border-border">
+                              {item.quantity.toString().padStart(2, '0')}
+                            </span>
+                            <button
+                              className="flex-1 h-full flex items-center justify-center hover:bg-muted font-black"
+                              onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                            >
+                              +
+                            </button>
+                          </div>
+                          <div className="text-[10px] font-black tracking-widest uppercase text-muted-foreground/40">
+                            Manifest Subtotal // <span className="text-foreground font-mono">KSH {(item.product_price * item.quantity).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
                     </motion.div>
                   ))}
                 </div>
 
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="lg:col-span-1"
-                >
-                  <Card className="sticky top-24 shadow-xl border-2">
-                    <CardHeader className="bg-gradient-to-br from-muted/50 to-background pb-4">
-                      <CardTitle className="text-2xl font-black">Order Summary</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-5 pt-6">
-                      <div className="flex justify-between text-base">
-                        <span className="text-muted-foreground">Subtotal ({cartItems.length} {cartItems.length === 1 ? 'item' : 'items'})</span>
-                        <span className="font-semibold">KSh {subtotal.toFixed(2)}</span>
+                <div className="lg:col-span-5">
+                  <div className="sticky top-32 p-10 border border-accent/20 bg-muted/5 relative backdrop-blur-sm">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 -rotate-45 translate-x-16 -translate-y-16 pointer-events-none" />
+
+                    <h3 className="text-[11px] font-black tracking-[0.4em] uppercase mb-10 pb-4 border-b border-border/30">Acquisition Summary</h3>
+
+                    <div className="space-y-6 mb-10">
+                      <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest">
+                        <span className="opacity-40">Original Value</span>
+                        <span className="font-mono">KSH {subtotal.toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between text-base">
-                        <span className="text-muted-foreground">Shipping</span>
-                        <span className="font-semibold text-green-600">FREE</span>
+                      <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest">
+                        <span className="opacity-40">System Logistics</span>
+                        <span className="text-accent">Complimentary</span>
                       </div>
-                      <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
-                      <div className="flex justify-between text-xl font-bold">
-                        <span>Total</span>
-                        <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">KSh {subtotal.toFixed(2)}</span>
+                      <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest">
+                        <span className="opacity-40">Tax Adjustment</span>
+                        <span className="font-mono">Inclusive</span>
                       </div>
-                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                        <Button
-                          className="w-full h-14 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white font-bold shadow-xl hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 text-base"
-                          onClick={() => router.push('/checkout')}
-                        >
-                          Proceed to Checkout
-                        </Button>
-                      </motion.div>
-                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                        <Button
-                          variant="outline"
-                          className="w-full h-12 border-2 font-semibold hover:bg-muted"
-                          onClick={() => router.push('/marketplace')}
-                        >
-                          <Package className="h-4 w-4 mr-2" />
-                          Continue Shopping
-                        </Button>
-                      </motion.div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+                    </div>
+
+                    <div className="pt-8 border-t border-border flex justify-between items-end mb-12">
+                      <div>
+                        <div className="text-[9px] font-black tracking-widest uppercase opacity-40 mb-1">Total Payable</div>
+                        <div className="text-3xl font-black tracking-tighter text-accent font-mono">KSH {subtotal.toLocaleString()}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-4">
+                      <Button
+                        className="btn-premium h-16 rounded-none text-[11px] font-black tracking-widest uppercase w-full shadow-2xl shadow-accent/10"
+                        onClick={() => router.push('/checkout')}
+                      >
+                        Initiate Secure Acquisition
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="h-16 rounded-none text-[10px] font-black tracking-widest uppercase w-full border border-border/50 hover:bg-muted/50"
+                        onClick={() => router.push('/marketplace')}
+                      >
+                        Return to Archive
+                      </Button>
+                    </div>
+
+                    <div className="mt-8 text-[9px] font-bold uppercase tracking-[0.2em] opacity-30 text-center leading-relaxed">
+                      Secure SSL Encryption • Verified Collective Asset • Insured Handover
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </motion.div>
         </div>
       </main>
     </div>
+
   );
 }

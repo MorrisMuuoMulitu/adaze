@@ -23,50 +23,62 @@ export function CTA({ onAuthClick }: CTAProps) {
   };
 
   const handleBecomeTrader = () => {
-    if (user) {
-      router.push('/products/add');
-    } else {
-      onAuthClick?.();
-    }
+    router.push('/become-trader');
   };
 
   return (
-    <div className="bg-background">
-      <div className="mx-auto max-w-7xl py-24 sm:px-6 sm:py-32 lg:px-8">
-        <div className="relative isolate overflow-hidden bg-gray-900 px-6 pt-16 shadow-2xl sm:rounded-3xl sm:px-16 sm:pt-24 lg:flex lg:gap-x-20 lg:px-24 lg:pt-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-800 via-gray-900 to-black">
-          <motion.div 
+    <div className="bg-background pt-24 pb-32">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="relative isolate overflow-hidden bg-background border border-border/50 py-24 px-12 lg:px-24">
+          {/* Scanline Effect */}
+          <div className="absolute inset-0 bg-scanline opacity-[0.03] pointer-events-none" />
+
+          <motion.div
             initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="mx-auto text-center lg:py-32"
+            className="relative z-10 text-center space-y-12"
           >
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Ready to Transform Your Wardrobe?
-            </h2>
-            <p className="mt-6 text-lg leading-8 text-white/90">
-              Join Africa&apos;s premier mitumba marketplace. Discover unique fashion, connect with trusted traders, and enjoy seamless delivery.
-            </p>
-            <div className="mt-10 flex items-center justify-center gap-x-6 lg:justify-start">
-              <Button 
-                size="lg" 
-                className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            <div className="space-y-6">
+              <div className="text-[10px] font-black tracking-[0.4em] uppercase text-accent">
+                JOIN THE COLLECTIVE
+              </div>
+              <h2 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter text-foreground uppercase leading-[0.9]">
+                Ready to <span className="text-muted-foreground/30 italic">Ascend?</span>
+              </h2>
+              <p className="mt-8 text-xl text-muted-foreground/60 max-w-2xl mx-auto font-medium tracking-tight">
+                Join Africa&apos;s premier curated fashion ecosystem. Discover the unique, manage your empire, and redefine your style.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-4">
+              <Button
+                size="lg"
+                className="btn-premium h-16 px-12 text-[11px] font-black tracking-[0.3em] uppercase rounded-none w-full sm:w-auto"
                 onClick={handleStartJourney}
-                aria-label="Start your shopping journey"
               >
-                Start Shopping Now
+                Start Exploring
               </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="text-white border-white hover:bg-white/10 transition-colors"
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-16 px-12 rounded-none border-border font-black text-[11px] tracking-[0.3em] uppercase hover:bg-muted/50 transition-all w-full sm:w-auto"
                 onClick={handleBecomeTrader}
-                aria-label="Become a trader - sign up required"
               >
-                Become a Trader &rarr;
+                Become a Trader
               </Button>
             </div>
           </motion.div>
-          
+
+          {/* Background Text Decor */}
+          <div className="absolute bottom-[-10%] left-1/2 -translate-x-1/2 text-[25vw] font-black text-muted-foreground/5 leading-none select-none pointer-events-none uppercase tracking-tighter whitespace-nowrap">
+            JOIN ADZE
+          </div>
+
+          {/* Geometric Accent */}
+          <div className="absolute top-10 left-10 w-20 h-20 border-t border-l border-accent/20" />
+          <div className="absolute bottom-10 right-10 w-20 h-20 border-b border-r border-accent/20" />
         </div>
       </div>
     </div>

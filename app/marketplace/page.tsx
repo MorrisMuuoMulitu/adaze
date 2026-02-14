@@ -341,7 +341,7 @@ export default function MarketplacePage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-background text-foreground selection:bg-accent/30">
       <Navbar onAuthClick={handleAuthClick} />
       <AuthModal
         isOpen={showAuthModal}
@@ -350,324 +350,197 @@ export default function MarketplacePage() {
         onSuccess={handleCloseAuthModal}
       />
 
-      {/* Quick View Dialog */}
-      <Dialog open={!!quickViewProduct} onOpenChange={() => setQuickViewProduct(null)}>
-        <DialogContent className="max-w-3xl">
-          {quickViewProduct && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{quickViewProduct.name}</DialogTitle>
-                <DialogDescription>Quick view product details</DialogDescription>
-              </DialogHeader>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="relative h-64 md:h-full bg-gray-200 rounded-lg overflow-hidden">
-                  {quickViewProduct.image_url ? (
-                    <Image
-                      src={quickViewProduct.image_url}
-                      alt={quickViewProduct.name}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Package className="h-16 w-16 text-gray-400" />
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-3xl font-bold text-primary">KSh {quickViewProduct.price.toFixed(2)}</p>
-                    {quickViewProduct.category && (
-                      <Badge variant="secondary" className="mt-2">{quickViewProduct.category}</Badge>
-                    )}
-                  </div>
-                  <p className="text-muted-foreground">{quickViewProduct.description}</p>
-                  <div className="flex items-center">
-                    <Star className="h-5 w-5 fill-yellow-400 text-yellow-400 mr-1" />
-                    <span className="font-medium">{quickViewProduct.rating?.toFixed(1) || 'N/A'}</span>
-                  </div>
-                  <div className="flex gap-2 pt-4">
-                    <Button className="flex-1" onClick={() => {
-                      addToCart(quickViewProduct.id);
-                      setQuickViewProduct(null);
-                    }}>
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      Add to Cart
-                    </Button>
-                    <Button variant="outline" onClick={() => handleToggleWishlist(quickViewProduct.id)}>
-                      <Heart className={`h-4 w-4 ${wishlistStatus[quickViewProduct.id] ? 'fill-red-500 text-red-500' : ''}`} />
-                    </Button>
-                  </div>
-                  <Button variant="link" className="w-full" onClick={() => {
-                    router.push(`/products/${quickViewProduct.id}`);
-                    setQuickViewProduct(null);
-                  }}>
-                    View Full Details →
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <main className="flex-grow pt-32 pb-24">
+        {/* Scanline Effect */}
+        <div className="fixed inset-0 bg-scanline opacity-[0.02] pointer-events-none z-0" />
 
-      <main className="flex-grow">
-        <div className="min-h-screen bg-background py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          {/* Editorial Header */}
+          <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-12">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="max-w-2xl"
             >
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-                <div>
-                  <h1 className="text-3xl font-bold">Marketplace</h1>
-                  <p className="text-muted-foreground">{filteredAndSortedProducts.length} products available</p>
-                </div>
-                <div className="mt-4 md:mt-0 flex gap-2">
-                  <Button onClick={() => router.push('/cart')}>
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Cart ({cartCount})
-                  </Button>
-                </div>
+              <div className="text-[10px] font-black tracking-[0.4em] uppercase text-accent mb-6">
+                THE MARKETPLACE
               </div>
+              <h1 className="text-6xl md:text-8xl font-black tracking-tighter uppercase leading-[0.85]">
+                The <span className="text-muted-foreground/30 italic">Collective.</span>
+              </h1>
+              <p className="mt-8 text-lg text-muted-foreground/60 font-medium tracking-tight uppercase">
+                {filteredAndSortedProducts.length} Authenticated Pieces Available.
+              </p>
+            </motion.div>
 
-              {/* Search and Filters Bar */}
-              <div className="mb-6 flex flex-col sm:flex-row gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <div className="flex gap-4">
+              <Button
+                variant="outline"
+                className="rounded-none border-border/50 text-[10px] font-black tracking-widest uppercase h-14 px-8 hover:bg-muted/50 transition-all"
+                onClick={() => router.push('/cart')}
+              >
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Cart ({cartCount})
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-col lg:flex-row gap-16 items-start">
+            {/* Desktop Filters Sidebar */}
+            <aside className="hidden lg:block w-64 shrink-0 space-y-12 sticky top-32">
+              <div className="space-y-4">
+                <Label className="text-[10px] font-black tracking-[0.3em] uppercase opacity-40">Search</Label>
+                <div className="relative">
+                  <Search className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 text-accent" />
                   <Input
                     type="text"
-                    placeholder="Search products..."
+                    placeholder="KEYWORD"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-8 border-none bg-transparent rounded-none border-b border-border focus-visible:ring-0 focus-visible:border-accent font-black text-xs placeholder:opacity-30 p-0 h-10"
                   />
                 </div>
-
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-full sm:w-[200px]">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categoryOptions.map(cat => (
-                      <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-full sm:w-[200px]">
-                    <ArrowUpDown className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SORT_OPTIONS.map(opt => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" className="relative">
-                      <SlidersHorizontal className="h-4 w-4 mr-2" />
-                      Filters
-                      {activeFiltersCount > 0 && (
-                        <Badge className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center">
-                          {activeFiltersCount}
-                        </Badge>
-                      )}
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent>
-                    <SheetHeader>
-                      <SheetTitle>Advanced Filters</SheetTitle>
-                      <SheetDescription>Refine your product search</SheetDescription>
-                    </SheetHeader>
-                    <div className="py-6 space-y-6">
-                      <div>
-                        <Label className="mb-3 block">Price Range</Label>
-                        <div className="space-y-4">
-                          <Slider
-                            min={0}
-                            max={maxPrice}
-                            step={100}
-                            value={priceRange}
-                            onValueChange={setPriceRange}
-                            className="w-full"
-                          />
-                          <div className="flex justify-between text-sm">
-                            <span>KSh {priceRange[0]}</span>
-                            <span>KSh {priceRange[1]}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label className="mb-3 block">Category</Label>
-                        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categoryOptions.map(cat => (
-                              <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label className="mb-3 block">Seller/Trader</Label>
-                        <Select value={selectedTrader || 'all'} onValueChange={(value) => setSelectedTrader(value === 'all' ? null : value)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="All Sellers" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Sellers</SelectItem>
-                            {traders.map(trader => (
-                              <SelectItem key={trader.id} value={trader.id}>{trader.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <SheetFooter>
-                      <Button variant="outline" onClick={handleClearFilters} className="w-full">
-                        <X className="h-4 w-4 mr-2" />
-                        Clear Filters
-                      </Button>
-                    </SheetFooter>
-                  </SheetContent>
-                </Sheet>
               </div>
 
-              {/* Active Filters */}
-              {activeFiltersCount > 0 && (
-                <div className="mb-4 flex flex-wrap gap-2 items-center">
-                  <span className="text-sm text-muted-foreground">Active filters:</span>
-                  {selectedCategory !== 'all' && (
-                    <Badge variant="secondary" className="gap-1">
-                      {categoryOptions.find(c => c.value === selectedCategory)?.label}
-                      <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedCategory('all')} />
-                    </Badge>
-                  )}
-                  {selectedTrader && (
-                    <Badge variant="secondary" className="gap-1">
-                      Seller: {getTraderName(selectedTrader)}
-                      <X className="h-3 w-3 cursor-pointer" onClick={() => { setSelectedTrader(null); router.push('/marketplace'); }} />
-                    </Badge>
-                  )}
-                  {(priceRange[0] !== 0 || priceRange[1] !== maxPrice) && (
-                    <Badge variant="secondary" className="gap-1">
-                      KSh {priceRange[0]} - KSh {priceRange[1]}
-                      <X className="h-3 w-3 cursor-pointer" onClick={() => setPriceRange([0, maxPrice])} />
-                    </Badge>
-                  )}
-                  <Button variant="ghost" size="sm" onClick={handleClearFilters}>
-                    Clear all
-                  </Button>
+              <div className="space-y-4">
+                <Label className="text-[10px] font-black tracking-[0.3em] uppercase opacity-40">Categories</Label>
+                <div className="flex flex-col gap-2">
+                  {categoryOptions.map(cat => (
+                    <button
+                      key={cat.value}
+                      onClick={() => setSelectedCategory(cat.value)}
+                      className={`text-left text-[11px] font-black tracking-widest uppercase transition-colors py-1 ${selectedCategory === cat.value ? 'text-accent' : 'text-foreground/60 hover:text-foreground'
+                        }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
                 </div>
-              )}
+              </div>
 
+              <div className="space-y-6 pt-4 border-t border-border/20">
+                <div className="flex justify-between items-center">
+                  <Label className="text-[10px] font-black tracking-[0.3em] uppercase opacity-40">Price Range</Label>
+                  <span className="text-[10px] font-black font-mono">KSH {priceRange[1]}</span>
+                </div>
+                <Slider
+                  min={0}
+                  max={maxPrice}
+                  step={500}
+                  value={[priceRange[1]]}
+                  onValueChange={(val) => setPriceRange([0, val[0]])}
+                  className="w-full"
+                />
+              </div>
+
+              <Button
+                variant="ghost"
+                onClick={handleClearFilters}
+                className="w-full justify-start p-0 h-auto text-[9px] font-black tracking-widest uppercase opacity-40 hover:opacity-100 hover:bg-transparent"
+              >
+                Reset All Filters
+              </Button>
+            </aside>
+
+            {/* Mobile / Control Bar */}
+            <div className="w-full lg:flex-1 space-y-12">
+              <div className="flex flex-wrap items-center justify-between gap-6 py-4 border-y border-border/20">
+                <div className="flex items-center gap-8">
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-auto border-none bg-transparent h-auto p-0 rounded-none focus:ring-0 gap-2">
+                      <ArrowUpDown className="h-3 w-3 text-accent" />
+                      <SelectValue className="text-[10px] font-black tracking-widest uppercase" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-none border-border">
+                      {SORT_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value} className="text-[10px] font-black tracking-widest uppercase">
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="lg:hidden">
+                  <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+                    <SheetTrigger asChild>
+                      <Button variant="outline" className="rounded-none border-border/50 text-[10px] font-black tracking-widest uppercase gap-2 h-10">
+                        <SlidersHorizontal className="h-3 w-3" />
+                        Filters
+                        {activeFiltersCount > 0 && <span>({activeFiltersCount})</span>}
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent className="bg-background border-l border-border/50 w-full sm:max-w-md">
+                      {/* Mobile Filter Content - Similar to sidebar */}
+                      <div className="py-12 space-y-12">
+                        <SheetHeader className="text-left mb-8">
+                          <SheetTitle className="text-2xl font-black tracking-tighter uppercase">Filters.</SheetTitle>
+                        </SheetHeader>
+                        {/* Categories List */}
+                        <div className="space-y-4">
+                          <Label className="text-[10px] font-black tracking-[0.3em] uppercase opacity-40">Categories</Label>
+                          <div className="grid grid-cols-2 gap-4">
+                            {categoryOptions.map(cat => (
+                              <button
+                                key={cat.value}
+                                onClick={() => setSelectedCategory(cat.value)}
+                                className={`text-left text-[11px] font-black tracking-widest uppercase transition-colors py-2 border-b border-border/10 ${selectedCategory === cat.value ? 'text-accent border-accent' : 'text-foreground/60'
+                                  }`}
+                              >
+                                {cat.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <Button className="btn-premium w-full h-14 rounded-none uppercase text-[10px] font-black tracking-widest" onClick={() => setFiltersOpen(false)}>
+                          Show {filteredAndSortedProducts.length} Pieces
+                        </Button>
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                </div>
+              </div>
+
+              {/* Product Grid */}
               {filteredAndSortedProducts.length === 0 ? (
-                <div className="text-center py-12">
-                  <Package className="h-12 w-12 mx-auto text-muted-foreground" />
-                  <h3 className="mt-4 text-xl font-semibold">No products found</h3>
-                  <p className="text-muted-foreground mt-2">No products match your search and filters.</p>
-                  <Button className="mt-6" onClick={handleClearFilters}>
-                    Clear Filters
+                <div className="text-center py-32 space-y-8 border border-dashed border-border/50">
+                  <Package className="h-12 w-12 mx-auto text-accent opacity-20" />
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-black tracking-tighter uppercase">No pieces found.</h3>
+                    <p className="text-muted-foreground/60 text-[10px] font-bold uppercase tracking-widest">Refine your criteria and try again.</p>
+                  </div>
+                  <Button variant="outline" onClick={handleClearFilters} className="rounded-none border-border text-[10px] font-black tracking-widest uppercase h-12 px-8">
+                    Clear Workspace
                   </Button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
                   {filteredAndSortedProducts.map((product, index) => (
-                    <Card key={product.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
-                      <div className="relative">
-                        <div className="h-48 bg-gray-200 relative overflow-hidden">
-                          {product.image_url ? (
-                            <Image
-                              src={product.image_url}
-                              alt={product.name}
-                              width={400}
-                              height={300}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                              priority={index < 4}
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-muted flex items-center justify-center">
-                              <Package className="h-12 w-12 text-gray-400" />
-                            </div>
-                          )}
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => setQuickViewProduct(product)}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              Quick View
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="absolute top-2 right-2 flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            className="rounded-full p-2 shadow-lg"
-                            onClick={() => handleToggleWishlist(product.id)}
-                          >
-                            <Heart className={`h-4 w-4 ${wishlistStatus[product.id] ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
-                          </Button>
-                        </div>
-                        {product.category && (
-                          <Badge className="absolute top-2 left-2">{product.category}</Badge>
-                        )}
-                      </div>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-lg line-clamp-2">{product.name}</CardTitle>
-                        <CardDescription className="line-clamp-2">
-                          {product.description || 'No description available'}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex justify-between items-center mb-3">
-                          <span className="text-xl font-bold text-primary">
-                            KSh {product.price.toFixed(2)}
-                          </span>
-                          <div className="flex items-center">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                            <span>{product.rating?.toFixed(1) || 'N/A'}</span>
-                          </div>
-                        </div>
-
-                        <div className="flex space-x-2">
-                          <Button
-                            className="flex-1"
-                            onClick={() => addToCart(product.id)}
-                          >
-                            <ShoppingCart className="h-4 w-4 mr-2" />
-                            Add
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router.push(`/products/${product.id}`)}
-                          >
-                            View
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <ProductCard
+                      key={product.id}
+                      product={{
+                        ...product,
+                        is_featured: index < 2 // Just for look
+                      }}
+                      index={index}
+                      isWishlisted={wishlistStatus[product.id]}
+                      onToggleWishlist={(e) => {
+                        e.preventDefault();
+                        handleToggleWishlist(product.id);
+                      }}
+                      onQuickView={(e) => {
+                        e.preventDefault();
+                        setQuickViewProduct(product);
+                      }}
+                    />
                   ))}
                 </div>
               )}
-            </motion.div>
+            </div>
           </div>
         </div>
       </main>
     </div>
   );
 }
+

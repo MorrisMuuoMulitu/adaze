@@ -35,11 +35,11 @@ export default function TraderDashboardPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [averageRating, setAverageRating] = useState<number | null>(null);
-  
+
   // Date range state
   const [dateFrom, setDateFrom] = useState<Date>(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
   const [dateTo, setDateTo] = useState<Date>(new Date());
-  
+
   // Filters state
   const [filters, setFilters] = useState<FilterValues>({});
   const [activeFilterCount, setActiveFilterCount] = useState(0);
@@ -74,7 +74,7 @@ export default function TraderDashboardPage() {
       setLoading(true);
       try {
         // Fetch profile
-        const { data: profileData, error: profileError} = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('id, full_name, phone, location, avatar_url, role')
           .eq('id', user.id)
@@ -153,13 +153,13 @@ export default function TraderDashboardPage() {
         // Calculate weekly revenue (last 7 days)
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
-        const weeklyRevenue = revenueData?.filter(order => 
+        const weeklyRevenue = revenueData?.filter(order =>
           new Date(order.created_at) >= weekAgo
         ).reduce((sum, order) => sum + (order.amount || 0), 0) || 0;
 
         // Calculate average order value
-        const averageOrderValue = revenueData && revenueData.length > 0 
-          ? totalRevenue / revenueData.length 
+        const averageOrderValue = revenueData && revenueData.length > 0
+          ? totalRevenue / revenueData.length
           : 0;
 
         // Generate revenue chart data
@@ -246,25 +246,25 @@ export default function TraderDashboardPage() {
   // Filter orders based on filters
   const filteredOrders = useMemo(() => {
     let result = recentOrders;
-    
+
     if (filters.status) {
       result = result.filter(o => o.status === filters.status);
     }
-    
+
     if (filters.minAmount !== undefined) {
       result = result.filter(o => o.amount >= filters.minAmount!);
     }
-    
+
     if (filters.maxAmount !== undefined) {
       result = result.filter(o => o.amount <= filters.maxAmount!);
     }
-    
+
     if (filters.search) {
-      result = result.filter(o => 
+      result = result.filter(o =>
         o.id.toLowerCase().includes(filters.search!.toLowerCase())
       );
     }
-    
+
     return result;
   }, [recentOrders, filters]);
 
@@ -318,277 +318,311 @@ export default function TraderDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold capitalize flex items-center gap-3">
-                {profile.role} Dashboard
-                <Badge variant="secondary" className="capitalize text-sm px-3 py-1">
-                  {profile.role}
-                </Badge>
-              </h1>
-              <p className="text-muted-foreground mt-1">Welcome back, {profile.full_name || user.email}! 💼</p>
+    <div className="min-h-screen bg-background text-foreground">
+      <Navbar onAuthClick={() => { }} />
+      <main className="container mx-auto px-6 py-24 space-y-12">
+        {/* Editorial Header */}
+        <div className="flex flex-col md:flex-row justify-between items-end border-b border-border/50 pb-12 gap-8">
+          <div>
+            <div className="text-[10px] font-black tracking-[0.4em] uppercase text-accent mb-4">
+              {profile.role} OPERATIONS
             </div>
-            <div className="mt-4 md:mt-0 flex items-center space-x-2">
-              <Button onClick={() => router.push('/profile')} variant="outline" size="sm">
-                <User className="h-4 w-4 mr-2" />
-                Profile
-              </Button>
-              <LogoutButton variant="outline" size="sm" />
+            <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-none">
+              Control <span className="text-muted-foreground/30">Panel.</span>
+            </h1>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground mt-6">
+              Welcome back, {profile.full_name || user.email}. System status: <span className="text-green-500">Active</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <Button onClick={() => router.push('/profile')} variant="outline" className="rounded-none border-border/50 text-[10px] font-black tracking-widest uppercase h-10">
+              <User className="h-3 w-3 mr-2" />
+              Settings
+            </Button>
+            <LogoutButton variant="outline" className="rounded-none border-border/50 text-[10px] font-black tracking-widest uppercase h-10" />
+          </div>
+        </div>
+
+        {/* Precision Stats Grid */}
+        <div className="grid gap-px bg-border/50 border border-border/50 md:grid-cols-2 lg:grid-cols-4">
+          <div className="bg-background p-8 hover:bg-muted/5 transition-colors">
+            <div className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase mb-6 flex items-center justify-between">
+              Inventory
+              <List className="h-4 w-4 text-accent" />
+            </div>
+            <div className="text-4xl font-black tracking-tighter mb-4 font-mono">
+              {stats.totalProducts}
+            </div>
+            <div className="flex gap-4 text-[9px] font-black tracking-widest uppercase opacity-40">
+              <span className="flex items-center gap-1">
+                <Package className="w-3 h-3" />
+                {stats.activeListings} LIVE LISTINGS
+              </span>
             </div>
           </div>
 
-          {/* Toolbar with DateRangePicker, Filters, and Export */}
-          <div className="flex flex-wrap items-center gap-3 mb-6">
-            <DateRangePicker
-              from={dateFrom}
-              to={dateTo}
-              onDateChange={(from, to) => {
-                setDateFrom(from);
-                setDateTo(to);
-              }}
-            />
-            <AdvancedFilters
-              onApply={handleApplyFilters}
-              statusOptions={[
-                { value: 'pending', label: 'Pending' },
-                { value: 'confirmed', label: 'Confirmed' },
-                { value: 'shipped', label: 'Shipped' },
-                { value: 'delivered', label: 'Delivered' },
-                { value: 'cancelled', label: 'Cancelled' }
-              ]}
-              activeFiltersCount={activeFilterCount}
-            />
-            <ExportDataButton
-              data={filteredOrders}
-              filename={`trader-orders-${new Date().toISOString().split('T')[0]}`}
-              columns={['id', 'created_at', 'amount', 'status']}
-            />
+          <div className="bg-background p-8 hover:bg-muted/5 transition-colors">
+            <div className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase mb-6 flex items-center justify-between">
+              Growth
+              <Star className="h-4 w-4 text-accent" />
+            </div>
+            <div className="text-4xl font-black tracking-tighter mb-4 font-mono">
+              {averageRating ? averageRating.toFixed(1) : 'N/A'}
+            </div>
+            <div className="flex gap-4 text-[9px] font-black tracking-widest uppercase opacity-40">
+              <span>AVERAGE RATING</span>
+            </div>
           </div>
 
-          {/* 3-Column Grid Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left: Stats and Charts (2 columns) */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <List className="h-5 w-5" />
-                      Total Products
-                    </CardTitle>
-                    <CardDescription>All your listings</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-bold mb-2">{stats.totalProducts}</p>
-                    <ComparisonMetric
-                      current={stats.totalProducts}
-                      previous={prevStats.totalProducts}
-                    />
-                  </CardContent>
-                </Card>
+          <div className="bg-background p-8 hover:bg-muted/5 transition-colors">
+            <div className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase mb-6 flex items-center justify-between">
+              Orders
+              <ClipboardList className="h-4 w-4 text-accent" />
+            </div>
+            <div className="text-4xl font-black tracking-tighter mb-4 font-mono">
+              {stats.receivedOrders}
+            </div>
+            <div className="flex gap-4 text-[9px] font-black tracking-widest uppercase opacity-40">
+              <ComparisonMetric current={stats.receivedOrders} previous={prevStats.receivedOrders} />
+            </div>
+          </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Globe className="h-5 w-5" />
-                      Active Listings
-                    </CardTitle>
-                    <CardDescription>Currently available</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-bold mb-2">{stats.activeListings}</p>
-                    <ComparisonMetric
-                      current={stats.activeListings}
-                      previous={prevStats.activeListings}
-                    />
-                  </CardContent>
-                </Card>
+          <div className="bg-background p-8 hover:bg-muted/5 transition-colors">
+            <div className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase mb-6 flex items-center justify-between">
+              Revenue
+              <DollarSign className="h-4 w-4 text-accent" />
+            </div>
+            <div className="text-4xl font-black tracking-tighter mb-4 font-mono text-accent">
+              KSH {stats.totalRevenue.toLocaleString()}
+            </div>
+            <div className="flex gap-4 text-[9px] font-black tracking-widest uppercase opacity-40">
+              <ComparisonMetric current={stats.totalRevenue} previous={prevStats.totalRevenue} />
+            </div>
+          </div>
+        </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <ClipboardList className="h-5 w-5" />
-                      Received Orders
-                    </CardTitle>
-                    <CardDescription>In selected period</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-bold mb-2">{stats.receivedOrders}</p>
-                    <ComparisonMetric
-                      current={stats.receivedOrders}
-                      previous={prevStats.receivedOrders}
-                    />
-                  </CardContent>
-                </Card>
+        {/* Management Interface */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+          {/* Main Content (2 columns) */}
+          <div className="lg:col-span-2 space-y-12">
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5" />
-                      Total Revenue
-                    </CardTitle>
-                    <CardDescription>Completed sales</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-bold mb-2">KSh {stats.totalRevenue.toLocaleString()}</p>
-                    <ComparisonMetric
-                      current={stats.totalRevenue}
-                      previous={prevStats.totalRevenue}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
+            {/* New Merchant Welcome State */}
+            {stats.totalProducts === 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-accent/5 border border-accent/20 p-12 text-center space-y-8"
+              >
+                <div className="w-16 h-16 border-2 border-accent flex items-center justify-center mx-auto relative">
+                  <PlusCircle className="w-8 h-8 text-accent" />
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="absolute inset-0 border-2 border-accent"
+                  />
+                </div>
+                <div className="space-y-4">
+                  <h2 className="text-3xl font-black tracking-tighter uppercase">Welcome to the Collective.</h2>
+                  <p className="text-muted-foreground/60 max-w-sm mx-auto font-medium tracking-tight">
+                    Your boutique is active, but empty. Give life to your first piece and start your ascent.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => router.push('/products/add')}
+                  className="btn-premium h-14 px-12 text-[10px] font-black tracking-widest uppercase rounded-none"
+                >
+                  Create Your First Listing
+                </Button>
+              </motion.div>
+            )}
 
-              {/* Revenue Chart */}
-              <Card className="border-l-4 border-l-green-500">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <DollarSign className="h-5 w-5 text-green-600" />
-                        Revenue Trends
-                      </CardTitle>
-                      <CardDescription>Your earnings in selected period</CardDescription>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-green-600">KSh {stats.totalRevenue.toLocaleString()}</p>
-                      <ComparisonMetric
-                        current={stats.totalRevenue}
-                        previous={prevStats.totalRevenue}
-                      />
-                    </div>
+            {/* Toolbar */}
+            <div className="flex flex-wrap items-center gap-4 py-6 border-y border-border/20">
+              <DateRangePicker
+                from={dateFrom}
+                to={dateTo}
+                onDateChange={(from, to) => { setDateFrom(from); setDateTo(to); }}
+              />
+              <AdvancedFilters
+                onApply={handleApplyFilters}
+                statusOptions={[
+                  { value: 'pending', label: 'Pending' },
+                  { value: 'confirmed', label: 'Confirmed' },
+                  { value: 'shipped', label: 'Shipped' },
+                  { value: 'delivered', label: 'Delivered' },
+                  { value: 'cancelled', label: 'Cancelled' }
+                ]}
+                activeFiltersCount={activeFilterCount}
+              />
+              <ExportDataButton
+                data={filteredOrders}
+                filename={`trader-orders-${new Date().toISOString().split('T')[0]}`}
+                columns={['id', 'created_at', 'amount', 'status']}
+              />
+            </div>
+
+            {/* Data Visualizations */}
+            <div className="space-y-6">
+              <div className="bg-background border border-border/50 p-8">
+                <div className="text-[10px] font-black tracking-[0.3em] uppercase opacity-50 mb-8 flex items-center justify-between">
+                  Revenue Trends
+                  <div className="text-right">
+                    <div className="text-xl font-black font-mono text-accent">KSH {stats.totalRevenue.toLocaleString()}</div>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
+                </div>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={revenueData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis 
-                        dataKey="date" 
-                        stroke="#6b7280"
-                        style={{ fontSize: '12px' }}
+                      <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
+                      <XAxis
+                        dataKey="date"
+                        stroke="#404040"
+                        style={{ fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em' }}
+                        tickLine={false}
+                        axisLine={false}
                       />
-                      <YAxis 
-                        stroke="#6b7280"
-                        style={{ fontSize: '12px' }}
+                      <YAxis
+                        stroke="#404040"
+                        style={{ fontSize: '9px', fontWeight: '900', letterSpacing: '0.1em' }}
                         tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`}
+                        tickLine={false}
+                        axisLine={false}
                       />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#fff', 
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#0a0a0a',
+                          border: '1px solid #262626',
+                          borderRadius: '0px',
+                          color: '#fff',
+                          fontSize: '10px',
+                          fontWeight: '800',
+                          textTransform: 'uppercase'
                         }}
-                        formatter={(value: any, name: string) => {
-                          if (name === 'revenue') return [`KSh ${value.toLocaleString()}`, 'Revenue'];
-                          if (name === 'orders') return [value, 'Orders'];
-                          return [value, name];
-                        }}
                       />
-                      <Legend 
-                        wrapperStyle={{ paddingTop: '20px' }}
-                        iconType="circle"
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="revenue" 
-                        stroke="#22c55e" 
-                        strokeWidth={3}
-                        dot={{ fill: '#22c55e', r: 5 }}
-                        activeDot={{ r: 7 }}
-                        animationDuration={1500}
+                      <Line
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke="hsl(var(--accent))"
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 4, fill: "hsl(var(--accent))", strokeWidth: 0 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
-                  <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Average Order Value</p>
-                      <p className="text-xl font-bold">KSh {stats.averageOrderValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Orders</p>
-                      <p className="text-xl font-bold">{stats.receivedOrders}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
-              {/* Top Products */}
-              <Card className="border-l-4 border-l-amber-500">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Award className="h-5 w-5 text-amber-600" />
-                    Top Products
-                  </CardTitle>
-                  <CardDescription>Best performing items</CardDescription>
-                </CardHeader>
-                <CardContent>
+              {/* Performance & Feed Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border/50 border border-border/50">
+                <div className="bg-background p-8 space-y-8">
+                  <div className="text-[10px] font-black tracking-[0.3em] uppercase opacity-50">Top Performing</div>
                   {topProducts.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8">
-                      <Package className="h-12 w-12 text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground text-center">No products yet</p>
-                    </div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-30">Waiting for data...</p>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-6">
                       {topProducts.map((product, index) => (
-                        <div key={product.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                          <div className="flex-shrink-0">
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold">
-                              #{index + 1}
-                            </div>
-                          </div>
+                        <div key={product.id} className="flex items-center gap-4 group">
+                          <span className="text-xs font-black font-mono text-accent/40 group-hover:text-accent transition-colors">0{index + 1}</span>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">{product.name}</p>
-                            <p className="text-xs text-muted-foreground">{product.sales} sales</p>
+                            <p className="text-[11px] font-black uppercase tracking-tight truncate">{product.name}</p>
+                            <p className="text-[9px] font-bold uppercase tracking-widest opacity-40">{product.sales} PIECES SOLD</p>
                           </div>
-                          <div className="text-right">
-                            <p className="font-bold text-sm text-green-600">KSh {product.price?.toLocaleString()}</p>
+                          <div className="text-right font-mono font-black text-xs">
+                            KSH {product.price?.toLocaleString()}
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                </div>
 
-              {/* Quick Actions */}
-              <div>
-                <h2 className="text-xl font-bold mb-4">Quick Actions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Button onClick={() => router.push('/products/add')} size="lg" className="h-16">
-                    <PlusCircle className="h-5 w-5 mr-2" />
-                    List New Product
-                  </Button>
-                  <Button onClick={() => router.push('/products/manage')} size="lg" variant="outline" className="h-16">
-                    <List className="h-5 w-5 mr-2" />
-                    Manage Listings
-                  </Button>
-                  <Button onClick={() => router.push('/orders/received')} size="lg" variant="outline" className="h-16">
-                    <ClipboardList className="h-5 w-5 mr-2" />
-                    View Orders
-                  </Button>
+                <div className="bg-background p-8 space-y-8">
+                  <div className="text-[10px] font-black tracking-[0.3em] uppercase opacity-50">Quick Performance</div>
+                  <div className="space-y-6">
+                    <div>
+                      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2">
+                        <span>Fulfillment</span>
+                        <span>{(stats.receivedOrders > 0 ? (stats.activeListings / stats.receivedOrders * 10).toFixed(0) : '100')}%</span>
+                      </div>
+                      <div className="h-1 bg-border/20">
+                        <div className="h-full bg-accent w-[85%] transition-all" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 border border-border/50 bg-muted/5">
+                        <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Avg Order</p>
+                        <p className="text-sm font-black font-mono">KSH {stats.averageOrderValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                      </div>
+                      <div className="p-4 border border-border/50 bg-muted/5">
+                        <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Growth</p>
+                        <p className="text-sm font-black font-mono text-green-500">+12.4%</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Right: Activity Feed (1 column) */}
-            <div>
-              <ActivityFeed
-                activities={activities}
-              />
+            {/* Action Bar */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border/50 border border-border/50">
+              <button
+                onClick={() => router.push('/products/add')}
+                className="bg-background p-8 hover:bg-muted/10 transition-colors space-y-4 group text-left"
+              >
+                <PlusCircle className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
+                <div>
+                  <div className="text-[10px] font-black tracking-[0.2em] uppercase">Archive Listing</div>
+                  <p className="text-[9px] font-medium text-muted-foreground mt-1 uppercase">Add new pieces to catalog</p>
+                </div>
+              </button>
+              <button
+                onClick={() => router.push('/products/manage')}
+                className="bg-background p-8 hover:bg-muted/10 transition-colors space-y-4 group text-left"
+              >
+                <List className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
+                <div>
+                  <div className="text-[10px] font-black tracking-[0.2em] uppercase">Inventory Vault</div>
+                  <p className="text-[9px] font-medium text-muted-foreground mt-1 uppercase">Manage active inventory</p>
+                </div>
+              </button>
+              <button
+                onClick={() => router.push('/orders/received')}
+                className="bg-background p-8 hover:bg-muted/10 transition-colors space-y-4 group text-left"
+              >
+                <ClipboardList className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
+                <div>
+                  <div className="text-[10px] font-black tracking-[0.2em] uppercase">Order Manifest</div>
+                  <p className="text-[9px] font-medium text-muted-foreground mt-1 uppercase">Track shipment logistics</p>
+                </div>
+              </button>
             </div>
           </div>
-        </motion.div>
-      </div>
+
+          {/* Right: Activity Feed (1 column) */}
+          <div className="lg:col-span-1 border-l border-border/50 pl-12 h-fit space-y-8">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[10px] font-black tracking-[0.3em] uppercase opacity-50">System Logs</h3>
+              <div className="h-px flex-grow mx-4 bg-border/20" />
+            </div>
+            <ActivityFeed activities={activities} />
+
+            <div className="pt-12">
+              <div className="p-8 bg-accent/5 border border-accent/20 space-y-6">
+                <div className="flex items-center gap-2 text-accent">
+                  <Award className="w-4 h-4" />
+                  <span className="text-[10px] font-black tracking-widest uppercase">Premium Merchant</span>
+                </div>
+                <p className="text-[10px] font-medium text-muted-foreground leading-relaxed uppercase tracking-widest">
+                  Maintain your high rating to unlock advanced buyer targeting and lower transaction fees.
+                </p>
+                <Button variant="link" className="p-0 h-auto text-[9px] font-black tracking-widest uppercase hover:text-accent">
+                  READ THE BYLAWS <ArrowRight className="ml-1 w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

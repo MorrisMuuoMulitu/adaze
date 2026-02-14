@@ -33,11 +33,6 @@ export async function middleware(request: NextRequest) {
             value,
             ...options,
           })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
           response.cookies.set({
             name,
             value,
@@ -49,11 +44,6 @@ export async function middleware(request: NextRequest) {
             name,
             value: '',
             ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
           })
           response.cookies.set({
             name,
@@ -179,7 +169,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/profile', request.url));
     }
 
-    if (requiredRoles && !requiredRoles.includes(userRole)) {
+    if (requiredRoles && !requiredRoles.includes(userRole) && userRole !== 'admin') {
       // If role does not match, redirect to their dashboard
       if (userRole === 'buyer') {
         return NextResponse.redirect(new URL('/dashboard/buyer', request.url));

@@ -1,7 +1,7 @@
 import { AuthProvider } from '@/components/auth/auth-provider';
 import './globals.css';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Instrument_Serif, JetBrains_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { LanguageProvider } from '@/components/language-provider';
@@ -10,7 +10,21 @@ import { RealtimeNotifications } from '@/components/notifications/realtime-notif
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-inter'
+  variable: '--font-sans'
+});
+
+const serif = Instrument_Serif({
+  subsets: ['latin'],
+  weight: ['400'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+  variable: '--font-serif'
+});
+
+const mono = JetBrains_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-mono'
 });
 
 export const metadata: Metadata = {
@@ -120,7 +134,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" suppressHydrationWarning className={inter.variable}>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${serif.variable} ${mono.variable}`}>
       <head>
         <link rel="icon" href="/icon-72.png" />
         <link rel="apple-touch-icon" href="/icon-144.png" />

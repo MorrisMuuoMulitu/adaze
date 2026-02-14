@@ -52,11 +52,21 @@ export function Navbar({ onAuthClick }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [cartItemCount, setCartItemCount] = useState(0);
-  const [wishlistItemCount, setWishlistItemCount] = useState(0); // New state for wishlist
-  const [notificationCount, setNotificationCount] = useState(0); // New state for notifications
+  const [wishlistItemCount, setWishlistItemCount] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const supabase = createClient();
+
+  // Scroll handler
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Fetch counts when user logs in or on component mount
   useEffect(() => {
@@ -66,7 +76,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
           const cartCount = await cartService.getCartCount(user.id);
           setCartItemCount(cartCount);
 
-          const wishlistCount = await wishlistService.getWishlistCount(user.id); // Fetch actual wishlist count
+          const wishlistCount = await wishlistService.getWishlistCount(user.id);
           setWishlistItemCount(wishlistCount);
 
           const unreadNotifications = (await notificationService.getUnreadNotifications(user.id)).length;
@@ -78,7 +88,6 @@ export function Navbar({ onAuthClick }: NavbarProps) {
 
       fetchCounts();
 
-      // Set up listener for cart updates
       const handleCartUpdate = async () => {
         try {
           const count = await cartService.getCartCount(user.id);
@@ -87,10 +96,8 @@ export function Navbar({ onAuthClick }: NavbarProps) {
           console.error('Error updating cart count:', error);
         }
       };
-
       window.addEventListener('cartUpdated', handleCartUpdate);
 
-      // Set up listener for wishlist updates (if applicable)
       const handleWishlistUpdate = async () => {
         try {
           const count = await wishlistService.getWishlistCount(user.id);
@@ -101,13 +108,9 @@ export function Navbar({ onAuthClick }: NavbarProps) {
       };
       window.addEventListener('wishlistUpdated', handleWishlistUpdate);
 
-      // Set up listener for notification updates (if applicable)
-      // window.addEventListener('notificationUpdated', handleNotificationUpdate);
-
       return () => {
         window.removeEventListener('cartUpdated', handleCartUpdate);
         window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
-        // window.removeEventListener('notificationUpdated', handleNotificationUpdate);
       };
     } else {
       setCartItemCount(0);
@@ -115,13 +118,11 @@ export function Navbar({ onAuthClick }: NavbarProps) {
       setNotificationCount(0);
     }
 
-    // Global event listener for triggering auth modal
     const handleAuthTrigger = (event: Event) => {
       const customEvent = event as CustomEvent;
       const type = customEvent.detail?.type || 'login';
       onAuthClick(type);
     };
-
     window.addEventListener('TRIGGER_AUTH_MODAL', handleAuthTrigger);
 
     return () => {
@@ -131,24 +132,20 @@ export function Navbar({ onAuthClick }: NavbarProps) {
 
   const handleLogout = async () => {
     try {
-      // Terminate active session
       if (user?.id) {
         const { terminateSession } = await import('@/lib/login-tracker');
         await terminateSession(user.id);
       }
-
       await supabase.auth.signOut();
-      // Always redirect to landing page after logout
       window.location.href = '/';
     } catch (error) {
       console.error('Error logging out:', error);
-      // Even on error, redirect to landing page
       window.location.href = '/';
     }
   };
 
-  const userRole = user?.user_metadata.role || 'buyer';
-  const userName = user?.user_metadata.full_name || 'User';
+  const userRole = profile?.role || user?.user_metadata.role || 'buyer';
+  const userName = profile?.full_name || user?.user_metadata.full_name || 'User';
   const isVerified = !!user?.email_confirmed_at;
 
   const navItems = [
@@ -157,104 +154,66 @@ export function Navbar({ onAuthClick }: NavbarProps) {
   ];
 
   const traderNavItems = [
-    { name: 'Dashboard', href: '/dashboard/trader', icon: LayoutDashboard },
-    { name: 'Products', href: '/products/manage', icon: Package },
-    { name: 'Orders', href: '/orders/received', icon: ClipboardList },
+    { name: 'DASHBOARD', href: '/dashboard/trader', icon: LayoutDashboard },
+    { name: 'PRODUCTS', href: '/products/manage', icon: Package },
+    { name: 'ORDERS', href: '/orders/received', icon: ClipboardList },
   ];
-
-  const wholesalerNavItems = [
-    { name: 'Dashboard', href: '/dashboard/wholesaler', icon: LayoutDashboard },
-    { name: 'Products', href: '/products', icon: Package },
-    { name: 'Orders', href: '/orders', icon: ClipboardList },
-  ];
-
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'trader': return <Store className="h-4 w-4" />;
-      case 'transporter': return <Truck className="h-4 w-4" />;
-      default: return <User className="h-4 w-4" />;
-    }
-  };
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'trader': return 'bg-green-500';
-      case 'transporter': return 'bg-blue-500';
-      default: return 'bg-primary';
-    }
-  };
 
   return (
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="bg-background/80 backdrop-blur-md border-b sticky top-0 z-50"
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled ? 'bg-background/80 backdrop-blur-xl border-b py-2' : 'bg-transparent py-4'
+        }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-14 sm:h-16">
-          {/* Logo */}
-          <Link href="/" passHref>
-            <motion.div
-              className="flex items-center space-x-2 cursor-pointer"
-              whileHover={{ scale: 1.05 }}
-            >
-              <div className="african-gradient w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center">
-                <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-              </div>
-              <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                ADAZE
-              </span>
-            </motion.div>
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="flex justify-between items-center">
+          {/* Logo Area */}
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="relative">
+              <span className="text-2xl font-black tracking-tighter">ADAZE</span>
+              <span className="absolute -right-1 -top-1 w-1.5 h-1.5 bg-accent rounded-full animate-pulse"></span>
+            </div>
           </Link>
 
-          {/* Search Bar - Desktop */}
-          <div className="hidden lg:flex flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search products, traders, or categories..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 bg-muted/50 border-0 focus:bg-background transition-colors h-10 focus-ring"
-              />
-            </div>
-          </div>
-
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-6">
+          {/* Center Navigation - Fashion Minimalist */}
+          <div className="hidden lg:flex items-center gap-8">
             {(userRole === 'trader' ? traderNavItems : navItems).map((item) => (
-              <motion.a
+              <Link
                 key={item.name}
                 href={item.href}
-                className="text-foreground/80 hover:text-primary transition-colors flex items-center space-x-1 text-sm"
-                whileHover={{ y: -2 }}
+                className="text-[11px] font-black tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground transition-colors relative group"
               >
-                {item.icon && <item.icon className="h-4 w-4" />}
-                <span>{item.name}</span>
-              </motion.a>
+                {item.name}
+                <span className="absolute -bottom-1 left-0 w-0 h-[1.5px] bg-accent transition-all duration-300 group-hover:w-full"></span>
+              </Link>
             ))}
           </div>
 
           {/* Desktop Actions */}
-          <div className="hidden lg:flex items-center space-x-2">
-            <ThemeToggle />
-            <LanguageToggle />
+          <div className="hidden lg:flex items-center gap-4">
+            <div className="relative group/search">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within/search:text-accent transition-colors" />
+              <Input
+                placeholder="SEARCH..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-10 w-48 focus:w-64 bg-muted/30 border-none transition-all duration-500 rounded-none text-[10px] font-black tracking-widest"
+              />
+            </div>
+
+            <div className="h-6 w-[1px] bg-border mx-2"></div>
 
             {user ? (
-              <div className="flex items-center space-x-2">
-                {/* Quick Actions - Only show for buyers */}
+              <div className="flex items-center gap-2">
                 {userRole === 'buyer' && (
                   <>
-                    <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button" asChild>
-                      <Link href="/wishlist">
-                        <Heart className="h-4 w-4" />
-                        {wishlistItemCount > 0 && (
-                          <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">{wishlistItemCount}</Badge>
-                        )}
-                      </Link>
-                    </Button>
-
+                    <Link href="/wishlist" className="relative p-2 hover:bg-muted transition-colors group">
+                      <Heart className="h-5 w-5 " />
+                      {wishlistItemCount > 0 && (
+                        <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full"></span>
+                      )}
+                    </Link>
                     <CartSidebar
                       cartCount={cartItemCount}
                       onCartUpdate={setCartItemCount}
@@ -262,242 +221,181 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                   </>
                 )}
 
-                <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button">
-                  <Bell className="h-4 w-4" />
-                  {notificationCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-red-500">{notificationCount}</Badge>
-                  )}
-                </Button>
-
-                <Button variant="ghost" size="sm" className="w-9 h-9 p-0 mobile-button">
-                  <MessageCircle className="h-4 w-4" />
-                </Button>
-
-                {/* User Menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full mobile-button">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.user_metadata.avatar_url} alt={userName} />
-                        <AvatarFallback className={getRoleColor(userRole)}>
-                          {userName?.charAt(0) || 'U'}
+                    <button className="flex items-center gap-3 pl-2 hover:opacity-80 transition-opacity">
+                      <div className="text-right hidden xl:block">
+                        <div className="text-[10px] font-black tracking-widest uppercase">{userName}</div>
+                        <div className="text-[9px] text-muted-foreground font-medium uppercase tracking-tighter">{userRole}</div>
+                      </div>
+                      <Avatar className="h-8 w-8 rounded-none border border-border">
+                        <AvatarImage src={user.user_metadata.avatar_url} />
+                        <AvatarFallback className="rounded-none bg-primary text-primary-foreground text-[10px] font-bold">
+                          {userName?.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
-                      {isVerified && (
-                        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
-                      )}
-                    </Button>
+                    </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-64" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <p className="text-sm font-medium leading-none truncate">
-                            {userName}
-                          </p>
-                          {isVerified && (
-                            <Badge variant="secondary" className="text-xs">Verified</Badge>
-                          )}
-                        </div>
-                        <p className="text-xs leading-none text-muted-foreground truncate">
-                          {user.email}
-                        </p>
-                        <div className="flex items-center space-x-2">
-                          <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                            {getRoleIcon(userRole)}
-                            <span className="capitalize">{userRole}</span>
-                          </div>
-                          <span className="text-xs text-muted-foreground">•</span>
-                          <span className="text-xs text-muted-foreground">{user.user_metadata.location}</span>
-                        </div>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/">
-                        <ShoppingBag className="mr-2 h-4 w-4" />
-                        <span>Home</span>
+                  <DropdownMenuContent align="end" className="w-56 rounded-none border-2 border-border p-2">
+                    <DropdownMenuItem asChild className="focus:bg-accent focus:text-accent-foreground py-3">
+                      <Link href={`/dashboard/${userRole}`} className="flex items-center gap-3">
+                        <LayoutDashboard className="h-4 w-4" />
+                        <span className="text-[10px] font-black tracking-widest uppercase">Dashboard</span>
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href={`/dashboard/${userRole}`}>
-                        <LayoutDashboard className="mr-2 h-4 w-4" />
-                        <span>Dashboard</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile">
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
+                    <DropdownMenuItem asChild className="focus:bg-accent focus:text-accent-foreground py-3">
+                      <Link href="/profile" className="flex items-center gap-3">
+                        <User className="h-4 w-4" />
+                        <span className="text-[10px] font-black tracking-widest uppercase">Profile</span>
                       </Link>
                     </DropdownMenuItem>
                     {userRole === 'buyer' && (
                       <>
-                        <DropdownMenuItem asChild>
-                          <Link href="/wishlist">
-                            <Heart className="mr-2 h-4 w-4" />
-                            <span>Wishlist</span>
+                        <DropdownMenuItem asChild className="focus:bg-accent focus:text-accent-foreground py-3">
+                          <Link href="/become-trader" className="flex items-center gap-3">
+                            <Store className="h-4 w-4" />
+                            <span className="text-[10px] font-black tracking-widest uppercase text-accent">Become a Trader</span>
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href="/orders">
-                            <Package className="mr-2 h-4 w-4" />
-                            <span>My Orders</span>
+                        <DropdownMenuItem asChild className="focus:bg-accent focus:text-accent-foreground py-3">
+                          <Link href="/transporter-registration" className="flex items-center gap-3">
+                            <Truck className="h-4 w-4" />
+                            <span className="text-[10px] font-black tracking-widest uppercase text-accent">Join Transporters</span>
                           </Link>
                         </DropdownMenuItem>
                       </>
                     )}
-                    <DropdownMenuItem asChild>
-                      <Link href="/settings">
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>Settings</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Wallet className="mr-2 h-4 w-4" />
-                      <span>Wallet</span>
-                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
+                    <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-white py-3" onClick={handleLogout}>
+                      <LogOut className="h-4 w-4" />
+                      <span className="text-[10px] font-black tracking-widest uppercase">Log Out</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
             ) : (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   onClick={() => onAuthClick('login')}
-                  className="mobile-button"
+                  className="text-[10px] font-black tracking-widest uppercase hover:bg-muted"
                 >
-                  {t('nav.login')}
+                  Login
                 </Button>
                 <Button
                   onClick={() => onAuthClick('register')}
-                  className="african-gradient text-white hover:opacity-90 mobile-button"
+                  className="btn-premium rounded-none h-10 px-6 text-[10px] font-black tracking-widest uppercase"
                 >
-                  {t('nav.get_started')}
+                  Join Adaze
                 </Button>
               </div>
             )}
           </div>
 
-          {/* Mobile Actions */}
-          <div className="flex lg:hidden items-center space-x-2">
-            {user && (
-              <>
-                <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button">
-                  <Bell className="h-4 w-4" />
-                  {notificationCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-red-500">{notificationCount}</Badge>
-                  )}
-                </Button>
-
-                {userRole === 'buyer' && (
-                  <Button variant="ghost" size="sm" className="relative w-9 h-9 p-0 mobile-button" asChild>
-                    <Link href="/cart">
-                      <ShoppingCart className="h-4 w-4" />
-                      <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">{cartItemCount}</Badge>
-                    </Link>
-                  </Button>
+          {/* Mobile Toggle */}
+          <div className="lg:hidden flex items-center gap-4">
+            {userRole === 'buyer' && (
+              <Link href="/cart" className="relative p-2">
+                <ShoppingCart className="h-5 w-5" />
+                {cartItemCount > 0 && (
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full"></span>
                 )}
-              </>
+              </Link>
             )}
-
-            <ThemeToggle />
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="w-9 h-9 p-0 mobile-button"
+              className="p-2 hover:bg-muted transition-colors"
             >
-              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
         </div>
+      </div>
+      {/* This div was incorrectly closed, it should be part of the main nav structure */}
 
-        {/* Mobile menu */}
-        <AnimatePresence>
-          {isMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden py-4 border-t"
-            >
-              <div className="flex flex-col space-y-4">
-                {/* Mobile Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-4 h-12 focus-ring"
-                  />
-                </div>
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="lg:hidden border-t bg-background/95 backdrop-blur-xl"
+          >
+            <div className="container px-6 py-8 flex flex-col gap-6">
+              {/* Mobile Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="SEARCH..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 h-12 bg-muted/30 border-none rounded-none text-[10px] font-black tracking-widest"
+                />
+              </div>
 
-                {(userRole === 'trader' ? traderNavItems : userRole === 'wholesaler' ? wholesalerNavItems : navItems).map((item) => (
-                  <a
+              <div className="flex flex-col gap-4">
+                {(userRole === 'trader' ? traderNavItems : navItems).map((item) => (
+                  <Link
                     key={item.name}
                     href={item.href}
-                    className="text-foreground/80 hover:text-primary transition-colors px-2 py-3 flex items-center space-x-2 mobile-button"
+                    className="text-[12px] font-black tracking-[0.2em] uppercase py-2 border-b border-border/50"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    {item.icon && <item.icon className="h-4 w-4" />}
-                    <span>{item.name}</span>
-                  </a>
+                    {item.name}
+                  </Link>
                 ))}
+              </div>
 
-                {user && (
-                  <div className="flex items-center space-x-3 px-2 pt-2 border-t">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={user.user_metadata.avatar_url} alt={userName} />
-                      <AvatarFallback className={getRoleColor(userRole)}>
-                        {userName?.charAt(0) || 'U'}
+              {user ? (
+                <div className="flex flex-col gap-4 pt-4 border-t">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-10 w-10 rounded-none">
+                      <AvatarImage src={user.user_metadata.avatar_url} />
+                      <AvatarFallback className="rounded-none bg-primary text-primary-foreground font-bold">
+                        {userName?.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{userName}</p>
-                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-widest">{userName}</div>
+                      <div className="text-[10px] text-muted-foreground uppercase tracking-tighter">{userRole}</div>
                     </div>
                   </div>
-                )}
-
-                <div className="flex items-center space-x-2 px-2 pt-4 border-t">
-                  <LanguageToggle />
+                  <Button
+                    variant="destructive"
+                    onClick={handleLogout}
+                    className="rounded-none h-12 text-[10px] font-black tracking-widest uppercase"
+                  >
+                    Log Out
+                  </Button>
                 </div>
-
-                {!user && (
-                  <div className="flex flex-col space-y-3 px-2 pt-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        onAuthClick('login');
-                        setIsMenuOpen(false);
-                      }}
-                      className="h-12 mobile-button"
-                    >
-                      {t('nav.login')}
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        onAuthClick('register');
-                        setIsMenuOpen(false);
-                      }}
-                      className="african-gradient text-white hover:opacity-90 h-12 mobile-button"
-                    >
-                      {t('nav.get_started')}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+              ) : (
+                <div className="flex flex-col gap-3 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      onAuthClick('login');
+                      setIsMenuOpen(false);
+                    }}
+                    className="h-14 rounded-none text-[10px] font-black tracking-widest uppercase"
+                  >
+                    Login
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      onAuthClick('register');
+                      setIsMenuOpen(false);
+                    }}
+                    className="btn-premium h-14 rounded-none text-[10px] font-black tracking-widest uppercase"
+                  >
+                    Join Adaze
+                  </Button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.nav>
   );
 }

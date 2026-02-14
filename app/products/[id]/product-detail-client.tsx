@@ -156,7 +156,10 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground selection:bg-accent/30 selection:text-white pb-32">
+      {/* Scanline Effect */}
+      <div className="fixed inset-0 bg-scanline opacity-[0.03] pointer-events-none z-50" />
+
       <Navbar onAuthClick={handleAuthClick} />
       <AuthModal
         isOpen={showAuthModal}
@@ -164,224 +167,221 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
         initialType={authModalType}
         onSuccess={handleCloseAuthModal}
       />
-      <div className="py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Button
-              variant="outline"
-              onClick={() => router.back()}
-              className="mb-6"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Products
-            </Button>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              {/* Product Image */}
-              <div className="flex flex-col items-center">
-                <div className="w-full h-96 bg-gray-200 rounded-xl overflow-hidden">
-                  {product.image_url ? (
-                    <Image
-                      src={product.image_url}
-                      alt={product.name}
-                      width={600}
-                      height={600}
-                      className="w-full h-full object-cover"
-                      priority
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-muted flex items-center justify-center">
-                      <Package className="h-24 w-24 text-gray-400" />
+      <main className="container mx-auto px-6 pt-32 max-w-7xl relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <button
+            onClick={() => router.back()}
+            className="group mb-12 flex items-center gap-3 text-[10px] font-black tracking-[0.3em] uppercase opacity-40 hover:opacity-100 transition-opacity"
+          >
+            <ArrowLeft className="h-3 w-3 transition-transform group-hover:-translate-x-1" />
+            Return to Collective
+          </button>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-24">
+            {/* Visual Documentation (5 cols) */}
+            <div className="lg:col-span-6 space-y-12">
+              <div className="aspect-[3/4] bg-muted relative overflow-hidden ring-1 ring-border/50">
+                {product.image_url ? (
+                  <Image
+                    src={product.image_url}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Package className="h-24 w-24 text-accent/20" />
+                  </div>
+                )}
+
+                {/* Status Overlays */}
+                <div className="absolute top-8 left-8 flex flex-col gap-3">
+                  <div className="bg-background/90 backdrop-blur-md px-4 py-2 text-[10px] font-black tracking-widest uppercase border border-border/50">
+                    {product.category}
+                  </div>
+                  {product.stock_quantity <= 5 && product.stock_quantity > 0 && (
+                    <div className="bg-accent px-4 py-2 text-[10px] font-black tracking-widest uppercase text-white animate-pulse">
+                      Low Stock: {product.stock_quantity}
                     </div>
                   )}
                 </div>
+              </div>
 
-                <div className="mt-4 flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleToggleWishlist}
-                  >
-                    <Heart className={`h-4 w-4 mr-2 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
-                    Wishlist
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      // Share functionality (not implemented yet)
-                      toast.info('Link copied to clipboard');
-                    }}
-                  >
-                    Share
-                  </Button>
+              {/* Interaction Bar */}
+              <div className="flex items-center gap-4 py-6 border-y border-border/20">
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-none border-border/50 text-[10px] font-black tracking-widest uppercase h-14"
+                  onClick={handleToggleWishlist}
+                >
+                  <Heart className={`h-4 w-4 mr-3 ${isWishlisted ? 'fill-accent text-accent' : ''}`} />
+                  {isWishlisted ? 'Archived' : 'Add to Wishlist'}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-none border-border/50 text-[10px] font-black tracking-widest uppercase h-14"
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    toast.success('Manifest link copied');
+                  }}
+                >
+                  Share Manifest
+                </Button>
+              </div>
+            </div>
+
+            {/* Technical Specifications (7 cols) */}
+            <div className="lg:col-span-6 space-y-12">
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center text-accent">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Star key={i} className={`h-3 w-3 ${i <= Math.round(product.rating) ? 'fill-current' : 'opacity-20'}`} />
+                    ))}
+                  </div>
+                  <span className="text-[10px] font-black tracking-widest uppercase opacity-40">Verified Piece</span>
+                </div>
+
+                <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-[0.85]">
+                  {product.name}
+                </h1>
+
+                <div className="text-4xl font-black tracking-tighter text-accent font-mono mt-8">
+                  KSH {product.price.toLocaleString()}
                 </div>
               </div>
 
-              {/* Product Info */}
-              <div>
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h1 className="text-3xl font-bold">{product.name}</h1>
-                    <div className="flex items-center mt-2">
-                      <div className="flex items-center">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                        <span className="font-medium">{product.rating.toFixed(1)}</span>
-                      </div>
-                      <span className="text-muted-foreground mx-2">•</span>
-                      <span className="text-muted-foreground">In stock: {product.stock_quantity}</span>
-                    </div>
-                  </div>
-
-                  <div className="text-3xl font-bold text-primary">
-                    KSh {product.price.toFixed(2)}
-                  </div>
-                </div>
-
-                <p className="text-lg text-muted-foreground mb-6">
+              <div className="p-8 bg-muted/5 border border-border/20 space-y-4">
+                <div className="text-[10px] font-black tracking-[0.2em] uppercase opacity-40">Archive Description</div>
+                <p className="text-lg text-muted-foreground/80 font-medium tracking-tight leading-relaxed uppercase">
                   {product.description}
                 </p>
+              </div>
 
-                {/* Seller Info Card - Prominent */}
-                <Card className="mb-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-1">Sold by</p>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => router.push(`/marketplace?trader=${product.trader_id}`)}
-                            className="text-xl font-bold hover:text-primary transition-colors"
-                          >
-                            {traderInfo?.name || 'Loading...'}
-                          </button>
-                          {traderInfo?.averageRating !== null && (
-                            <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded">
-                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                              <span className="font-medium">{traderInfo?.averageRating.toFixed(1)}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push(`/marketplace?trader=${product.trader_id}`)}
-                      >
-                        View All Products
-                      </Button>
+              {/* Source Verification */}
+              <div className="border border-accent/30 p-8 space-y-6 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 -rotate-45 translate-x-12 -translate-y-12" />
+                <div className="space-y-1">
+                  <div className="text-[10px] font-black tracking-[0.3em] uppercase opacity-40">Archive Source</div>
+                  <div className="text-2xl font-black tracking-tighter uppercase whitespace-nowrap overflow-hidden text-ellipsis">
+                    {traderInfo?.name || 'Verifying...'}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-4 border-t border-accent/20">
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold uppercase opacity-40">Source Rep</span>
+                    <span className="text-[11px] font-black uppercase text-accent">{traderInfo?.averageRating?.toFixed(1) || 'N/A'} Rating</span>
+                  </div>
+                  <Button
+                    variant="link"
+                    className="p-0 h-auto text-[10px] font-black tracking-widest uppercase hover:text-accent"
+                    onClick={() => router.push(`/marketplace?trader=${product.trader_id}`)}
+                  >
+                    View Repository →
+                  </Button>
+                </div>
+              </div>
+
+              {/* Acquisition Tools */}
+              <div className="space-y-8 pt-12 border-t border-border/20">
+                <div className="flex flex-col sm:flex-row items-center gap-6">
+                  {/* Quantity Minimalist */}
+                  <div className="flex items-center border border-border/50 h-14 w-full sm:w-48">
+                    <button
+                      onClick={decrementQuantity}
+                      className="flex-1 h-full hover:bg-muted/50 transition-colors text-lg font-black disabled:opacity-20"
+                      disabled={quantity <= 1}
+                    >
+                      -
+                    </button>
+                    <div className="w-16 h-full flex items-center justify-center font-mono font-black border-x border-border/50">
+                      {quantity.toString().padStart(2, '0')}
                     </div>
-                  </CardContent>
-                </Card>
+                    <button
+                      onClick={incrementQuantity}
+                      className="flex-1 h-full hover:bg-muted/50 transition-colors text-lg font-black disabled:opacity-20"
+                      disabled={quantity >= product.stock_quantity}
+                    >
+                      +
+                    </button>
+                  </div>
 
-                <div className="space-y-4 mb-8">
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Category:</span>
-                    <span className="font-medium">{product.category}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Delivery:</span>
-                    <span className="font-medium">Standard (3-5 days)</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Available:</span>
-                    <Badge variant={product.stock_quantity > 0 ? 'default' : 'destructive'}>
-                      {product.stock_quantity > 0 ? 'In Stock' : 'Out of Stock'}
-                    </Badge>
+                  <div className="flex-1 w-full space-y-2">
+                    <div className="flex justify-between text-[10px] font-black tracking-widest uppercase opacity-40">
+                      <span>Total Acquisition</span>
+                      <span className="font-mono text-accent">KSH {(product.price * quantity).toLocaleString()}</span>
+                    </div>
+                    <div className="h-0.5 bg-border/20 overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: "100%" }}
+                        className="h-full bg-accent"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center space-x-4">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={decrementQuantity}
-                          disabled={quantity <= 1}
-                        >
-                          <span className="text-lg">-</span>
-                        </Button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Button
+                    className="h-16 rounded-none border-none bg-foreground text-background hover:bg-foreground/90 text-[11px] font-black tracking-[0.2em] uppercase transition-all"
+                    onClick={addToCart}
+                    disabled={product.stock_quantity <= 0}
+                  >
+                    <ShoppingCart className="h-4 w-4 mr-3" />
+                    Place into Cart
+                  </Button>
+                  <Button
+                    className="btn-premium h-16 rounded-none text-[11px] font-black tracking-[0.2em] uppercase"
+                    onClick={() => {
+                      addToCart();
+                      router.push('/cart');
+                    }}
+                    disabled={product.stock_quantity <= 0}
+                  >
+                    Secure Acquisition
+                  </Button>
+                </div>
+              </div>
 
-                        <span className="text-xl font-medium w-12 text-center">
-                          {quantity}
-                        </span>
-
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={incrementQuantity}
-                          disabled={quantity >= product.stock_quantity}
-                        >
-                          <span className="text-lg">+</span>
-                        </Button>
-                      </div>
-
-                      <div className="text-xl font-bold">
-                        Total: KSh {(product.price * quantity).toFixed(2)}
-                      </div>
-                    </div>
-
-                    <div className="flex space-x-4">
-                      <Button
-                        className="flex-1 py-6 text-lg"
-                        onClick={addToCart}
-                        disabled={product.stock_quantity <= 0}
-                      >
-                        <ShoppingCart className="h-5 w-5 mr-2" />
-                        Add to Cart
-                      </Button>
-
-                      <Button
-                        className="py-6 px-8 text-lg"
-                        onClick={() => {
-                          addToCart();
-                          router.push('/cart');
-                        }}
-                        disabled={product.stock_quantity <= 0}
-                      >
-                        <Check className="h-5 w-5 mr-2" />
-                        Buy Now
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <div className="mt-8">
-                  <h3 className="text-lg font-semibold mb-4">Product Details</h3>
-                  <ul className="space-y-2">
-                    <li className="flex">
-                      <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
-                      <span>High quality product</span>
-                    </li>
-                    <li className="flex">
-                      <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
-                      <span>Free shipping on orders over KSh 2000</span>
-                    </li>
-                    <li className="flex">
-                      <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
-                      <span>30-day money-back guarantee</span>
-                    </li>
-                  </ul>
+              {/* Logistics Manifest */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-border/50 border border-border/50">
+                <div className="bg-background p-6 space-y-2">
+                  <div className="text-[9px] font-black tracking-[0.2em] uppercase opacity-40 flex items-center gap-2">
+                    <Truck className="w-3 h-3 text-accent" />
+                    Logistics
+                  </div>
+                  <p className="text-[10px] font-bold uppercase tracking-tight">Express Regional Dispatch</p>
+                </div>
+                <div className="bg-background p-6 space-y-2">
+                  <div className="text-[9px] font-black tracking-[0.2em] uppercase opacity-40 flex items-center gap-2">
+                    <Package className="w-3 h-3 text-accent" />
+                    Authentication
+                  </div>
+                  <p className="text-[10px] font-bold uppercase tracking-tight">Certified Pre-Owned Manifest</p>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Reviews Section */}
-            <div className="mt-12">
-              <ProductReviews
-                productId={product.id}
-                traderId={product.trader_id}
-              />
+          {/* Peer Reviews Section */}
+          <div className="mt-32 pt-32 border-t border-border/50">
+            <div className="flex items-center justify-between mb-16">
+              <h2 className="text-4xl font-black tracking-tighter uppercase italic">Peer <span className="text-muted-foreground/30 not-italic">Dialogue.</span></h2>
+              <div className="h-px flex-grow mx-12 bg-border/20" />
             </div>
-          </motion.div>
-        </div>
-      </div>
+            <ProductReviews
+              productId={product.id}
+              traderId={product.trader_id}
+            />
+          </div>
+        </motion.div>
+      </main>
     </div>
   );
 }

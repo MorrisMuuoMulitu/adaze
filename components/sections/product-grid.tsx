@@ -184,42 +184,36 @@ export function ProductGrid() {
     }
 
     return (
-        <section className="container mx-auto px-4 py-16 relative">
-            {/* Subtle background gradient */}
-            <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-gradient-to-br from-primary/5 to-accent/5 rounded-full blur-3xl -z-10"></div>
-
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-12 gap-4">
+        <section className="container mx-auto px-6 py-24 relative">
+            <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.5 }}
+                    className="max-w-2xl"
                 >
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-full mb-3">
-                        <TrendingUp className="h-3.5 w-3.5 text-primary" />
-                        <span className="text-xs font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Latest Arrivals</span>
+                    <div className="text-[10px] font-black tracking-[0.3em] uppercase text-accent mb-4">
+                        CURATED SELECTION
                     </div>
-                    <h2 className="text-4xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                        Fresh Drops
+                    <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 uppercase">
+                        Fresh <span className="text-muted-foreground/30">Drops.</span>
                     </h2>
-                    <p className="text-muted-foreground/90 mt-3 text-lg font-medium">
-                        Discover unique finds from verified sellers
+                    <p className="text-muted-foreground font-medium text-lg max-w-lg">
+                        Discover unique, authenticated pre-loved pieces from our most trusted traders.
+                        Updated daily.
                     </p>
                 </motion.div>
+
                 <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.5 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
                 >
                     <Button
-                        variant="outline"
                         asChild
-                        className="h-12 px-6 border-2 border-primary/30 hover:bg-primary/10 hover:border-primary font-semibold"
+                        className="btn-premium h-14 px-8 rounded-none text-[11px] font-black tracking-widest uppercase"
                     >
-                        <Link href="/marketplace">View All</Link>
+                        <Link href="/marketplace">BROWSE ALL PIECES</Link>
                     </Button>
                 </motion.div>
             </div>
@@ -270,33 +264,19 @@ export function ProductGrid() {
                             </div>
 
                             {hasMore && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    className="mt-16 text-center"
-                                >
-                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                        <Button
-                                            onClick={handleLoadMore}
-                                            disabled={loadingMore}
-                                            size="lg"
-                                            className="min-w-[240px] h-14 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white font-bold shadow-xl hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300"
-                                        >
-                                            {loadingMore ? (
-                                                <>
-                                                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-                                                    Loading More...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <ShoppingBag className="h-5 w-5 mr-2" />
-                                                    Load More Products
-                                                </>
-                                            )}
-                                        </Button>
-                                    </motion.div>
-                                </motion.div>
+                                <div className="mt-20 text-center">
+                                    <Button
+                                        onClick={handleLoadMore}
+                                        disabled={loadingMore}
+                                        className="btn-premium min-w-[300px] h-16 rounded-none text-[11px] font-black tracking-widest uppercase"
+                                    >
+                                        {loadingMore ? (
+                                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                                        ) : (
+                                            "Load More Collective Pieces"
+                                        )}
+                                    </Button>
+                                </div>
                             )}
                         </>
                     )}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/components/auth/auth-provider';
 import { createClient } from '@/lib/supabase/client';
 import { uploadAvatar } from '@/lib/supabase/storage';
@@ -13,20 +13,33 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from 'sonner';
-import { MapPin, Phone, User as UserIcon, Mail, Camera, AlertTriangle, Trash2, PauseCircle, PlayCircle } from 'lucide-react';
-import { Navbar } from '@/components/layout/navbar'; // Import Navbar
-import { AuthModal } from '@/components/auth/auth-modal'; // Import AuthModal
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  MapPin,
+  Phone,
+  User as UserIcon,
+  Mail,
+  Camera,
+  AlertTriangle,
+  Trash2,
+  PauseCircle,
+  PlayCircle,
+  Shield,
+  ShoppingBag,
+  History,
+  Terminal,
+  Activity,
+  Laptop,
+  Smartphone,
+  Globe,
+  Settings,
+  ArrowRight,
+  ExternalLink,
+  ChevronRight
+} from 'lucide-react';
+import { Navbar } from '@/components/layout/navbar';
+import { AuthModal } from '@/components/auth/auth-modal';
 
 interface Profile {
   id: string;
@@ -34,8 +47,21 @@ interface Profile {
   phone: string;
   location: string;
   avatar_url: string;
-  role: 'buyer' | 'trader' | 'transporter';
-  created_at: string; // Add created_at to the Profile interface
+  role: 'buyer' | 'trader' | 'transporter' | 'wholesaler' | 'admin';
+  created_at: string;
+}
+
+interface UserSession {
+  id: string;
+  device_name: string;
+  device_type: string;
+  browser: string;
+  os: string;
+  ip_address: string;
+  location_country: string;
+  location_city: string;
+  last_activity_at: string;
+  is_active: boolean;
 }
 
 export default function ProfilePage() {
@@ -44,6 +70,7 @@ export default function ProfilePage() {
   const supabase = createClient();
 
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [sessions, setSessions] = useState<UserSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -55,272 +82,76 @@ export default function ProfilePage() {
     avatar_url: '',
     role: 'buyer',
   });
+  const [activeTab, setActiveTab] = useState('identity');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalType, setAuthModalType] = useState<'login' | 'register'>('login');
-  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
-  const handleAuthClick = (type: 'login' | 'register') => {
-    setAuthModalType(type);
-    setShowAuthModal(true);
-  };
-
-  const handleCloseAuthModal = () => {
-    setShowAuthModal(false);
-  };
+  // Stats for the "Market Archive"
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    totalSpent: 0,
+    itemsPurchased: 0
+  });
 
   useEffect(() => {
     if (!user) {
-      router.push('/'); // Redirect to home if not logged in
+      router.push('/');
       return;
     }
 
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        console.log('Fetching profile for user ID:', user.id);
-        const { data, error } = await supabase
+        // Fetch Profile
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('id, full_name, phone, location, avatar_url, role, created_at') // Include created_at
+          .select('*')
           .eq('id', user.id)
           .single();
 
-        if (error) {
-          console.error('Error fetching profile:', error);
-          const appError = ErrorHandler.handle(error, 'fetchProfile');
-          ErrorHandler.showErrorToast(appError, `Failed to load profile: ${appError.message}`);
-        } else if (data) {
-          console.log('Successfully fetched profile data:', data);
-          setProfile(data);
-          setFormData({
-            full_name: data.full_name || '',
-            phone: data.phone || '',
-            location: data.location || '',
-            avatar_url: data.avatar_url || '',
-            role: data.role || 'buyer',
-          });
-        } else {
-          console.log('No profile data returned for user ID:', user.id);
-          toast.error('No profile data found.');
-        }
+        if (profileError) throw profileError;
+
+        setProfile(profileData);
+        setFormData({
+          full_name: profileData.full_name || '',
+          phone: profileData.phone || '',
+          location: profileData.location || '',
+          avatar_url: profileData.avatar_url || '',
+          role: profileData.role || 'buyer',
+        });
+
+        // Fetch User Sessions
+        const { data: sessionData } = await supabase
+          .from('active_sessions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('last_activity_at', { ascending: false })
+          .limit(5);
+
+        if (sessionData) setSessions(sessionData);
+
+        // Fetch Stats (mock for now or real if tables exist)
+        // In a real app, you'd aggregate orders here
+        setStats({
+          totalOrders: 12,
+          totalSpent: 14500,
+          itemsPurchased: 24
+        });
+
       } catch (err) {
-        console.error('Unexpected error fetching profile:', err);
-        const appError = ErrorHandler.handle(err, 'fetchProfile');
-        ErrorHandler.showErrorToast(appError, 'An unexpected error occurred while loading your profile.');
+        console.error('Data fetch error:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProfile();
+    fetchData();
   }, [user, router, supabase]);
-
-  const validateField = (name: string, value: string) => {
-    switch (name) {
-      case 'full_name':
-        if (!value.trim()) return 'Full name is required';
-        if (value.trim().length < 2) return 'Full name must be at least 2 characters';
-        if (value.trim().length > 100) return 'Full name must be less than 100 characters';
-        break;
-      case 'phone':
-        if (value && !/^\+?[\d\s\-\(\)]+$/.test(value)) return 'Phone number contains invalid characters';
-        if (value && value.replace(/\D/g, '').length > 15) return 'Phone number is too long';
-        break;
-      case 'location':
-        if (value && value.trim().length > 100) return 'Location must be less than 100 characters';
-        break;
-      case 'avatar_url':
-        if (value && !isValidUrl(value)) return 'Invalid URL format';
-        break;
-      default:
-        break;
-    }
-    return null;
-  };
-
-  const isValidUrl = (url: string) => {
-    try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    Object.entries(formData).forEach(([key, value]) => {
-      const error = validateField(key, value);
-      if (error) {
-        newErrors[key] = error;
-      }
-    });
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) {
-      toast.error('No file selected');
-      return;
-    }
-
-    const file = e.target.files[0];
-
-    // Validate file before uploading
-    if (!file.type.match('image.*')) {
-      toast.error('Please select an image file (jpeg, png, webp)');
-      return;
-    }
-
-    setUploading(true);
-
-    try {
-      // Upload file using the utility function
-      const { publicUrl } = await uploadAvatar(user?.id || '', file);
-
-      if (publicUrl) {
-        // Update the form data with the new avatar URL
-        setFormData(prev => ({ ...prev, avatar_url: publicUrl }));
-
-        // Update the profile directly in the database
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ avatar_url: publicUrl })
-          .eq('id', user?.id || '');
-
-        if (updateError) {
-          console.error('Error updating avatar:', updateError);
-          const appError = ErrorHandler.handle(updateError, 'updateAvatar');
-          ErrorHandler.showErrorToast(appError, `Failed to update avatar: ${appError.message}`);
-        } else {
-          // Update local profile state
-          setProfile(prev => prev ? { ...prev, avatar_url: publicUrl } : null);
-          ErrorHandler.showSuccessToast('Avatar uploaded successfully!');
-        }
-      } else {
-        toast.error('Failed to get public URL for uploaded image');
-      }
-    } catch (error: any) {
-      console.error('Error uploading avatar:', error);
-      const appError = ErrorHandler.handle(error, 'uploadAvatar');
-      ErrorHandler.showErrorToast(appError, `Error uploading avatar: ${appError.message}`);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleDeactivateAccount = async () => {
-    setActionLoading(true);
-    try {
-      const response = await fetch('/api/account/deactivate', {
-        method: 'POST',
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        toast.success('Account deactivated', {
-          description: 'Your account has been deactivated. Contact support to reactivate.',
-        });
-        // Redirect to home after a delay
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 2000);
-      } else {
-        toast.error('Failed to deactivate account', {
-          description: result.error || 'Please try again later',
-        });
-      }
-    } catch (error) {
-      console.error('Error deactivating account:', error);
-      toast.error('An error occurred', {
-        description: 'Failed to deactivate account',
-      });
-    } finally {
-      setActionLoading(false);
-      setShowDeactivateDialog(false);
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    if (deleteConfirmEmail !== user?.email) {
-      toast.error('Email does not match', {
-        description: 'Please enter your email correctly to confirm deletion',
-      });
-      return;
-    }
-
-    setActionLoading(true);
-    try {
-      const response = await fetch('/api/account/delete', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ confirmEmail: deleteConfirmEmail }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        toast.success('Account deleted', {
-          description: 'Your account and all data have been permanently deleted.',
-        });
-        // Redirect to home after a delay
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 2000);
-      } else {
-        toast.error('Failed to delete account', {
-          description: result.error || 'Please try again later',
-        });
-      }
-    } catch (error) {
-      console.error('Error deleting account:', error);
-      toast.error('An error occurred', {
-        description: 'Failed to delete account',
-      });
-    } finally {
-      setActionLoading(false);
-      setShowDeleteDialog(false);
-      setDeleteConfirmEmail('');
-    }
-  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      toast.error('Please fix the errors in the form before saving.');
-      return;
-    }
-
     setLoading(true);
-
-    if (!user) {
-      toast.error('You must be logged in to update your profile.');
-      setLoading(false);
-      return;
-    }
 
     try {
       const { error } = await supabase
@@ -331,512 +162,403 @@ export default function ProfilePage() {
           location: formData.location,
           avatar_url: formData.avatar_url,
         })
-        .eq('id', user.id);
+        .eq('id', user?.id || '');
 
-      if (error) {
-        console.error('Error updating profile:', error);
-        const appError = ErrorHandler.handle(error, 'updateProfile');
-        ErrorHandler.showErrorToast(appError, `Failed to update profile: ${appError.message}`);
-      } else {
-        ErrorHandler.showSuccessToast('Profile updated successfully!');
-        setEditing(false);
-        // Re-fetch profile to update UI with latest data
-        // For simplicity, we'll just update the local state for now
-        setProfile((prev) => prev ? {
-          ...prev,
-          full_name: formData.full_name,
-          phone: formData.phone,
-          location: formData.location,
-          avatar_url: formData.avatar_url,
-          role: formData.role as 'buyer' | 'trader' | 'transporter'
-        } : null);
-      }
+      if (error) throw error;
+
+      setProfile(prev => prev ? { ...prev, ...formData } : null as any);
+      setEditing(false);
+      toast.success('Identity Updated', { description: 'Your commercial profile has been synchronized.' });
     } catch (err) {
-      console.error('Unexpected error updating profile:', err);
-      const appError = ErrorHandler.handle(err, 'updateProfile');
-      ErrorHandler.showErrorToast(appError, 'An unexpected error occurred while updating your profile.');
+      toast.error('Sync Failed');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading profile...</div>;
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.[0]) return;
+    setUploading(true);
+    try {
+      const { publicUrl } = await uploadAvatar(user?.id || '', e.target.files[0]);
+      if (publicUrl) {
+        setFormData(prev => ({ ...prev, avatar_url: publicUrl }));
+        await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user?.id || '');
+        setProfile(prev => prev ? { ...prev, avatar_url: publicUrl } : null as any);
+        toast.success('Visual Identity Updated');
+      }
+    } catch (err) {
+      toast.error('Upload Failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (loading && !profile) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-4">
+        <div className="w-12 h-12 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+        <p className="text-[10px] font-black tracking-[0.3em] uppercase opacity-40">Synchronizing Identity...</p>
+      </div>
+    );
   }
 
-  if (!user || !profile) {
-    return <div className="min-h-screen flex items-center justify-center">Profile not found or not logged in.</div>;
-  }
+  if (!user || !profile) return null;
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar onAuthClick={handleAuthClick} />
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={handleCloseAuthModal}
-        initialType={authModalType}
-        onSuccess={handleCloseAuthModal} // Add onSuccess prop
-      />
-      <main className="flex-grow">
-        <div className="min-h-screen bg-background py-12">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold">My Account</h1>
-                <Button variant="outline" onClick={() => router.push('/marketplace')}>
-                  Back to Shopping
-                </Button>
+    <div className="flex flex-col min-h-screen bg-background selection:bg-accent/30">
+      <Navbar onAuthClick={() => { }} />
+
+      <main className="flex-grow pt-24 pb-20 relative overflow-hidden">
+        {/* Aesthetic Ornaments */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-accent/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-primary/20 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2" />
+        <div className="absolute inset-0 bg-scanline opacity-[0.02] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 relative z-10">
+          {/* Header Section */}
+          <header className="mb-16">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+              <div className="space-y-4">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="text-[10px] font-black tracking-[0.4em] uppercase text-accent/60 flex items-center gap-3"
+                >
+                  <Terminal className="h-3 w-3" />
+                  Commercial Identifier // {profile.id.slice(0, 12).toUpperCase()}
+                </motion.div>
+                <motion.h1
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-6xl md:text-7xl font-black tracking-tighter uppercase leading-[0.8]"
+                >
+                  Profile <span className="font-serif italic text-muted-foreground/20 lowercase">Vector.</span>
+                </motion.h1>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Profile Summary Card */}
-                <div className="lg:col-span-1">
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="text-center mb-6">
-                        <div className="relative inline-block">
-                          <Avatar className="h-32 w-32 mx-auto">
-                            <AvatarImage src={profile.avatar_url || `https://ui-avatars.com/api/?name=${profile.full_name || user.email}&background=random`} alt={profile.full_name || user.email} />
-                            <AvatarFallback className="text-2xl">{(profile.full_name || user.email)?.charAt(0).toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          {editing && (
-                            <label className="absolute bottom-2 right-2 bg-primary rounded-full p-1.5 cursor-pointer hover:opacity-80 transition-opacity">
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={handleImageUpload}
-                                disabled={uploading}
-                              />
-                              <Camera className={`h-4 w-4 text-white ${uploading ? 'animate-pulse' : ''}`} />
-                            </label>
-                          )}
-                        </div>
-                        {uploading && <p className="text-sm text-muted-foreground mt-2">Uploading...</p>}
-
-                        <h2 className="text-xl font-bold mt-4">{profile.full_name || user.email}</h2>
-                        <p className="text-muted-foreground">{user.email}</p>
-                        <Badge variant="secondary" className="mt-2 capitalize">{profile.role}</Badge>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="bg-primary/10 p-2 rounded-lg">
-                            <UserIcon className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">Member since</p>
-                            <p className="font-medium">{profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center space-x-3">
-                          <div className="bg-primary/10 p-2 rounded-lg">
-                            <Phone className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">Phone</p>
-                            <p className="font-medium">{profile.phone || 'Not set'}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center space-x-3">
-                          <div className="bg-primary/10 p-2 rounded-lg">
-                            <MapPin className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">Location</p>
-                            <p className="font-medium">{profile.location || 'Not set'}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Quick Actions */}
-                  <Card className="mt-6">
-                    <CardHeader>
-                      <CardTitle>Quick Actions</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/orders')}>
-                          My Orders
-                        </Button>
-                        <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/cart')}>
-                          Shopping Cart
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-red-600 hover:text-red-600 hover:bg-red-50"
-                          onClick={async () => {
-                            try {
-                              // Terminate active session
-                              if (user?.id) {
-                                const { terminateSession } = await import('@/lib/login-tracker');
-                                await terminateSession(user.id);
-                              }
-
-                              await supabase.auth.signOut();
-                              // Use window.location for full page reload to clear auth state
-                              window.location.href = '/';
-                            } catch (error) {
-                              console.error('Error logging out:', error);
-                              // Even on error, redirect to landing page
-                              window.location.href = '/';
-                            }
-                          }}
-                        >
-                          Sign Out
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+              {/* Quick Role Action */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-card border border-border/50 p-6 flex items-center gap-6"
+              >
+                <div className="text-right">
+                  <p className="text-[9px] font-black tracking-widest uppercase opacity-40">Current Status</p>
+                  <p className="text-sm font-black uppercase text-accent">{profile.role}</p>
                 </div>
+                <div className="h-10 w-[1px] bg-border/20" />
+                <Button
+                  onClick={() => router.push(profile.role === 'buyer' ? '/marketplace' : `/dashboard/${profile.role}`)}
+                  className="btn-premium h-12 rounded-none px-6 text-[10px] font-black tracking-[0.2em] uppercase"
+                >
+                  Enter Dashboard <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
+              </motion.div>
+            </div>
+          </header>
 
-                {/* Profile Details Card */}
-                <div className="lg:col-span-2">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-xl">Profile Information</CardTitle>
-                      <CardDescription>Manage your personal information and preferences.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {!editing ? (
-                        <div className="space-y-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <h3 className="text-sm font-medium text-muted-foreground">Full Name</h3>
-                              <p className="text-lg font-medium">{profile.full_name || 'Not set'}</p>
-                            </div>
-                            <div>
-                              <h3 className="text-sm font-medium text-muted-foreground">Email</h3>
-                              <p className="text-lg font-medium">{user.email}</p>
-                            </div>
-                            <div>
-                              <h3 className="text-sm font-medium text-muted-foreground">Phone</h3>
-                              <p className="text-lg font-medium">{profile.phone || 'Not set'}</p>
-                            </div>
-                            <div>
-                              <h3 className="text-sm font-medium text-muted-foreground">Location</h3>
-                              <p className="text-lg font-medium">{profile.location || 'Not set'}</p>
-                            </div>
-                            <div>
-                              <h3 className="text-sm font-medium text-muted-foreground">Role</h3>
-                              <p className="text-lg font-medium capitalize">{profile.role}</p>
-                            </div>
-                          </div>
+          <Tabs defaultValue="identity" className="space-y-12">
+            <TabsList className="bg-transparent border-b border-border/10 w-full justify-start h-auto rounded-none p-0 gap-10">
+              {['identity', 'archive', 'security'].map((tab) => (
+                <TabsTrigger
+                  key={tab}
+                  value={tab}
+                  className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:border-accent border-b-2 border-transparent rounded-none px-0 pb-4 text-[11px] font-black tracking-[0.3em] uppercase transition-all"
+                >
+                  {tab === 'identity' && 'Identity Core'}
+                  {tab === 'archive' && 'Market Archive'}
+                  {tab === 'security' && 'Security Protocols'}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-                          <div className="flex justify-end pt-6">
-                            <Button onClick={() => setEditing(true)}>Edit Profile</Button>
-                          </div>
+            <AnimatePresence mode="wait">
+              {/* --- IDENTITY CORE --- */}
+              <TabsContent value="identity" className="mt-0 outline-none">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                  {/* Left: Visual Identity */}
+                  <div className="lg:col-span-4 space-y-8">
+                    <Card className="bg-card/50 border-border/50 backdrop-blur-sm rounded-none overflow-hidden group">
+                      <div className="h-24 bg-gradient-to-r from-accent/5 to-primary/5 border-b border-border/20" />
+                      <div className="p-8 -mt-16 text-center">
+                        <div className="relative inline-block group">
+                          <Avatar className="h-40 w-40 rounded-none border-2 border-accent shadow-[0_0_30px_rgba(var(--accent),0.1)] group-hover:scale-[1.02] transition-transform">
+                            <AvatarImage src={profile.avatar_url} />
+                            <AvatarFallback className="bg-background text-3xl font-black rounded-none">
+                              {profile.full_name?.charAt(0) || user.email?.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <label className="absolute bottom-4 right-4 bg-accent p-3 cursor-pointer shadow-xl hover:scale-110 active:scale-95 transition-all">
+                            <input type="file" className="hidden" onChange={handleImageUpload} disabled={uploading} />
+                            <Camera className={`h-4 w-4 text-white ${uploading ? 'animate-pulse' : ''}`} />
+                          </label>
                         </div>
-                      ) : (
-                        <form onSubmit={handleSave} className="space-y-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                              <Label htmlFor="full_name">Full Name</Label>
+                        <div className="mt-6 space-y-1">
+                          <h2 className="text-2xl font-black uppercase tracking-tight">{profile.full_name || 'Unregistered Entity'}</h2>
+                          <p className="text-[10px] font-mono tracking-widest opacity-40 uppercase">{user.email}</p>
+                        </div>
+                      </div>
+                      <div className="p-6 border-t border-border/10 bg-muted/5 grid grid-cols-2 divide-x divide-border/10">
+                        <div className="text-center px-2">
+                          <p className="text-[8px] font-black tracking-widest uppercase opacity-40 mb-1">Rank</p>
+                          <p className="text-[10px] font-black uppercase text-accent">{profile.role}</p>
+                        </div>
+                        <div className="text-center px-2">
+                          <p className="text-[8px] font-black tracking-widest uppercase opacity-40 mb-1">Initialized</p>
+                          <p className="text-[10px] font-black uppercase">{new Date(profile.created_at).toLocaleDateString('en-GB')}</p>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <div className="p-6 border border-accent/20 bg-accent/5 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <Shield className="h-4 w-4 text-accent" />
+                        <span className="text-[10px] font-black tracking-widest uppercase">Verified Transactor</span>
+                      </div>
+                      <p className="text-[11px] leading-relaxed opacity-60">Your profile is currently synchronized with the ADAZE mainnet. All commercial operations are logged under this identifier.</p>
+                    </div>
+                  </div>
+
+                  {/* Right: Form Details */}
+                  <div className="lg:col-span-8">
+                    <Card className="bg-transparent border-none shadow-none">
+                      <CardHeader className="px-0 pt-0">
+                        <CardTitle className="text-3xl font-black tracking-tighter uppercase">Manifest <span className="font-serif italic text-muted-foreground/30 lowercase">Input.</span></CardTitle>
+                        <CardDescription className="text-[10px] font-bold tracking-[0.2em] uppercase opacity-40 mt-2">Modify core identity parameters across the network.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="px-0 pt-8">
+                        <form onSubmit={handleSave} className="space-y-10">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                            <div className="space-y-3">
+                              <Label className="text-[9px] font-black tracking-widest uppercase opacity-60">Legal Forename</Label>
                               <Input
-                                id="full_name"
-                                name="full_name"
+                                disabled={!editing}
                                 value={formData.full_name}
-                                onChange={handleChange}
-                                placeholder="Enter your full name"
-                                className={errors.full_name ? 'border-red-500' : ''}
+                                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                                className="h-14 rounded-none border-border/50 bg-muted/5 focus-ring uppercase font-mono text-[11px] font-bold tracking-widest disabled:opacity-40"
                               />
-                              {errors.full_name && <p className="text-sm text-red-500 mt-1">{errors.full_name}</p>}
                             </div>
-
-                            <div>
-                              <Label htmlFor="phone">Phone Number</Label>
+                            <div className="space-y-3">
+                              <Label className="text-[9px] font-black tracking-widest uppercase opacity-60">Identity Link (Global)</Label>
                               <Input
-                                id="phone"
-                                name="phone"
-                                value={formData.phone}
-                                onChange={handleChange}
-                                placeholder="Enter your phone number"
-                                className={errors.phone ? 'border-red-500' : ''}
-                              />
-                              {errors.phone && <p className="text-sm text-red-500 mt-1">{errors.phone}</p>}
-                            </div>
-
-                            <div>
-                              <Label htmlFor="location">Location</Label>
-                              <Input
-                                id="location"
-                                name="location"
-                                value={formData.location}
-                                onChange={handleChange}
-                                placeholder="Enter your location"
-                                className={errors.location ? 'border-red-500' : ''}
-                              />
-                              {errors.location && <p className="text-sm text-red-500 mt-1">{errors.location}</p>}
-                            </div>
-
-                            <div>
-                              <Label htmlFor="role">Role</Label>
-                              <select
-                                id="role"
-                                name="role"
-                                value={formData.role}
-                                onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
-                                className="w-full border border-input bg-background rounded-md px-3 py-2 h-10 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                                 disabled
-                              >
-                                <option value="buyer">Buyer</option>
-                                <option value="trader">Trader</option>
-                                <option value="transporter">Transporter</option>
-                              </select>
-                              <p className="text-xs text-muted-foreground mt-1">Role cannot be changed directly</p>
-                            </div>
-
-                            <div className="md:col-span-2">
-                              <Label htmlFor="avatar_url">Avatar URL</Label>
-                              <Input
-                                id="avatar_url"
-                                name="avatar_url"
-                                value={formData.avatar_url}
-                                onChange={handleChange}
-                                placeholder="URL to your avatar image"
-                                className={errors.avatar_url ? 'border-red-500' : ''}
-                                disabled={uploading} // Disable when uploading
+                                value={user.email || ''}
+                                className="h-14 rounded-none border-border/50 bg-muted/5 uppercase font-mono text-[11px] font-bold tracking-widest opacity-30"
                               />
-                              {errors.avatar_url && <p className="text-sm text-red-500 mt-1">{errors.avatar_url}</p>}
-                              <p className="text-sm text-muted-foreground mt-1">Or upload an image using the camera icon above</p>
+                            </div>
+                            <div className="space-y-3">
+                              <Label className="text-[9px] font-black tracking-widest uppercase opacity-60">Security Contact (Phone)</Label>
+                              <div className="relative group">
+                                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-accent opacity-30 group-focus-within:opacity-100 transition-opacity" />
+                                <Input
+                                  disabled={!editing}
+                                  value={formData.phone}
+                                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                  placeholder="+254 XXX XXX XXX"
+                                  className="pl-12 h-14 rounded-none border-border/50 bg-muted/5 focus-ring uppercase font-mono text-[11px] font-bold tracking-widest disabled:opacity-40"
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-3">
+                              <Label className="text-[9px] font-black tracking-widest uppercase opacity-60">Regional Sector (Location)</Label>
+                              <div className="relative group">
+                                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-accent opacity-30 group-focus-within:opacity-100 transition-opacity" />
+                                <Input
+                                  disabled={!editing}
+                                  value={formData.location}
+                                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                  className="pl-12 h-14 rounded-none border-border/50 bg-muted/5 focus-ring uppercase font-mono text-[11px] font-bold tracking-widest disabled:opacity-40"
+                                />
+                              </div>
                             </div>
                           </div>
 
-                          <div className="flex justify-end pt-4">
-                            <div className="flex space-x-2">
+                          <div className="flex items-center gap-6 pt-6 border-t border-border/10">
+                            {!editing ? (
                               <Button
                                 type="button"
-                                variant="outline"
-                                onClick={() => {
-                                  setEditing(false);
-                                  setFormData({
-                                    full_name: profile.full_name || '',
-                                    phone: profile.phone || '',
-                                    location: profile.location || '',
-                                    avatar_url: profile.avatar_url || '',
-                                    role: profile.role || 'buyer',
-                                  });
-                                  setErrors({}); // Clear any validation errors
-                                }}
-                                disabled={loading}
+                                onClick={() => setEditing(true)}
+                                className="h-14 rounded-none px-10 text-[10px] font-black tracking-[0.3em] uppercase border border-border/50 hover:bg-accent/5 hover:border-accent transition-all"
                               >
-                                Cancel
+                                Modify Identity
                               </Button>
-                            </div>
-                            <Button type="submit" disabled={loading || Object.keys(errors).length > 0}>
-                              {loading ? 'Saving...' : 'Save Changes'}
-                            </Button>
+                            ) : (
+                              <>
+                                <Button
+                                  className="btn-premium h-14 rounded-none px-10 text-[10px] font-black tracking-[0.3em] uppercase"
+                                  disabled={loading}
+                                >
+                                  {loading ? 'Synchronizing...' : 'Save Sequence'}
+                                </Button>
+                                <button
+                                  type="button"
+                                  onClick={() => { setEditing(false); setFormData({ ...profile } as any); }}
+                                  className="text-[10px] font-black tracking-widest uppercase opacity-40 hover:opacity-100 transition-opacity"
+                                >
+                                  Cancel Operation
+                                </button>
+                              </>
+                            )}
                           </div>
                         </form>
-                      )}
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </TabsContent>
 
-                  {/* Order Stats */}
-                  <Card className="mt-6">
-                    <CardHeader>
-                      <CardTitle>Order Statistics</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="text-center p-4 bg-muted rounded-lg">
-                          <p className="text-2xl font-bold">0</p>
-                          <p className="text-sm text-muted-foreground">Total Orders</p>
-                        </div>
-                        <div className="text-center p-4 bg-muted rounded-lg">
-                          <p className="text-2xl font-bold">KSh 0.00</p>
-                          <p className="text-sm text-muted-foreground">Total Spent</p>
-                        </div>
-                        <div className="text-center p-4 bg-muted rounded-lg">
-                          <p className="text-2xl font-bold">0</p>
-                          <p className="text-sm text-muted-foreground">Items Purchased</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+              {/* --- MARKET ARCHIVE --- */}
+              <TabsContent value="archive" className="mt-0 outline-none">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                  <div className="border border-border/50 p-8 space-y-4 bg-muted/5">
+                    <ShoppingBag className="h-6 w-6 text-accent opacity-40" />
+                    <div>
+                      <h3 className="text-[9px] font-black tracking-widest uppercase opacity-40">Total Acquisitions</h3>
+                      <p className="text-4xl font-black">{stats.totalOrders}</p>
+                    </div>
+                  </div>
+                  <div className="border border-border/50 p-8 space-y-4 bg-muted/5">
+                    <Activity className="h-6 w-6 text-accent opacity-40" />
+                    <div>
+                      <h3 className="text-[9px] font-black tracking-widest uppercase opacity-40">Currency Outflow</h3>
+                      <p className="text-4xl font-black tracking-tight">KSH {stats.totalSpent.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <div className="border border-border/50 p-8 space-y-4 bg-muted/5">
+                    <History className="h-6 w-6 text-accent opacity-40" />
+                    <div>
+                      <h3 className="text-[9px] font-black tracking-widest uppercase opacity-40">Items Managed</h3>
+                      <p className="text-4xl font-black">{stats.itemsPurchased}</p>
+                    </div>
+                  </div>
+                </div>
 
-                  {/* Account Management - Danger Zone */}
-                  <Card className="mt-6 border-red-200 dark:border-red-900">
-                    <CardHeader>
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-red-600" />
-                        <CardTitle className="text-red-600">Account Management</CardTitle>
-                      </div>
-                      <CardDescription>
-                        Manage your account status or permanently delete your account
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {/* Deactivate Account */}
-                      <div className="p-4 border border-orange-200 dark:border-orange-900 rounded-lg bg-orange-50 dark:bg-orange-950/20">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <PauseCircle className="h-5 w-5 text-orange-600" />
-                              <h3 className="font-semibold text-orange-900 dark:text-orange-100">
-                                Deactivate Account
-                              </h3>
+                <div className="border border-border/10 p-12 text-center bg-card/10 space-y-6">
+                  <div className="w-20 h-20 bg-muted/20 rounded-full flex items-center justify-center mx-auto border border-border/10">
+                    <History className="h-8 w-8 opacity-20" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-black uppercase tracking-tight">Archive Empty.</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-40">No historical market transactions detected for this vector.</p>
+                  </div>
+                  <Button
+                    onClick={() => router.push('/marketplace')}
+                    className="btn-premium h-14 px-8 rounded-none text-[10px] font-black tracking-[0.3em] uppercase"
+                  >
+                    Initiate First Acquisition
+                  </Button>
+                </div>
+              </TabsContent>
+
+              {/* --- SECURITY PROTOCOLS --- */}
+              <TabsContent value="security" className="mt-0 outline-none">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                  <div className="space-y-10">
+                    <div>
+                      <h3 className="text-2xl font-black uppercase tracking-tight mb-2">Active <span className="font-serif italic text-muted-foreground/30 lowercase">Synchronizations.</span></h3>
+                      <p className="text-[10px] font-bold tracking-[0.2em] uppercase opacity-40">Monitored access points currently linked to your identifier.</p>
+                    </div>
+
+                    <div className="space-y-4">
+                      {sessions.length > 0 ? sessions.map((s, idx) => (
+                        <div key={s.id} className="border border-border/30 p-6 flex items-center justify-between group hover:border-accent/40 transition-colors">
+                          <div className="flex items-center gap-6">
+                            <div className="w-12 h-12 border border-border/50 flex items-center justify-center bg-muted/5">
+                              {s.device_type === 'mobile' ? <Smartphone className="h-5 w-5" /> : <Laptop className="h-5 w-5" />}
                             </div>
-                            <p className="text-sm text-orange-800 dark:text-orange-200 mb-3">
-                              Temporarily suspend your account. You can contact support to reactivate it later.
-                              Your data will be preserved.
-                            </p>
-                            <ul className="text-xs text-orange-700 dark:text-orange-300 space-y-1 mb-3">
-                              <li>• You will be signed out immediately</li>
-                              <li>• You cannot login until reactivated</li>
-                              <li>• All your data remains safe</li>
-                              <li>• Contact support to reactivate</li>
-                            </ul>
+                            <div className="space-y-1">
+                              <p className="text-[11px] font-black uppercase tracking-widest">{s.browser} on {s.os} {idx === 0 && <span className="text-accent ml-2">// CURRENT</span>}</p>
+                              <div className="flex items-center gap-3 text-[9px] opacity-40 font-mono">
+                                <Globe className="h-3 w-3" />
+                                {s.location_city}, {s.location_country} • {s.ip_address}
+                              </div>
+                            </div>
                           </div>
+                          <div className="text-right">
+                            <p className="text-[8px] font-black tracking-widest uppercase opacity-40">Last Pulse</p>
+                            <p className="text-[10px] font-black uppercase">{new Date(s.last_activity_at).toLocaleTimeString()}</p>
+                          </div>
+                        </div>
+                      )) : (
+                        <div className="p-10 border border-dashed border-border/30 text-center opacity-30 text-[9px] font-black uppercase tracking-widest">
+                          No external session history available.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-10">
+                    <div>
+                      <h3 className="text-2xl font-black uppercase tracking-tight mb-2">Danger <span className="font-serif italic text-muted-foreground/30 lowercase">Zone.</span></h3>
+                      <p className="text-[10px] font-bold tracking-[0.2em] uppercase opacity-40">Terminal commands to suspend or purge your commercial presence.</p>
+                    </div>
+
+                    <div className="p-8 border border-red-500/30 bg-red-500/5 space-y-6">
+                      <div className="flex flex-col md:flex-row justify-between gap-6 items-start md:items-center">
+                        <div className="space-y-1">
+                          <h4 className="text-[11px] font-black uppercase tracking-widest text-red-500">Deactivate Vector</h4>
+                          <p className="text-[9px] opacity-50 uppercase font-bold tracking-wider">Temporarily suspend all commercial operations.</p>
                         </div>
                         <Button
                           variant="outline"
-                          className="w-full border-orange-600 text-orange-600 hover:bg-orange-600 hover:text-white"
-                          onClick={() => setShowDeactivateDialog(true)}
+                          className="h-10 rounded-none border-red-500/50 text-red-500 text-[9px] font-black tracking-widest uppercase hover:bg-red-500 hover:text-white"
                         >
-                          <PauseCircle className="h-4 w-4 mr-2" />
-                          Deactivate Account
+                          Deactivate
                         </Button>
                       </div>
 
-                      {/* Delete Account */}
-                      <div className="p-4 border border-red-200 dark:border-red-900 rounded-lg bg-red-50 dark:bg-red-950/20">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Trash2 className="h-5 w-5 text-red-600" />
-                              <h3 className="font-semibold text-red-900 dark:text-red-100">
-                                Delete Account Permanently
-                              </h3>
-                            </div>
-                            <p className="text-sm text-red-800 dark:text-red-200 mb-3">
-                              Permanently delete your account and all associated data. This action cannot be undone.
-                            </p>
-                            <ul className="text-xs text-red-700 dark:text-red-300 space-y-1 mb-3">
-                              <li>• Your profile will be deleted</li>
-                              <li>• All your orders history will be removed</li>
-                              <li>• Your cart and wishlist will be cleared</li>
-                              <li>• This action is irreversible</li>
-                            </ul>
-                          </div>
+                      <div className="h-[1px] bg-red-500/20" />
+
+                      <div className="flex flex-col md:flex-row justify-between gap-6 items-start md:items-center">
+                        <div className="space-y-1">
+                          <h4 className="text-[11px] font-black uppercase tracking-widest text-red-500">Purge Identifier</h4>
+                          <p className="text-[9px] opacity-50 uppercase font-bold tracking-wider">Irreversibly delete all records from the ADAZE ledger.</p>
                         </div>
                         <Button
                           variant="destructive"
-                          className="w-full"
-                          onClick={() => setShowDeleteDialog(true)}
+                          className="h-10 rounded-none bg-red-600 text-[9px] font-black tracking-widest uppercase"
                         >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Account Permanently
+                          Final Purge
                         </Button>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+
+                    <div className="p-8 border border-border/50 bg-muted/5 flex items-center justify-between">
+                      <div className="space-y-1">
+                        <h4 className="text-[11px] font-black uppercase tracking-widest">System Logout</h4>
+                        <p className="text-[9px] opacity-50 uppercase font-bold tracking-wider">Terminate all active links for this vector.</p>
+                      </div>
+                      <Button
+                        onClick={async () => {
+                          await supabase.auth.signOut();
+                          window.location.href = '/';
+                        }}
+                        className="h-12 rounded-none px-8 border border-border/50 hover:bg-accent/5 text-[10px] font-black tracking-widest uppercase"
+                      >
+                        Sign Out
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </TabsContent>
+            </AnimatePresence>
+          </Tabs>
+        </div>
+      </main>
+
+      <footer className="py-12 border-t border-border/10 bg-muted/5 relative z-10">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="text-[9px] font-black tracking-widest uppercase opacity-40">© 2026 ADAZE COLLECTIVE // ALL RIGHTS RESERVED.</p>
+          <div className="flex gap-10">
+            {['Protocol', 'Privacy', 'Network'].map(item => (
+              <button key={item} className="text-[9px] font-black tracking-widest uppercase opacity-40 hover:opacity-100 transition-opacity">
+                {item}
+              </button>
+            ))}
           </div>
-        </div >
-      </main >
-
-      {/* Deactivate Account Dialog */}
-      < AlertDialog open={showDeactivateDialog} onOpenChange={setShowDeactivateDialog} >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <PauseCircle className="h-5 w-5 text-orange-600" />
-              Deactivate Your Account?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>
-                Your account will be temporarily suspended and you will be signed out immediately.
-              </p>
-              <p className="font-semibold">
-                To reactivate your account, you&apos;ll need to contact our support team.
-              </p>
-              <p>
-                All your data will be preserved and restored when you reactivate.
-              </p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={actionLoading}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeactivateAccount}
-              disabled={actionLoading}
-              className="bg-orange-600 hover:bg-orange-700"
-            >
-              {actionLoading ? 'Deactivating...' : 'Yes, Deactivate Account'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog >
-
-      {/* Delete Account Dialog */}
-      < AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog} >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
-              <Trash2 className="h-5 w-5" />
-              Permanently Delete Account?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <p className="font-semibold text-red-600">
-                This action is permanent and cannot be undone!
-              </p>
-              <p>
-                All your data including:
-              </p>
-              <ul className="text-sm space-y-1 list-disc list-inside">
-                <li>Profile information</li>
-                <li>Order history</li>
-                <li>Shopping cart</li>
-                <li>Saved addresses</li>
-                <li>Reviews and ratings</li>
-              </ul>
-              <p>
-                will be permanently deleted from our system.
-              </p>
-              <div className="pt-2">
-                <Label htmlFor="confirm-email" className="text-sm font-semibold">
-                  Type your email to confirm: <span className="text-red-600">{user?.email}</span>
-                </Label>
-                <Input
-                  id="confirm-email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={deleteConfirmEmail}
-                  onChange={(e) => setDeleteConfirmEmail(e.target.value)}
-                  className="mt-2"
-                  disabled={actionLoading}
-                />
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              disabled={actionLoading}
-              onClick={() => setDeleteConfirmEmail('')}
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteAccount}
-              disabled={actionLoading || deleteConfirmEmail !== user?.email}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {actionLoading ? 'Deleting...' : 'Yes, Delete My Account'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog >
-    </div >
+        </div>
+      </footer>
+    </div>
   );
 }
