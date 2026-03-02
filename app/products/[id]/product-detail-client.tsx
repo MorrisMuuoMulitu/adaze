@@ -330,8 +330,8 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                   </Button>
                   <Button
                     className="btn-premium h-16 rounded-none text-[11px] font-black tracking-[0.2em] uppercase"
-                    onClick={() => {
-                      addToCart();
+                    onClick={async () => {
+                      await addToCart();
                       router.push('/cart');
                     }}
                     disabled={product.stock_quantity <= 0}

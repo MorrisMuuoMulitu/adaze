@@ -63,6 +63,7 @@ class CartService {
     if (!this.isServer) {
       const res = await fetch('/api/cart', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productId, quantity }),
       });
       return res.json();
@@ -103,6 +104,7 @@ class CartService {
     if (!this.isServer) {
       const res = await fetch(`/api/cart/${cartId}`, {
         method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quantity: newQuantity }),
       });
       return res.json();

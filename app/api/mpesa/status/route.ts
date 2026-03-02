@@ -1,44 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mpesaService } from '@/lib/mpesa';
+import { mpesaService } from '@/lib/mpesa/service';
 import { prisma } from '@/lib/prisma';
-import { orderService } from '@/lib/orderService';
-import { cartService } from '@/lib/cartService';
-import { notificationService } from '@/lib/notificationService';
-import { MpesaStatus, OrderStatus } from '@prisma/client';
+import { getMpesaError } from '@/lib/mpesa/errors';
+import { MpesaStatus } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Query M-Pesa Payment Status
- * 
  * GET /api/mpesa/status?checkoutRequestId=xxx
+ * Query payment status from DB or M-Pesa API
  */
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const checkoutRequestId = searchParams.get('checkoutRequestId');
 
     if (!checkoutRequestId) {
-      return NextResponse.json(
-        { error: 'Missing checkoutRequestId' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing checkoutRequestId' }, { status: 400 });
     }
 
-    // First check our database via Prisma
+    // 1. Check local database first
     const transaction = await prisma.mpesaTransaction.findUnique({
       where: { checkoutRequestId },
     });
 
     if (!transaction) {
-      return NextResponse.json(
-        { error: 'Transaction not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
     }
 
-    // If already completed or failed, return from database
+    // 2. If already COMPLETED or FAILED, return immediately
     if (transaction.status === MpesaStatus.COMPLETED || transaction.status === MpesaStatus.FAILED) {
       return NextResponse.json({
         status: transaction.status.toLowerCase(),
@@ -47,90 +37,56 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Query M-Pesa API for pending transactions
+    // 3. Fallback: Query M-Pesa API if status is still PENDING
+    // This handles cases where the callback was lost or delayed
     try {
-      const status = await mpesaService.queryPaymentStatus(checkoutRequestId);
+      const result = await mpesaService.querySTKPushStatus(checkoutRequestId);
       
-      // Update our database based on M-Pesa response
-      if (status.ResultCode === '0') {
-        await mpesaService.updateTransactionStatus(
-          checkoutRequestId,
-          'completed',
-          status.MpesaReceiptNumber
-        );
+      // Map ResultCode to human message
+      const error = getMpesaError(result.ResultCode);
 
-        // Also update the order status
-        if (transaction.orderId) {
-          const order = await prisma.order.findUnique({
-            where: { id: transaction.orderId },
-          });
-
-          if (order) {
-            // 1. Mark order as confirmed (since it's paid)
-            await prisma.order.update({
-              where: { id: transaction.orderId },
-              data: {
-                status: OrderStatus.CONFIRMED,
-              },
-            });
-            
-            // 2. Clear cart
-            await cartService.clearCart(order.buyerId);
-
-            // 3. Attempt Auto-Assignment of Transporter using our service
-            try {
-              await orderService.autoAssignTransporter(order.id);
-            } catch (err) {
-              console.error('Auto-assign failed in status poll:', err);
-            }
-
-            // 4. Notifications
-            await notificationService.createNotification({
-              user_id: order.buyerId,
-              title: 'Order Confirmed',
-              message: `Your payment was successful. Order "${order.title}" is now being processed.`,
-              type: 'success',
-              related_order_id: order.id
-            });
-
-            if (order.traderId) {
-              await notificationService.createNotification({
-                user_id: order.traderId,
-                title: 'New Paid Order',
-                message: `Payment received for "${order.title}". Please prepare the items for delivery.`,
-                type: 'info',
-                related_order_id: order.id
-              });
-            }
-
-            console.log(`✅ Order ${transaction.orderId} confirmed and processed via status poll`);
-          }
-        }
+      // If the API says it's finished, update our DB
+      if (result.ResultCode === '0') {
+        // Note: The Query API response doesn't include metadata like MpesaReceiptNumber
+        // usually, but if it does, we'd update it here.
+        await prisma.mpesaTransaction.update({
+          where: { checkoutRequestId },
+          data: { status: MpesaStatus.COMPLETED }
+        });
 
         return NextResponse.json({
           status: 'completed',
-          mpesaReceiptNumber: status.MpesaReceiptNumber,
-          amount: status.Amount,
+          message: 'Payment confirmed via query API'
         });
-      } else {
-        await mpesaService.updateTransactionStatus(checkoutRequestId, 'failed');
+      } else if (result.ResultCode !== '0' && result.ResponseCode === '0') {
+        // Transaction failed according to M-Pesa
+        await prisma.mpesaTransaction.update({
+          where: { checkoutRequestId },
+          data: { status: MpesaStatus.FAILED }
+        });
+
         return NextResponse.json({
           status: 'failed',
-          message: status.ResultDesc,
+          message: error.customerMessage
         });
       }
-    } catch (apiError) {
-      console.error('M-Pesa status query error:', apiError);
+
+      // Still pending
       return NextResponse.json({
-        status: transaction.status.toLowerCase(),
-        message: 'Payment is being processed',
+        status: 'pending',
+        message: 'Payment is being processed'
+      });
+
+    } catch (apiError) {
+      // API query failed, just return current DB status
+      return NextResponse.json({
+        status: 'pending',
+        message: 'Awaiting confirmation'
       });
     }
+
   } catch (error: any) {
-    console.error('Status check error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to check status' },
-      { status: 500 }
-    );
+    console.error('[API/Mpesa/Status] Error:', error.message);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

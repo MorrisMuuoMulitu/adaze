@@ -1,5 +1,3 @@
-// schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,7 +7,296 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Enums
+model User {
+  id                   String               @id @default(uuid())
+  name                 String?
+  email                String?              @unique
+  emailVerified        DateTime?
+  image                String?
+  password             String?
+  role                 Role                 @default(BUYER)
+  phone                String?
+  location             String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  isSuspended          Boolean              @default(false)
+  suspendedAt          DateTime?
+  suspendedBy          String?
+  isDeleted            Boolean              @default(false)
+  deletedAt            DateTime?
+  deletedBy            String?
+  lastLoginAt          DateTime?
+  loginCount           Int                  @default(0)
+  twoFactorEnabled     Boolean              @default(false)
+  twoFactorMethod      String?              @default("totp")
+  twoFactorSecret      String?
+  accounts             Account[]
+  cart                 CartItem[]
+  loginHistory         LoginHistory[]
+  mpesaTransactions    MpesaTransaction[]
+  notifications        Notification[]
+  ordersAsBuyer        Order[]              @relation("BuyerOrders")
+  ordersAsTrader       Order[]              @relation("TraderOrders")
+  ordersAsTransporter  Order[]              @relation("TransporterOrders")
+  products             Product[]            @relation("TraderProducts")
+  reviewsReceived      Review[]             @relation("Reviewed")
+  reviewsGiven         Review[]             @relation("Reviewer")
+  sessions             Session[]
+  suspiciousActivities SuspiciousActivity[]
+  wishlist             Wishlist[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id              String   @id @default(uuid())
+  sessionToken    String   @unique
+  userId          String
+  expires         DateTime
+  browser         String?
+  deviceName      String?
+  deviceType      String?
+  ipAddress       String?
+  isActive        Boolean  @default(true)
+  lastActivityAt  DateTime @default(now())
+  locationCity    String?
+  locationCountry String?
+  os              String?
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model LoginHistory {
+  id              String      @id @default(uuid())
+  userId          String
+  loginTime       DateTime    @default(now())
+  ipAddress       String?
+  userAgent       String?
+  deviceType      String?
+  browser         String?
+  os              String?
+  locationCountry String?
+  locationCity    String?
+  status          LoginStatus
+  isSuspicious    Boolean     @default(false)
+  riskScore       Int         @default(0)
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("login_history")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Product {
+  id            String        @id @default(uuid())
+  traderId      String
+  name          String
+  description   String?
+  price         Decimal       @db.Decimal(10, 2)
+  category      String?
+  imageUrl      String?
+  stockQuantity Int           @default(0)
+  rating        Decimal       @default(0.0) @db.Decimal(2, 1)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  isFeatured    Boolean       @default(false)
+  status        ProductStatus @default(PENDING)
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  trader        User          @relation("TraderProducts", fields: [traderId], references: [id])
+  reviews       Review[]
+  wishlist      Wishlist[]
+
+  @@index([name])
+  @@index([category])
+  @@index([traderId])
+  @@map("products")
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("cart_items")
+}
+
+model Wishlist {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("wishlist")
+}
+
+model Order {
+  id                String             @id @default(uuid())
+  buyerId           String
+  traderId          String?
+  transporterId     String?
+  title             String
+  description       String?
+  amount            Decimal            @db.Decimal(10, 2)
+  status            OrderStatus        @default(PENDING)
+  shippingAddress   String
+  billingAddress    String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  mpesaTransactions MpesaTransaction[]
+  items             OrderItem[]
+  buyer             User               @relation("BuyerOrders", fields: [buyerId], references: [id])
+  trader            User?              @relation("TraderOrders", fields: [traderId], references: [id])
+  transporter       User?              @relation("TransporterOrders", fields: [transporterId], references: [id])
+  reviews           Review[]
+
+  @@index([buyerId])
+  @@index([traderId])
+  @@index([status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  productId   String
+  quantity    Int
+  priceAtTime Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+model Review {
+  id                 String    @id @default(uuid())
+  orderId            String?
+  productId          String?
+  reviewerId         String
+  reviewedId         String
+  rating             Int
+  title              String?
+  comment            String?
+  images             String[]  @default([])
+  verifiedPurchase   Boolean   @default(false)
+  helpfulCount       Int       @default(0)
+  traderResponse     String?
+  traderResponseDate DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  order              Order?    @relation(fields: [orderId], references: [id])
+  product            Product?  @relation(fields: [productId], references: [id])
+  reviewed           User      @relation("Reviewed", fields: [reviewedId], references: [id])
+  reviewer           User      @relation("Reviewer", fields: [reviewerId], references: [id])
+
+  @@map("reviews")
+}
+
+model Notification {
+  id             String           @id @default(uuid())
+  userId         String
+  title          String
+  message        String
+  type           NotificationType @default(INFO)
+  isRead         Boolean          @default(false)
+  relatedOrderId String?
+  createdAt      DateTime         @default(now())
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+model MpesaTransaction {
+  id                 String      @id @default(uuid())
+  orderId            String
+  userId             String
+  amount             Decimal     @db.Decimal(10, 2)
+  phoneNumber        String
+  checkoutRequestId  String      @unique
+  merchantRequestId  String
+  mpesaReceiptNumber String?
+  status             MpesaStatus @default(PENDING)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  order              Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([checkoutRequestId])
+  @@index([status])
+  @@map("mpesa_transactions")
+}
+
+model SuspiciousActivity {
+  id          String    @id @default(uuid())
+  userId      String?
+  type        String
+  description String
+  ipAddress   String?
+  userAgent   String?
+  severity    String    @default("low")
+  isResolved  Boolean   @default(false)
+  resolvedAt  DateTime?
+  resolvedBy  String?
+  createdAt   DateTime  @default(now())
+  user        User?     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@map("suspicious_activities")
+}
+
+model PlatformSettings {
+  id                  String   @id @default("default")
+  siteName            String   @default("Adaze Marketplace")
+  maintenanceMode     Boolean  @default(false)
+  allowRegistration   Boolean  @default(true)
+  commissionRate      Decimal  @default(10.0) @db.Decimal(5, 2)
+  minWithdrawalAmount Decimal  @default(1000.0) @db.Decimal(10, 2)
+  supportEmail        String?
+  updatedAt           DateTime @updatedAt
+
+  @@map("platform_settings")
+}
+
 enum Role {
   BUYER
   TRADER
@@ -50,318 +337,4 @@ enum ProductStatus {
   ACTIVE
   PENDING
   REJECTED
-}
-
-// User Model (Auth.js + Profile Data)
-model User {
-  id            String    @id @default(uuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  role          Role      @default(BUYER)
-  phone         String?
-  location      String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Account Management
-  isSuspended   Boolean   @default(false)
-  suspendedAt   DateTime?
-  suspendedBy   String?
-  isDeleted     Boolean   @default(false)
-  deletedAt     DateTime?
-  deletedBy     String?
-  lastLoginAt   DateTime?
-  loginCount    Int       @default(0)
-
-  // 2FA & Security
-  twoFactorEnabled Boolean @default(false)
-  twoFactorSecret  String?
-  twoFactorMethod  String?   @default("totp") // 'totp', 'sms', 'email'
-
-  accounts      Account[]
-  sessions      Session[]
-  
-  // Relations
-  products      Product[]      @relation("TraderProducts")
-  ordersAsBuyer Order[]        @relation("BuyerOrders")
-  ordersAsTrader Order[]       @relation("TraderOrders")
-  ordersAsTransporter Order[]  @relation("TransporterOrders")
-  cart          CartItem[]
-  wishlist      Wishlist[]
-  notifications Notification[]
-  reviewsGiven  Review[]       @relation("Reviewer")
-  reviewsReceived Review[]     @relation("Reviewed")
-  mpesaTransactions MpesaTransaction[]
-  loginHistory  LoginHistory[]
-  suspiciousActivities SuspiciousActivity[]
-
-  @@map("users")
-}
-
-model Account {
-  id                 String  @id @default(uuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String? @db.Text
-  access_token       String? @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String? @db.Text
-  session_state      String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@map("accounts")
-}
-
-model Session {
-  id           String   @id @default(uuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  
-  // Custom tracking fields
-  deviceName   String?
-  deviceType   String?
-  browser      String?
-  os           String?
-  ipAddress    String?
-  locationCountry String?
-  locationCity String?
-  isActive     Boolean  @default(true)
-  lastActivityAt DateTime @default(now())
-
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
-}
-
-model LoginHistory {
-  id              String      @id @default(uuid())
-  userId          String
-  loginTime       DateTime    @default(now())
-  ipAddress       String?
-  userAgent       String?
-  deviceType      String?
-  browser         String?
-  os              String?
-  locationCountry String?
-  locationCity    String?
-  status          LoginStatus
-  isSuspicious    Boolean     @default(false)
-  riskScore       Int         @default(0)
-
-  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("login_history")
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-  @@map("verification_tokens")
-}
-
-// Marketplace Models
-
-model Product {
-  id            String   @id @default(uuid())
-  traderId      String
-  name          String
-  description   String?
-  price         Decimal  @db.Decimal(10, 2)
-  category      String?
-  imageUrl      String?
-  stockQuantity Int      @default(0)
-  rating        Decimal  @default(0.0) @db.Decimal(2, 1)
-  status        ProductStatus @default(PENDING)
-  isFeatured    Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  trader        User     @relation("TraderProducts", fields: [traderId], references: [id])
-  cartItems     CartItem[]
-  wishlist      Wishlist[]
-  orderItems    OrderItem[]
-  reviews       Review[]
-
-  @@index([name]) // Optimized for search
-  @@index([category])
-  @@index([traderId])
-  @@map("products")
-}
-
-model CartItem {
-  id        String   @id @default(uuid())
-  userId    String
-  productId String
-  quantity  Int      @default(1)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, productId])
-  @@map("cart_items")
-}
-
-model Wishlist {
-  id        String   @id @default(uuid())
-  userId    String
-  productId String
-  createdAt DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, productId])
-  @@map("wishlist")
-}
-
-model Order {
-  id              String      @id @default(uuid())
-  buyerId         String
-  traderId        String?
-  transporterId   String?
-  title           String
-  description     String?
-  amount          Decimal     @db.Decimal(10, 2)
-  status          OrderStatus @default(PENDING)
-  shippingAddress String
-  billingAddress  String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-
-  buyer           User        @relation("BuyerOrders", fields: [buyerId], references: [id])
-  trader          User?       @relation("TraderOrders", fields: [traderId], references: [id])
-  transporter     User?       @relation("TransporterOrders", fields: [transporterId], references: [id])
-  items           OrderItem[]
-  mpesaTransactions MpesaTransaction[]
-  reviews         Review[]
-
-  @@index([buyerId])
-  @@index([traderId])
-  @@index([status])
-  @@map("orders")
-}
-
-model OrderItem {
-  id          String   @id @default(uuid())
-  orderId     String
-  productId   String
-  quantity    Int
-  priceAtTime Decimal  @db.Decimal(10, 2)
-  createdAt   DateTime @default(now())
-
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product     Product  @relation(fields: [productId], references: [id])
-
-  @@map("order_items")
-}
-
-model Review {
-  id                 String   @id @default(uuid())
-  orderId            String?
-  productId          String?
-  reviewerId         String
-  reviewedId         String
-  rating             Int
-  title              String?
-  comment            String?
-  images             String[] @default([])
-  verifiedPurchase   Boolean  @default(false)
-  helpfulCount       Int      @default(0)
-  traderResponse     String?
-  traderResponseDate DateTime?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  order       Order?   @relation(fields: [orderId], references: [id])
-  product     Product? @relation(fields: [productId], references: [id])
-  reviewer    User     @relation("Reviewer", fields: [reviewerId], references: [id])
-  reviewed    User     @relation("Reviewed", fields: [reviewedId], references: [id])
-
-  @@map("reviews")
-}
-
-model Notification {
-  id             String           @id @default(uuid())
-  userId         String
-  title          String
-  message        String
-  type           NotificationType @default(INFO)
-  isRead         Boolean          @default(false)
-  relatedOrderId String?
-  createdAt      DateTime         @default(now())
-
-  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("notifications")
-}
-
-model MpesaTransaction {
-  id                  String      @id @default(uuid())
-  orderId             String
-  userId              String
-  amount              Decimal     @db.Decimal(10, 2)
-  phoneNumber         String
-  checkoutRequestId   String      @unique
-  merchantRequestId   String
-  mpesaReceiptNumber  String?
-  status              MpesaStatus @default(PENDING)
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
-
-  order               Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([checkoutRequestId])
-  @@index([status])
-  @@map("mpesa_transactions")
-}
-
-model SuspiciousActivity {
-  id          String   @id @default(uuid())
-  userId      String?
-  type        String   // 'failed_login', 'unauthorized_access', etc.
-  description String
-  ipAddress   String?
-  userAgent   String?
-  severity    String   @default("low") // 'low', 'medium', 'high', 'critical'
-  isResolved  Boolean  @default(false)
-  resolvedAt  DateTime?
-  resolvedBy  String?
-  createdAt   DateTime @default(now())
-
-  user        User?    @relation(fields: [userId], references: [id])
-
-  @@index([userId])
-  @@index([type])
-  @@map("suspicious_activities")
-}
-
-model PlatformSettings {
-  id                  String   @id @default("default")
-  siteName            String   @default("Adaze Marketplace")
-  maintenanceMode     Boolean  @default(false)
-  allowRegistration   Boolean  @default(true)
-  commissionRate      Decimal  @default(10.0) @db.Decimal(5, 2)
-  minWithdrawalAmount Decimal  @default(1000.0) @db.Decimal(10, 2)
-  supportEmail        String?
-  updatedAt           DateTime @updatedAt
-
-  @@map("platform_settings")
 }

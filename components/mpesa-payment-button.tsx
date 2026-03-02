@@ -68,8 +68,7 @@ export function MpesaPaymentButton({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderId,
-          phoneNumber,
-          amount,
+          phone: phoneNumber,
         }),
       });
 

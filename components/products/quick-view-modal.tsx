@@ -5,10 +5,11 @@ import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, X, Star } from 'lucide-react';
-import { addToCart } from '@/lib/cart';
+import { ShoppingCart, X, Star, Loader2 } from 'lucide-react';
+import { cartService } from '@/lib/cartService';
 import { useAuth } from '@/components/auth/auth-provider';
 import { formatCurrency } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface Product {
     id: string;
@@ -37,24 +38,24 @@ export function QuickViewModal({ product, open, onOpenChange }: QuickViewModalPr
 
     if (!product) return null;
 
-    const handleAddToCart = () => {
+    const handleAddToCart = async () => {
         if (!user) {
             window.dispatchEvent(new CustomEvent('TRIGGER_AUTH_MODAL', { detail: { type: 'login' } }));
             return;
         }
 
         setIsAdding(true);
-        // Map product to CartItem structure if needed, or just pass as is if compatible
-        // lib/cart.ts expects Product which has id (number in lib/cart.ts? let's check)
-        // lib/cart.ts imports Product from @/types.
-        // Our local Product interface has id as string.
-        // We might need to cast or ensure types match.
-        // For now, we'll try passing it.
-        addToCart({
-            ...product,
-            // Ensure required fields for CartItem are present
-        } as any, 1, !!user);
-        setTimeout(() => setIsAdding(false), 1000);
+        try {
+            await cartService.addToCart(user.id, product.id, 1);
+            toast.success('Item added to cart');
+            // Notify Navbar to refresh cart count
+            window.dispatchEvent(new CustomEvent('cartUpdated'));
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            toast.error('Failed to add item to cart');
+        } finally {
+            setIsAdding(false);
+        }
     };
 
     return (
@@ -131,8 +132,8 @@ export function QuickViewModal({ product, open, onOpenChange }: QuickViewModalPr
                             >
                                 {isAdding ? (
                                     <span className="flex items-center gap-2">
-                                        <CheckCircle className="w-5 h-5" />
-                                        Added to Cart
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        Adding...
                                     </span>
                                 ) : (
                                     <span className="flex items-center gap-2">

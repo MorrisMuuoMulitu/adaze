@@ -1,127 +1,53 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { cartService } from '@/lib/cartService';
-import { notificationService } from '@/lib/notificationService';
-import { orderService } from '@/lib/orderService';
-import { MpesaStatus, OrderStatus } from '@prisma/client';
+import { processMpesaCallback } from '@/lib/mpesa/callback';
+import { isSafaricomIp, isDuplicateRequest } from '@/lib/mpesa/middleware';
+import { NextResponse } from 'next/server';
 
 /**
- * M-Pesa Callback Handler
- * 
- * This endpoint receives payment confirmations from Safaricom
- * Documentation: https://developer.safaricom.co.ke/Documentation
+ * POST /api/mpesa/callback
+ * Safaricom Webhook Receiver
  */
-
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
+    // 1. IP Whitelisting (Security)
+    const forwardHeader = request.headers.get('x-forwarded-for');
+    const ip = forwardHeader ? forwardHeader.split(',')[0] : 'unknown';
+    
+    if (!isSafaricomIp(ip)) {
+      console.warn(`[API/Mpesa/Callback] Rejected request from unauthorized IP: ${ip}`);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
     const body = await request.json();
-    console.log('=== M-Pesa Callback START ===');
-    
-    const { Body } = body;
-    
-    if (!Body || !Body.stkCallback) {
-      return NextResponse.json(
-        { ResultCode: 1, ResultDesc: 'Invalid callback data' },
-        { status: 400 }
-      );
+    const checkoutRequestId = body.Body?.stkCallback?.CheckoutRequestID;
+
+    // 2. Idempotency Check
+    if (checkoutRequestId && isDuplicateRequest(checkoutRequestId)) {
+      console.log(`[API/Mpesa/Callback] Duplicate request received for ${checkoutRequestId}. Skipping.`);
+      return NextResponse.json({ ResultCode: 0, ResultDesc: "Duplicate accepted" });
     }
+    
+    // Log the received callback
+    console.log(`[API/Mpesa/Callback] Received callback for ${checkoutRequestId} at:`, new Date().toISOString());
+    
+    // 3. Asynchronously process the callback
+    // We don't await this because Safaricom has a strict timeout (usually < 5s)
+    // and expects a 200 OK response immediately.
+    processMpesaCallback(body).catch(err => {
+      console.error('[API/Mpesa/Callback] Async processing error:', err);
+    });
 
-    const { stkCallback } = Body;
-    const {
-      CheckoutRequestID,
-      ResultCode,
-      ResultDesc,
-      CallbackMetadata,
-    } = stkCallback;
+    // 2. Respond to Safaricom immediately
+    return NextResponse.json({
+      ResultCode: 0,
+      ResultDesc: "Accepted successfully"
+    });
 
-    console.log('Processing callback - ResultCode:', ResultCode, 'ResultDesc:', ResultDesc);
-
-    // ResultCode 0 = Success
-    if (ResultCode === 0) {
-      console.log('✅ Payment SUCCESSFUL');
-      
-      const metadata = CallbackMetadata?.Item || [];
-      const getMetadataValue = (name: string) => {
-        const item = metadata.find((i: any) => i.Name === name);
-        return item?.Value;
-      };
-
-      const mpesaReceiptNumber = getMetadataValue('MpesaReceiptNumber');
-
-      // Update transaction status
-      const transaction = await prisma.mpesaTransaction.update({
-        where: { checkoutRequestId: CheckoutRequestID },
-        data: {
-          status: MpesaStatus.COMPLETED,
-          mpesaReceiptNumber,
-        },
-      });
-
-      // Update order status to confirmed
-      if (transaction.orderId) {
-        const order = await prisma.order.findUnique({
-          where: { id: transaction.orderId },
-        });
-
-        if (order) {
-          // 1. Mark as confirmed
-          await prisma.order.update({
-            where: { id: order.id },
-            data: { status: OrderStatus.CONFIRMED },
-          });
-
-          // 2. Clear user's cart
-          await cartService.clearCart(order.buyerId);
-
-          // 3. Attempt Auto-Assignment of Transporter
-          try {
-            await orderService.autoAssignTransporter(order.id);
-          } catch (assignError) {
-            console.error('Error during transporter auto-assignment:', assignError);
-          }
-
-          // 4. Notify Buyer & Trader
-          await notificationService.createNotification({
-            user_id: order.buyerId,
-            title: 'Order Confirmed',
-            message: `Your payment was successful. Order "${order.title}" is now being processed.`,
-            type: 'success',
-            related_order_id: order.id
-          });
-
-          if (order.traderId) {
-            await notificationService.createNotification({
-              user_id: order.traderId,
-              title: 'New Paid Order',
-              message: `Payment received for "${order.title}". Please prepare the items for delivery.`,
-              type: 'info',
-              related_order_id: order.id
-            });
-          }
-        }
-      }
-
-      console.log('=== M-Pesa Callback END (Success) ===');
-      return NextResponse.json({ ResultCode: 0, ResultDesc: 'Success' });
-    } else {
-      // Payment failed or cancelled
-      await prisma.mpesaTransaction.update({
-        where: { checkoutRequestId: CheckoutRequestID },
-        data: { status: MpesaStatus.FAILED },
-      });
-
-      return NextResponse.json({ ResultCode: 0, ResultDesc: 'Accepted' });
-    }
   } catch (error: any) {
-    console.error('M-Pesa callback error:', error);
-    return NextResponse.json(
-      { ResultCode: 1, ResultDesc: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('[API/Mpesa/Callback] Parsing error:', error.message);
+    // Even on error, we return 200 to Safaricom to stop retries if the payload was valid JSON
+    return NextResponse.json({
+      ResultCode: 0,
+      ResultDesc: "Accepted with parsing error"
+    });
   }
-}
-
-// M-Pesa also sends validation requests
-export async function GET() {
-  return NextResponse.json({ message: 'M-Pesa callback endpoint' });
 }

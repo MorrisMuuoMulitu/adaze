@@ -1,8 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { ShoppingCart } from 'lucide-react'
+import { AddToCartButton } from '@/components/products/add-to-cart-button'
 import Image from 'next/image'
 
 export async function ProductList() {
@@ -47,10 +46,7 @@ export async function ProductList() {
             </p>
           </CardContent>
           <CardFooter className="p-4 pt-0">
-            <Button className="w-full bg-black text-white hover:bg-gray-800 transition-colors rounded-lg">
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              Add to Cart
-            </Button>
+            <AddToCartButton productId={product.id} productName={product.name} />
           </CardFooter>
         </Card>
       ))}
