@@ -1,14 +1,13 @@
-import { Configuration, OpenAIApi } from 'openai-edge'
+import OpenAI from 'openai'
 import { prisma } from '@/lib/prisma'
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
-const config = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-const openai = new OpenAIApi(config)
-
-export const runtime = 'edge'
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
   // Rate Limit: 20 searches per minute per IP
@@ -32,7 +31,7 @@ export async function GET(req: Request) {
      * 3. Return results ranked by relevance.
      */
     
-    const extractionResponse = await openai.createChatCompletion({
+    const extractionResponse = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
         {
@@ -49,8 +48,8 @@ export async function GET(req: Request) {
       ],
     })
 
-    const extractionData = await extractionResponse.json()
-    const content = JSON.parse(extractionData.choices[0].message.content)
+    const contentStr = extractionResponse.choices[0].message.content || '{}';
+    const content = JSON.parse(contentStr)
 
     // Execute query with Neon (optimized with the @@index created in schema.prisma)
     const results = await prisma.product.findMany({

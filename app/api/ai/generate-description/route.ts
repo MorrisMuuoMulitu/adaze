@@ -1,13 +1,12 @@
-import { Configuration, OpenAIApi } from 'openai-edge'
+import OpenAI from 'openai'
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
-const config = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-const openai = new OpenAIApi(config)
-
-export const runtime = 'edge'
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
   // Rate Limit: 10 requests per minute per IP
@@ -21,7 +20,7 @@ export async function POST(req: Request) {
   const { prompt } = await req.json()
 
   try {
-    const response = await openai.createChatCompletion({
+    const stream = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       stream: true,
       messages: [
@@ -38,10 +37,21 @@ export async function POST(req: Request) {
       ],
     })
 
-    // Return the raw response which is already a stream in edge runtime
-    return new Response(response.body, {
+    // Create a ReadableStream from the OpenAI stream
+    const readableStream = new ReadableStream({
+      async start(controller) {
+        for await (const part of stream) {
+          const content = part.choices[0]?.delta?.content || ''
+          controller.enqueue(new TextEncoder().encode(content))
+        }
+        controller.close()
+      },
+    })
+
+    return new Response(readableStream, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
+        'Transfer-Encoding': 'chunked',
       },
     })
   } catch (error: any) {
