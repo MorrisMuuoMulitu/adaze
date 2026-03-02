@@ -2,6 +2,8 @@ import { auth } from '@/auth';
 import { notificationService } from '@/lib/notificationService';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

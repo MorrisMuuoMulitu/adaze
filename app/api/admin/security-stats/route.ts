@@ -1,4 +1,5 @@
-export const dynamic = "force-dynamic";import { auth } from '@/auth';
+export const dynamic = "force-dynamic";
+import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { LoginStatus } from '@prisma/client';

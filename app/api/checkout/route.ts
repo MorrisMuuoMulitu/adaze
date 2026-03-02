@@ -5,6 +5,8 @@ import { notificationService } from '@/lib/notificationService';
 import { NextResponse } from 'next/server';
 import { OrderStatus } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const session = await auth();

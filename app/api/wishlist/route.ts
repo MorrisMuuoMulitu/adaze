@@ -2,6 +2,8 @@ import { auth } from '@/auth';
 import { wishlistService } from '@/lib/wishlistService';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const session = await auth();

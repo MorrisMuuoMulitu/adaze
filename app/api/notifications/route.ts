@@ -1,4 +1,5 @@
-export const dynamic = "force-dynamic";import { auth } from '@/auth';
+export const dynamic = "force-dynamic";
+import { auth } from '@/auth';
 import { notificationService } from '@/lib/notificationService';
 import { NextResponse } from 'next/server';
 

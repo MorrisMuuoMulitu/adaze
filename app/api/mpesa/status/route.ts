@@ -6,6 +6,8 @@ import { cartService } from '@/lib/cartService';
 import { notificationService } from '@/lib/notificationService';
 import { MpesaStatus, OrderStatus } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Query M-Pesa Payment Status
  * 
