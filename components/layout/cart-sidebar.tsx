@@ -242,18 +242,18 @@ export function CartSidebar({ cartCount, onCartUpdate }: CartSidebarProps) {
                   <div className="flex space-x-2 pt-4">
                     <Button 
                       variant="outline" 
-                      className="flex-1"
+                      className="flex-1 rounded-none text-[10px] font-black tracking-widest uppercase"
                       onClick={() => setIsOpen(false)}
                     >
-                      Continue Shopping
+                      Archive
                     </Button>
                     <Button 
-                      className="flex-1"
+                      className="flex-1 african-gradient rounded-none text-[10px] font-black tracking-widest uppercase text-white"
                       asChild
                       onClick={() => setIsOpen(false)}
                     >
                       <Link href="/cart">
-                        Checkout
+                        PROCEED TO CHECKOUT
                       </Link>
                     </Button>
                   </div>

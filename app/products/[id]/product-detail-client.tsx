@@ -90,14 +90,21 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
     if (!product) return;
 
-    try {
-      await cartService.addToCart(user.id, product.id, quantity);
-      toast.success(`${quantity} ${product.name} added to cart!`);
-
-      // Update cart count
-      const count = await cartService.getCartCount(user.id);
-      setCartCount(count);
-    } catch (error) {
+        try {
+          await cartService.addToCart(user.id, product.id, quantity);
+          toast.success(`${quantity} ${product.name} added to cart!`, {
+            action: {
+              label: 'View Cart',
+              onClick: () => router.push('/cart')
+            }
+          });
+    
+          // Update cart count
+          const count = await cartService.getCartCount(user.id);
+          setCartCount(count);
+          window.dispatchEvent(new CustomEvent('cartUpdated'));
+        }
+     catch (error) {
       console.error('Error adding to cart:', error);
       toast.error('Failed to add item to cart');
     }

@@ -25,12 +25,18 @@ export function AddToCartButton({ productId, productName }: AddToCartButtonProps
     }
 
     setLoading(true);
-    try {
-      await cartService.addToCart(user.id, productId, 1);
-      toast.success(`${productName} added to cart!`);
-      // Notify Navbar to refresh cart count
-      window.dispatchEvent(new CustomEvent('cartUpdated'));
-    } catch (error) {
+        try {
+          await cartService.addToCart(user.id, productId, 1);
+          toast.success(`${productName} added to cart!`, {
+            action: {
+              label: 'View Cart',
+              onClick: () => window.location.href = '/cart'
+            }
+          });
+          // Notify Navbar to refresh cart count
+          window.dispatchEvent(new CustomEvent('cartUpdated'));
+        }
+     catch (error) {
       console.error('Error adding to cart:', error);
       toast.error('Failed to add item to cart');
     } finally {
