@@ -1,35 +1,30 @@
+export const dynamic = "force-dynamic";import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
+    const session = await auth();
     
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
+    if (!session || !session.user || !session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Update profile to mark as suspended
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ 
-        is_suspended: true,
-        suspended_at: new Date().toISOString(),
-        suspended_by: 'self' // Track that user suspended their own account
-      })
-      .eq('id', user.id);
+    const userId = session.user.id;
 
-    if (updateError) {
-      console.error('Error deactivating account:', updateError);
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
-    }
+    // Update profile to mark as suspended via Prisma
+    await prisma.user.update({
+      where: { id: userId },
+      data: { 
+        isSuspended: true,
+        suspendedAt: new Date(),
+        suspendedBy: 'self'
+      },
+    });
 
-    // Sign out the user
-    await supabase.auth.signOut();
-
+    // In Auth.js, sign out is usually handled on the client 
+    // but the session will be invalid if we check isSuspended in callbacks
+    
     return NextResponse.json({ 
       message: 'Account deactivated successfully',
       success: true 

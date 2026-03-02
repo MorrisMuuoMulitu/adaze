@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mpesaService } from '@/lib/mpesa';
-import { createClient } from '@/lib/supabase/server';
+import { prisma } from '@/lib/prisma';
+import { orderService } from '@/lib/orderService';
+import { cartService } from '@/lib/cartService';
+import { notificationService } from '@/lib/notificationService';
+import { MpesaStatus, OrderStatus } from '@prisma/client';
 
 /**
  * Query M-Pesa Payment Status
@@ -20,14 +24,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
-
-    // First check our database
-    const { data: transaction } = await supabase
-      .from('mpesa_transactions')
-      .select('*')
-      .eq('checkout_request_id', checkoutRequestId)
-      .single();
+    // First check our database via Prisma
+    const transaction = await prisma.mpesaTransaction.findUnique({
+      where: { checkoutRequestId },
+    });
 
     if (!transaction) {
       return NextResponse.json(
@@ -37,11 +37,11 @@ export async function GET(request: NextRequest) {
     }
 
     // If already completed or failed, return from database
-    if (transaction.status === 'completed' || transaction.status === 'failed') {
+    if (transaction.status === MpesaStatus.COMPLETED || transaction.status === MpesaStatus.FAILED) {
       return NextResponse.json({
-        status: transaction.status,
-        mpesaReceiptNumber: transaction.mpesa_receipt_number,
-        amount: transaction.amount,
+        status: transaction.status.toLowerCase(),
+        mpesaReceiptNumber: transaction.mpesaReceiptNumber,
+        amount: Number(transaction.amount),
       });
     }
 
@@ -58,77 +58,42 @@ export async function GET(request: NextRequest) {
         );
 
         // Also update the order status
-        if (transaction.order_id) {
-          // Fetch order details for notification and auto-assignment
-          const { data: order } = await supabase
-            .from('orders')
-            .select('*')
-            .eq('id', transaction.order_id)
-            .single();
+        if (transaction.orderId) {
+          const order = await prisma.order.findUnique({
+            where: { id: transaction.orderId },
+          });
 
           if (order) {
-            // 1. Mark order as paid
-            await supabase
-              .from('orders')
-              .update({
-                status: 'confirmed',
-                payment_status: 'paid',
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', transaction.order_id);
+            // 1. Mark order as confirmed (since it's paid)
+            await prisma.order.update({
+              where: { id: transaction.orderId },
+              data: {
+                status: OrderStatus.CONFIRMED,
+              },
+            });
             
             // 2. Clear cart
-            await supabase
-              .from('cart')
-              .delete()
-              .eq('user_id', order.buyer_id);
+            await cartService.clearCart(order.buyerId);
 
-            // 3. Attempt Auto-Assignment of Transporter
+            // 3. Attempt Auto-Assignment of Transporter using our service
             try {
-              const { data: transporters } = await supabase
-                .from('profiles')
-                .select('id, full_name, location')
-                .eq('role', 'transporter')
-                .eq('is_suspended', false);
-
-              if (transporters && transporters.length > 0) {
-                const assignedTransporter = transporters[Math.floor(Math.random() * transporters.length)];
-                
-                await supabase
-                  .from('orders')
-                  .update({
-                    transporter_id: assignedTransporter.id,
-                    status: 'confirmed',
-                    updated_at: new Date().toISOString(),
-                  })
-                  .eq('id', order.id);
-                
-                await supabase.from('notifications').insert({
-                  user_id: assignedTransporter.id,
-                  title: 'New Delivery Available',
-                  message: `You have been assigned a new delivery for order "${order.title}".`,
-                  type: 'info',
-                  related_order_id: order.id
-                });
-              }
+              await orderService.autoAssignTransporter(order.id);
             } catch (err) {
               console.error('Auto-assign failed in status poll:', err);
             }
 
             // 4. Notifications
-            const notifications = [
-              {
-                user_id: order.buyer_id,
-                title: 'Order Confirmed',
-                message: `Your payment was successful. Order "${order.title}" is now being processed.`,
-                type: 'success',
-                related_order_id: order.id
-              }
-            ];
+            await notificationService.createNotification({
+              user_id: order.buyerId,
+              title: 'Order Confirmed',
+              message: `Your payment was successful. Order "${order.title}" is now being processed.`,
+              type: 'success',
+              related_order_id: order.id
+            });
 
-            if (order.trader_id) {
-              notifications.push({
-                user_id: order.trader_id,
+            if (order.traderId) {
+              await notificationService.createNotification({
+                user_id: order.traderId,
                 title: 'New Paid Order',
                 message: `Payment received for "${order.title}". Please prepare the items for delivery.`,
                 type: 'info',
@@ -136,8 +101,7 @@ export async function GET(request: NextRequest) {
               });
             }
 
-            await supabase.from('notifications').insert(notifications);
-            console.log(`✅ Order ${transaction.order_id} confirmed and processed via status poll`);
+            console.log(`✅ Order ${transaction.orderId} confirmed and processed via status poll`);
           }
         }
 
@@ -148,18 +112,6 @@ export async function GET(request: NextRequest) {
         });
       } else {
         await mpesaService.updateTransactionStatus(checkoutRequestId, 'failed');
-        
-        // Also update the order payment status to failed
-        if (transaction.order_id) {
-          await supabase
-            .from('orders')
-            .update({
-              payment_status: 'failed',
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', transaction.order_id);
-        }
-        
         return NextResponse.json({
           status: 'failed',
           message: status.ResultDesc,
@@ -167,10 +119,8 @@ export async function GET(request: NextRequest) {
       }
     } catch (apiError) {
       console.error('M-Pesa status query error:', apiError);
-      
-      // Return database status if API call fails
       return NextResponse.json({
-        status: transaction.status,
+        status: transaction.status.toLowerCase(),
         message: 'Payment is being processed',
       });
     }

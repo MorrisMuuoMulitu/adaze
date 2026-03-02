@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -33,16 +33,13 @@ export function LogoutButton({
 }: LogoutButtonProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
     
     try {
-      // Sign out from Supabase
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) throw error;
+      // Sign out from NextAuth
+      await signOut({ redirect: false });
       
       // Show success message
       toast.success('Logged out successfully', {

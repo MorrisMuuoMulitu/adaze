@@ -1,9 +1,8 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/auth/auth-provider';
-import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -18,16 +17,17 @@ interface ProductSales {
 }
 
 export default function TraderAnalyticsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const supabase = createClient();
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
-  const [topSellingProducts, setTopSellingProducts] = useState<ProductSales[]>([]);
+  const [topSellingProducts, setTopSellingProducts] = useState<any[]>([]);
   const [activeListingsCount, setActiveListingsCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
+    if (authLoading) return;
+    
+    if (!user || user.role !== 'TRADER') {
       router.push('/');
       return;
     }
@@ -35,77 +35,23 @@ export default function TraderAnalyticsPage() {
     const fetchAnalytics = async () => {
       setLoading(true);
       try {
-        // Fetch total revenue
-        const { data: revenueData, error: revenueError } = await supabase
-          .from('order_items')
-          .select(`
-            quantity,
-            price_at_time,
-            orders!inner (trader_id, status)
-          `)
-          .eq('orders.trader_id', user.id)
-          .eq('orders.status', 'delivered');
-
-        if (revenueError) throw revenueError;
-
-        const calculatedRevenue = revenueData.reduce((sum, item) => sum + (item.quantity * item.price_at_time), 0);
-        setTotalRevenue(calculatedRevenue);
-
-        // Fetch active listings count
-        const { count: listingsCount, error: listingsError } = await supabase
-          .from('products')
-          .select('*', { count: 'exact' })
-          .eq('trader_id', user.id);
-
-        if (listingsError) throw listingsError;
-        setActiveListingsCount(listingsCount || 0);
-
-        // Fetch top-selling products
-        const { data: salesData, error: salesError } = await supabase
-          .from('order_items')
-          .select(`
-            quantity,
-            price_at_time,
-            products (name),
-            orders!inner (trader_id, status)
-          `)
-          .eq('orders.trader_id', user.id)
-          .eq('orders.status', 'delivered');
-
-        if (salesError) throw salesError;
-
-        const productSalesMap = new Map<string, { total_quantity_sold: number; total_revenue: number; product_name: string }>();
-
-        salesData.forEach(item => {
-          const productName = item.products && item.products.length > 0 ? item.products[0].name : 'Unknown Product';
-          const currentSales = productSalesMap.get(productName) || { total_quantity_sold: 0, total_revenue: 0, product_name: productName };
-          
-          currentSales.total_quantity_sold += item.quantity;
-          currentSales.total_revenue += (item.quantity * item.price_at_time);
-          productSalesMap.set(productName, currentSales);
-        });
-
-        const sortedProducts = Array.from(productSalesMap.values())
-          .sort((a, b) => b.total_revenue - a.total_revenue)
-          .map(item => ({
-            product_id: item.product_name, // Using name as ID for now
-            product_name: item.product_name,
-            total_quantity_sold: item.total_quantity_sold,
-            total_revenue: item.total_revenue,
-          }));
+        const res = await fetch('/api/trader/analytics');
+        if (!res.ok) throw new Error('Failed to fetch analytics');
         
-        setTopSellingProducts(sortedProducts);
-
+        const data = await res.json();
+        setTotalRevenue(data.totalRevenue);
+        setTopSellingProducts(data.topSellingProducts);
+        setActiveListingsCount(data.activeListingsCount);
       } catch (error: any) {
         toast.error("Failed to fetch analytics data", { description: error.message });
         console.error('Analytics fetch error:', error);
       } finally {
         setLoading(false);
       }
-    }; // Closing brace for fetchAnalytics
+    };
 
     fetchAnalytics();
-  }, [user, supabase, router]); // Closing parenthesis and brace for useEffect
+  }, [user, authLoading, router]);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading analytics...</div>;

@@ -1,30 +1,29 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/components/auth/auth-provider';
 import { wishlistService } from '@/lib/wishlistService';
-import { Product } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Heart, ShoppingCart as ShoppingCartIcon, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/layout/navbar';
 import { AuthModal } from '@/components/auth/auth-modal';
-import { cartService } from '@/lib/cartService'; // Import cartService
+import { cartService } from '@/lib/cartService';
 
 interface WishlistItem {
   id: string;
   user_id: string;
   product_id: string;
-  created_at: string;
-  products: Product[]; // Joined product data as an array
+  created_at: string | Date;
+  product: any; // Using any for compatibility with nested data
 }
 
 export default function WishlistPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,29 +40,30 @@ export default function WishlistPage() {
     setShowAuthModal(false);
   };
 
-  useEffect(() => {
-    if (!user) {
+  const fetchWishlist = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const items = await wishlistService.getWishlistItems(user.id);
+      setWishlistItems(items as WishlistItem[]);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching wishlist:', err);
+      setError('Failed to load wishlist. Please try again later.');
+    } finally {
       setLoading(false);
-      // Optionally redirect to home or show a message to log in
-      return;
     }
-
-    const fetchWishlist = async () => {
-      setLoading(true);
-      try {
-        const items = await wishlistService.getWishlistItems(user.id);
-        setWishlistItems(items);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching wishlist:', err);
-        setError('Failed to load wishlist. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWishlist();
   }, [user]);
+
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      fetchWishlist();
+    }
+  }, [user, authLoading, fetchWishlist]);
 
   const handleRemoveFromWishlist = async (productId: string) => {
     if (!user) {
@@ -74,7 +74,7 @@ export default function WishlistPage() {
       await wishlistService.removeFromWishlist(user.id, productId);
       setWishlistItems(prevItems => prevItems.filter(item => item.product_id !== productId));
       toast.success('Item removed from wishlist!');
-      window.dispatchEvent(new CustomEvent('wishlistUpdated')); // Notify Navbar
+      window.dispatchEvent(new CustomEvent('wishlistUpdated'));
     } catch (err) {
       console.error('Error removing from wishlist:', err);
       toast.error('Failed to remove item from wishlist.');
@@ -89,14 +89,14 @@ export default function WishlistPage() {
     try {
       await cartService.addToCart(user.id, productId, 1);
       toast.success('Item added to cart!');
-      window.dispatchEvent(new CustomEvent('cartUpdated')); // Notify Navbar
+      window.dispatchEvent(new CustomEvent('cartUpdated'));
     } catch (err) {
       console.error('Error adding to cart:', err);
       toast.error('Failed to add item to cart.');
     }
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar onAuthClick={handleAuthClick} />
@@ -127,26 +127,6 @@ export default function WishlistPage() {
               <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <p className="mb-4">Log in to keep track of products you love.</p>
               <Button onClick={() => handleAuthClick('login')}>Log In</Button>
-            </CardContent>
-          </Card>
-        </main>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar onAuthClick={handleAuthClick} />
-        <main className="flex-grow flex items-center justify-center">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle className="text-2xl">Error</CardTitle>
-              <CardDescription>Failed to load your wishlist.</CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-red-500 mb-4">{error}</p>
-              <Button onClick={() => window.location.reload()}>Retry</Button>
             </CardContent>
           </Card>
         </main>
@@ -189,10 +169,10 @@ export default function WishlistPage() {
                   <Card key={item.product_id} className="overflow-hidden">
                     <div className="relative">
                       <div className="h-48 bg-gray-200 relative overflow-hidden">
-                        {item.products[0]?.image_url ? (
+                        {item.product?.imageUrl || item.product?.image_url ? (
                           <Image 
-                            src={item.products[0]?.image_url} 
-                            alt={item.products[0]?.name || 'Product'}
+                            src={item.product?.imageUrl || item.product?.image_url} 
+                            alt={item.product?.name || 'Product'}
                             width={400}
                             height={300}
                             className="w-full h-full object-cover"
@@ -213,13 +193,13 @@ export default function WishlistPage() {
                       </Button>
                     </div>
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">{item.products[0]?.name}</CardTitle>
-                      <CardDescription>{item.products[0]?.description?.substring(0, 60)}...</CardDescription>
+                      <CardTitle className="text-lg">{item.product?.name}</CardTitle>
+                      <CardDescription>{item.product?.description?.substring(0, 60)}...</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-xl font-bold text-primary">
-                          KSh {item.products[0]?.price.toFixed(2)}
+                          KSh {Number(item.product?.price).toFixed(2)}
                         </span>
                         <div className="flex items-center">
                           <Heart className="h-4 w-4 fill-red-400 text-red-400 mr-1" />

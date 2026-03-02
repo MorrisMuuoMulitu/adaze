@@ -41,7 +41,7 @@ import { notificationService } from '@/lib/notificationService'; // Import notif
 import { wishlistService } from '@/lib/wishlistService'; // Import wishlistService
 import Link from 'next/link';
 import { useAuth } from '@/components/auth/auth-provider';
-import { createClient } from '@/lib/supabase/client';
+import { signOut } from 'next-auth/react';
 import { CartSidebar } from './cart-sidebar';
 
 interface NavbarProps {
@@ -57,7 +57,6 @@ export function Navbar({ onAuthClick }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const { t } = useLanguage();
   const { user, profile } = useAuth();
-  const supabase = createClient();
 
   // Scroll handler
   useEffect(() => {
@@ -136,7 +135,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
         const { terminateSession } = await import('@/lib/login-tracker');
         await terminateSession(user.id);
       }
-      await supabase.auth.signOut();
+      await signOut({ redirect: false });
       window.location.href = '/';
     } catch (error) {
       console.error('Error logging out:', error);
@@ -144,9 +143,9 @@ export function Navbar({ onAuthClick }: NavbarProps) {
     }
   };
 
-  const userRole = profile?.role || user?.user_metadata.role || 'buyer';
-  const userName = profile?.full_name || user?.user_metadata.full_name || 'User';
-  const isVerified = !!user?.email_confirmed_at;
+  const userRole = user?.role?.toLowerCase() || 'buyer';
+  const userName = user?.name || 'User';
+  const isVerified = !!user?.emailVerified;
 
   const navItems = [
     { name: t('nav.marketplace'), href: '/marketplace', icon: ShoppingBag },
@@ -229,7 +228,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                         <div className="text-[9px] text-muted-foreground font-medium uppercase tracking-tighter">{userRole}</div>
                       </div>
                       <Avatar className="h-8 w-8 rounded-none border border-border">
-                        <AvatarImage src={user.user_metadata.avatar_url} />
+                        <AvatarImage src={user.image} />
                         <AvatarFallback className="rounded-none bg-primary text-primary-foreground text-[10px] font-bold">
                           {userName?.charAt(0)}
                         </AvatarFallback>
@@ -351,7 +350,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                 <div className="flex flex-col gap-4 pt-4 border-t">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-10 w-10 rounded-none">
-                      <AvatarImage src={user.user_metadata.avatar_url} />
+                      <AvatarImage src={user.image} />
                       <AvatarFallback className="rounded-none bg-primary text-primary-foreground font-bold">
                         {userName?.charAt(0)}
                       </AvatarFallback>

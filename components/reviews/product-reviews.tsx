@@ -97,6 +97,7 @@ export function ProductReviews({ productId, traderId }: ProductReviewsProps) {
         await reviewService.createReview({
           product_id: productId,
           user_id: user.id,
+          reviewed_id: traderId || '', // Pass traderId as reviewed_id
           ...reviewData,
         });
         toast.success('Review submitted successfully!');
@@ -121,7 +122,7 @@ export function ProductReviews({ productId, traderId }: ProductReviewsProps) {
     }
 
     try {
-      await reviewService.markHelpful(reviewId, user.id);
+      await reviewService.markHelpful(reviewId);
 
       // Toggle helpful mark in local state
       const newMarks = new Set(helpfulMarks);

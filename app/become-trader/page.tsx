@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/components/auth/auth-provider';
-import { createClient } from '@/lib/supabase/client';
 import { Navbar } from '@/components/layout/navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -46,7 +45,6 @@ const STEPS = [
 export default function BecomeTraderPage() {
     const router = useRouter();
     const { user, profile, loading } = useAuth();
-    const supabase = createClient();
 
     const [step, setStep] = useState(0); // 0 is landing, 1-3 are flow
     const [submitting, setSubmitting] = useState(false);
@@ -78,21 +76,20 @@ export default function BecomeTraderPage() {
 
         setSubmitting(true);
         try {
-            // In a real flow, we might save this to a 'trader_applications' table
-            // But for this MVP refinement, we'll upgrade the role and save profile info
-            const { error } = await supabase
-                .from('profiles')
-                .update({
-                    role: 'trader',
-                    full_name: formData.businessName || profile?.full_name,
-                    phone: formData.phone || profile?.phone,
-                    location: formData.location || profile?.location,
-                })
-                .eq('id', user.id);
+            const res = await fetch('/api/account/upgrade-to-trader', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            });
 
-            if (error) throw error;
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.message || 'Failed to upgrade account');
+            }
 
             toast.success('Welcome to the inner circle. You are now a Trader.');
+            
+            // Force a session refresh if needed or just redirect
             router.push('/dashboard/trader');
         } catch (error: any) {
             console.error('Upgrade error:', error);

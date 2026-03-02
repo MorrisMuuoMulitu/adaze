@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,8 +26,8 @@ interface DBProduct {
     image_url: string | null;
     stock_quantity: number;
     rating: number;
-    created_at: string;
-    updated_at: string;
+    created_at: string | Date;
+    updated_at: string | Date;
     location?: string;
 }
 
@@ -54,8 +53,8 @@ export function ProductGrid() {
 
     useEffect(() => {
         if (user) {
-            wishlistService.getWishlistItems(user.id).then(items => {
-                setWishlistIds(new Set(items.map(item => item.product_id)));
+            wishlistService.getWishlistItems(user.id).then((items: any[]) => {
+                setWishlistIds(new Set(items.map((item: any) => item.product_id)));
             });
         }
     }, [user]);

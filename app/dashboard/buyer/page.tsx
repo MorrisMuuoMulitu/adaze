@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/components/auth/auth-provider';
-import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,21 +17,9 @@ import { ExportDataButton } from '@/components/export-data-button';
 import { AdvancedFilters, FilterValues } from '@/components/advanced-filters';
 import { ActivityFeed } from '@/components/activity-feed';
 
-interface Profile {
-  id: string;
-  full_name: string;
-  phone: string;
-  location: string;
-  avatar_url: string;
-  role: 'buyer' | 'trader' | 'transporter';
-}
-
 export default function BuyerDashboardPage() {
-  const { user } = useAuth();
+  const { user, profile: authProfile, loading: authLoading } = useAuth();
   const router = useRouter();
-  const supabase = createClient();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
   
   // Stats
   const [stats, setStats] = useState({
@@ -43,16 +30,11 @@ export default function BuyerDashboardPage() {
     totalSpending: 0,
     weeklySpending: 0,
   });
-  const [previousStats, setPreviousStats] = useState({ 
-    totalSpending: 0, 
-    activeOrders: 0,
-    completedOrders: 0,
-    wishlistItems: 0 
-  });
   
   // Data
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [spendingData, setSpendingData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
   // Date range
   const [dateFrom, setDateFrom] = useState(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
@@ -62,183 +44,42 @@ export default function BuyerDashboardPage() {
   const [filters, setFilters] = useState<FilterValues>({});
   const [activeFilterCount, setActiveFilterCount] = useState(0);
 
-  // Fetch profile
-  useEffect(() => {
-    if (!user) {
-      router.push('/');
-      return;
-    }
-
-    const fetchProfile = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, full_name, phone, location, avatar_url, role')
-          .eq('id', user.id)
-          .single();
-
-        if (error) throw error;
-        setProfile(data);
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-      }
-    };
-
-    fetchProfile();
-  }, [user, router, supabase]);
-
   // Fetch dashboard data based on date range
-  useEffect(() => {
+  const fetchDashboardData = useCallback(async () => {
     if (!user) return;
+    setLoading(true);
+    try {
+      const url = new URL('/api/buyer/dashboard-stats', window.location.origin);
+      url.searchParams.set('from', dateFrom.toISOString());
+      url.searchParams.set('to', dateTo.toISOString());
+      
+      const res = await fetch(url.toString());
+      if (!res.ok) throw new Error('Failed to fetch dashboard data');
+      
+      const data = await res.json();
+      setStats(data.stats);
+      setSpendingData(data.spendingData);
+      setRecentOrders(data.recentOrders);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, dateFrom, dateTo]);
 
-    const fetchDashboardData = async () => {
-      setLoading(true);
-      try {
-        // Fetch active orders count (within date range)
-        const { count: activeCount } = await supabase
-          .from('orders')
-          .select('*', { count: 'exact', head: true })
-          .eq('buyer_id', user.id)
-          .in('status', ['pending', 'confirmed', 'shipped'])
-          .gte('created_at', dateFrom.toISOString())
-          .lte('created_at', dateTo.toISOString());
-
-        // Fetch completed orders count
-        const { count: completedCount } = await supabase
-          .from('orders')
-          .select('*', { count: 'exact', head: true })
-          .eq('buyer_id', user.id)
-          .eq('status', 'delivered')
-          .gte('created_at', dateFrom.toISOString())
-          .lte('created_at', dateTo.toISOString());
-
-        // Fetch wishlist items count
-        const { count: wishlistCount } = await supabase
-          .from('wishlist')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-
-        // Fetch cart items count
-        const { count: cartCount } = await supabase
-          .from('cart')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-
-        // Fetch orders for spending calculation
-        const { data: orders } = await supabase
-          .from('orders')
-          .select('amount, created_at')
-          .eq('buyer_id', user.id)
-          .eq('status', 'delivered')
-          .gte('created_at', dateFrom.toISOString())
-          .lte('created_at', dateTo.toISOString());
-
-        const totalSpending = orders?.reduce((sum, order) => sum + (order.amount || 0), 0) || 0;
-
-        // Generate chart data
-        const periodLength = dateTo.getTime() - dateFrom.getTime();
-        const days = Math.ceil(periodLength / (1000 * 60 * 60 * 24));
-        const daysToShow = Math.min(days, 30); // Max 30 days
-
-        const chartData = Array.from({ length: daysToShow }, (_, i) => {
-          const date = new Date(dateFrom);
-          date.setDate(date.getDate() + i);
-          
-          const dayOrders = orders?.filter(order => {
-            const orderDate = new Date(order.created_at);
-            return orderDate.toDateString() === date.toDateString();
-          }) || [];
-
-          const daySpending = dayOrders.reduce((sum, order) => sum + (order.amount || 0), 0);
-
-          return {
-            date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-            spending: daySpending,
-            orders: dayOrders.length
-          };
-        });
-
-        setStats({
-          activeOrders: activeCount || 0,
-          completedOrders: completedCount || 0,
-          wishlistItems: wishlistCount || 0,
-          cartItems: cartCount || 0,
-          totalSpending,
-          weeklySpending: totalSpending, // For this date range
-        });
-
-        setSpendingData(chartData);
-
-        // Fetch recent orders
-        const { data: ordersData } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('buyer_id', user.id)
-          .gte('created_at', dateFrom.toISOString())
-          .lte('created_at', dateTo.toISOString())
-          .order('created_at', { ascending: false })
-          .limit(20);
-
-        setRecentOrders(ordersData || []);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, [user, supabase, dateFrom, dateTo]);
-
-  // Fetch previous period stats for comparison
   useEffect(() => {
-    if (!user) return;
-
-    const fetchPreviousStats = async () => {
-      try {
-        const periodLength = dateTo.getTime() - dateFrom.getTime();
-        const prevFrom = new Date(dateFrom.getTime() - periodLength);
-        const prevTo = new Date(dateTo.getTime() - periodLength);
-
-        // Previous period orders
-        const { data: prevOrders } = await supabase
-          .from('orders')
-          .select('amount, created_at, status')
-          .eq('buyer_id', user.id)
-          .gte('created_at', prevFrom.toISOString())
-          .lte('created_at', prevTo.toISOString());
-
-        const prevSpending = prevOrders
-          ?.filter(o => o.status === 'delivered')
-          .reduce((sum, order) => sum + (order.amount || 0), 0) || 0;
-        
-        const prevActive = prevOrders?.filter(o => ['pending', 'confirmed', 'shipped'].includes(o.status)).length || 0;
-        const prevCompleted = prevOrders?.filter(o => o.status === 'delivered').length || 0;
-
-        // Wishlist (compare with 30 days ago)
-        const monthAgo = new Date();
-        monthAgo.setDate(monthAgo.getDate() - 30);
-        const { count: prevWishlist } = await supabase
-          .from('wishlist')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .lt('created_at', monthAgo.toISOString());
-
-        setPreviousStats({
-          totalSpending: prevSpending,
-          activeOrders: prevActive,
-          completedOrders: prevCompleted,
-          wishlistItems: prevWishlist || 0
-        });
-      } catch (error) {
-        console.error('Error fetching previous stats:', error);
+    console.log('BuyerDashboard: Auth state check', { authLoading, hasUser: !!user });
+    if (!authLoading) {
+      if (!user) {
+        console.log('BuyerDashboard: No user, redirecting to /');
+        router.push('/');
+        return;
       }
-    };
+      fetchDashboardData();
+    }
+  }, [user, authLoading, router, fetchDashboardData]);
 
-    fetchPreviousStats();
-  }, [user, supabase, dateFrom, dateTo]);
-
-  // Helper functions (defined before useMemo)
+  // Helper functions
   const getOrderAction = (status: string) => {
     switch (status) {
       case 'pending': return 'Order Placed';
@@ -287,18 +128,18 @@ export default function BuyerDashboardPage() {
     }
 
     if (filters.minAmount) {
-      result = result.filter(o => o.amount >= filters.minAmount!);
+      result = result.filter(o => Number(o.amount) >= filters.minAmount!);
     }
 
     if (filters.maxAmount) {
-      result = result.filter(o => o.amount <= filters.maxAmount!);
+      result = result.filter(o => Number(o.amount) <= filters.maxAmount!);
     }
 
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       result = result.filter(o =>
         o.id.toLowerCase().includes(searchLower) ||
-        o.product_name?.toLowerCase().includes(searchLower)
+        o.title?.toLowerCase().includes(searchLower)
       );
     }
 
@@ -311,10 +152,10 @@ export default function BuyerDashboardPage() {
       id: order.id,
       type: 'order' as const,
       action: getOrderAction(order.status),
-      description: `Order #${order.id.slice(0, 8)} - ${order.product_name || 'Product'}`,
-      timestamp: new Date(order.created_at),
+      description: `Order #${order.id.slice(0, 8)} - ${order.title || 'Product'}`,
+      timestamp: new Date(order.createdAt),
       status: getOrderActivityStatus(order.status),
-      amount: order.amount
+      amount: Number(order.amount)
     }));
   }, [filteredOrders]);
 
@@ -324,7 +165,7 @@ export default function BuyerDashboardPage() {
     setActiveFilterCount(count);
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-background py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -339,7 +180,7 @@ export default function BuyerDashboardPage() {
     );
   }
 
-  if (!user || !profile) {
+  if (!user || !authProfile) {
     router.push('/');
     return null;
   }
@@ -356,12 +197,12 @@ export default function BuyerDashboardPage() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold capitalize flex items-center gap-3">
-                {profile.role} Dashboard
+                {authProfile.role} Dashboard
                 <Badge variant="secondary" className="capitalize text-sm px-3 py-1">
-                  {profile.role}
+                  {authProfile.role}
                 </Badge>
               </h1>
-              <p className="text-muted-foreground mt-1">Welcome back, {profile.full_name || user.email}! 👋</p>
+              <p className="text-muted-foreground mt-1">Welcome back, {authProfile.full_name || user.email}! 👋</p>
             </div>
             <div className="mt-4 md:mt-0 flex items-center space-x-2">
               <Button onClick={() => router.push('/profile')} variant="outline" size="sm">
@@ -398,7 +239,7 @@ export default function BuyerDashboardPage() {
             <ExportDataButton
               data={filteredOrders}
               filename={`buyer-orders-${dateFrom.toISOString().split('T')[0]}`}
-              columns={['id', 'created_at', 'amount', 'status', 'product_name']}
+              columns={['id', 'createdAt', 'amount', 'status', 'title']}
             />
           </div>
 
@@ -406,7 +247,7 @@ export default function BuyerDashboardPage() {
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Left: Stats and Charts */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Stats Grid with Comparison Metrics */}
+              {/* Stats Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
@@ -418,13 +259,6 @@ export default function BuyerDashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-3xl font-bold">KSh {stats.totalSpending.toLocaleString()}</p>
-                    <div className="mt-2">
-                      <ComparisonMetric
-                        current={stats.totalSpending}
-                        previous={previousStats.totalSpending}
-                        format="currency"
-                      />
-                    </div>
                     <Button onClick={() => router.push('/orders')} className="mt-4 w-full" size="sm">
                       View Orders
                     </Button>
@@ -441,13 +275,6 @@ export default function BuyerDashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-3xl font-bold">{stats.activeOrders}</p>
-                    <div className="mt-2">
-                      <ComparisonMetric
-                        current={stats.activeOrders}
-                        previous={previousStats.activeOrders}
-                        format="number"
-                      />
-                    </div>
                     <Button onClick={() => router.push('/orders')} variant="outline" className="mt-4 w-full" size="sm">
                       Track Orders
                     </Button>
@@ -464,13 +291,6 @@ export default function BuyerDashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-3xl font-bold">{stats.completedOrders}</p>
-                    <div className="mt-2">
-                      <ComparisonMetric
-                        current={stats.completedOrders}
-                        previous={previousStats.completedOrders}
-                        format="number"
-                      />
-                    </div>
                     <Button onClick={() => router.push('/orders')} variant="outline" className="mt-4 w-full" size="sm">
                       View History
                     </Button>
@@ -487,13 +307,6 @@ export default function BuyerDashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-3xl font-bold">{stats.wishlistItems}</p>
-                    <div className="mt-2">
-                      <ComparisonMetric
-                        current={stats.wishlistItems}
-                        previous={previousStats.wishlistItems}
-                        format="number"
-                      />
-                    </div>
                     <Button onClick={() => router.push('/wishlist')} variant="outline" className="mt-4 w-full" size="sm">
                       View Wishlist
                     </Button>
@@ -616,7 +429,7 @@ export default function BuyerDashboardPage() {
                                 </Badge>
                               </div>
                               <p className="text-sm text-muted-foreground">
-                                {new Date(order.created_at).toLocaleDateString('en-US', { 
+                                {new Date(order.createdAt).toLocaleDateString('en-US', { 
                                   month: 'short', 
                                   day: 'numeric'
                                 })}
@@ -624,7 +437,7 @@ export default function BuyerDashboardPage() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold">KSh {order.amount?.toLocaleString() || '0'}</p>
+                            <p className="font-bold">KSh {Number(order.amount)?.toLocaleString() || '0'}</p>
                           </div>
                         </motion.div>
                       ))}

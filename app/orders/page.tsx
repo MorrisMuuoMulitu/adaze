@@ -72,27 +72,8 @@ export default function OrdersPage() {
 
     fetchOrders();
 
-    // Set up Supabase Realtime listener for orders
-    const ordersChannel = orderService.supabase
-      .channel('orders_changes')
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `buyer_id=eq.${user.id}` },
-        (payload) => {
-          const updatedOrder = payload.new as OrderWithDetails;
-          setOrders(prevOrders =>
-            prevOrders.map(order =>
-              order.id === updatedOrder.id ? { ...order, ...updatedOrder } : order
-            )
-          );
-          toast.info(`Order ${updatedOrder.title} status updated to ${updatedOrder.status}`);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      ordersChannel.unsubscribe();
-    };
+    // Real-time updates with Prisma would require a different approach (e.g. Socket.io or polling)
+    // For now, we'll just rely on the initial fetch and manual refreshes
   }, [user, router]);
 
   const getStatusBadgeVariant = (status: string) => {

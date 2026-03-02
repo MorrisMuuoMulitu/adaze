@@ -1,29 +1,13 @@
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/server';
+export const dynamic = "force-dynamic";import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
+import { Role } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function PUT(request: NextRequest) {
   try {
-    // 1. Create a server-side Supabase client to verify the current user's session
-    const supabase = await createClient();
+    const session = await auth();
     
-    // Get the current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      console.error('Auth error in update-role:', authError);
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // 2. Check if the current user is an admin by checking their profile in the database
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || profile?.role !== 'admin') {
-      console.error('Admin check failed:', profileError, profile?.role);
+    if (!session || !session.user || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
@@ -34,54 +18,21 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Missing userId or role' }, { status: 400 });
     }
 
-    // 4. Validate that the role is one of the allowed values
-    const allowedRoles = ['buyer', 'trader', 'transporter', 'admin', 'wholesaler'];
-    if (!allowedRoles.includes(role)) {
+    // 4. Validate and map the role
+    const upperRole = role.toUpperCase();
+    if (!(upperRole in Role)) {
       return NextResponse.json({ error: 'Invalid role specified' }, { status: 400 });
     }
 
-    // 5. Update the user's role
-    // We prioritize using the SERVICE_ROLE_KEY if it exists to bypass RLS policies
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    
-    if (serviceRoleKey) {
-      const adminClient = createSupabaseClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        serviceRoleKey
-      );
+    const prismaRole = upperRole as Role;
 
-      const { error: updateError } = await adminClient
-        .from('profiles')
-        .update({ role })
-        .eq('id', userId);
-
-      if (updateError) {
-        console.error('Error updating role with service role:', updateError);
-        return NextResponse.json({ 
-          error: 'Failed to update role in database', 
-          details: updateError.message 
-        }, { status: 500 });
-      }
+    // 5. Update the user's role via Prisma
+    await prisma.user.update({
+      where: { id: userId },
+      data: { role: prismaRole },
+    });
       
-      console.log(`Successfully updated user ${userId} to role ${role} (using service role)`);
-    } else {
-      // Fallback: try updating with the user's own session
-      // Note: This will only work if Supabase RLS policies allow an 'admin' role to update other profiles.
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ role })
-        .eq('id', userId);
-
-      if (updateError) {
-        console.error('Error updating role without service role:', updateError);
-        return NextResponse.json({ 
-          error: 'Internal Authorization Error: SUPABASE_SERVICE_ROLE_KEY is missing, and database policies blocked the update.', 
-          details: updateError.message 
-        }, { status: 500 });
-      }
-      
-      console.log(`Successfully updated user ${userId} to role ${role} (using admin session)`);
-    }
+    console.log(`Successfully updated user ${userId} to role ${prismaRole}`);
 
     return NextResponse.json({ message: 'Role updated successfully' });
   } catch (error: any) {

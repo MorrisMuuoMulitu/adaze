@@ -1,48 +1,37 @@
+export const dynamic = "force-dynamic";import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 
 export async function DELETE(request: Request) {
   try {
-    const supabase = await createClient();
+    const session = await auth();
     
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
+    if (!session || !session.user || !session.user.id || !session.user.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get confirmation from request body
+    const userId = session.user.id;
+    const userEmail = session.user.email;
+
     const body = await request.json();
     const { confirmEmail } = body;
 
     // Verify email matches
-    if (confirmEmail !== user.email) {
+    if (confirmEmail !== userEmail) {
       return NextResponse.json({ 
         error: 'Email confirmation does not match' 
       }, { status: 400 });
     }
 
-    // Note: We use soft delete to mark the account as deleted
-    // This prevents login while preserving data for potential recovery
-    // Hard deleting the auth user requires admin privileges
-
-    const { error: deleteError } = await supabase
-      .from('profiles')
-      .update({ 
-        is_deleted: true,
-        deleted_at: new Date().toISOString(),
-        deleted_by: 'self' // Track that user deleted their own account
-      })
-      .eq('id', user.id);
-
-    if (deleteError) {
-      console.error('Error deleting profile:', deleteError);
-      return NextResponse.json({ error: deleteError.message }, { status: 500 });
-    }
-
-    // Sign out the user
-    await supabase.auth.signOut();
+    // Soft delete via Prisma
+    await prisma.user.update({
+      where: { id: userId },
+      data: { 
+        isDeleted: true,
+        deletedAt: new Date(),
+        deletedBy: 'self'
+      },
+    });
 
     return NextResponse.json({ 
       message: 'Account deleted successfully',

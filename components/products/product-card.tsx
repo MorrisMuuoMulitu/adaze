@@ -14,9 +14,9 @@ export interface ProductCardProps {
     product: {
         id: string;
         name: string;
-        description?: string;
+        description?: string | null;
         price: number;
-        category: string;
+        category?: string | null;
         image_url: string | null;
         rating: number;
         location?: string;
@@ -25,7 +25,8 @@ export interface ProductCardProps {
         size?: string | null;
         brand?: string | null;
         trader?: {
-            full_name: string;
+            full_name?: string;
+            name?: string | null;
         };
     };
     index?: number;

@@ -1,11 +1,10 @@
-
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/auth/auth-provider';
-import { createClient } from '@/lib/supabase/client';
 import { Order, orderService } from '@/lib/orderService';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -22,17 +21,8 @@ import {
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 
-interface Profile {
-  id: string;
-  full_name: string;
-  phone: string;
-  location: string;
-  avatar_url: string;
-  role: 'buyer' | 'trader' | 'transporter';
-}
-
 interface OrderWithDetails extends Order {
-    profiles: { full_name: string } | null; // Trader's profile
+    profiles: { full_name: string } | null; // Buyer's profile
     order_items: {
         quantity: number;
         products: {
@@ -42,27 +32,43 @@ interface OrderWithDetails extends Order {
 }
 
 export default function ReceivedOrdersPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const supabase = createClient();
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
-  const [transporters, setTransporters] = useState<Profile[]>([]);
+  const [transporters, setTransporters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const fetchOrders = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/orders?role=trader&detailed=true');
+      if (!res.ok) throw new Error('Failed to fetch orders');
+      const data = await res.json();
+      setOrders(data);
+    } catch (error: any) {
+      toast.error("Failed to fetch orders", { description: error.message });
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  const fetchTransporters = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/users'); // Assuming this returns all, but we filter or use specific
+      if (!res.ok) throw new Error('Failed to fetch transporters');
+      const data = await res.json();
+      setTransporters(data.filter((u: any) => u.role === 'TRANSPORTER'));
+    } catch (error) {
+      console.error('Error fetching transporters:', error);
+    }
+  }, []);
 
   const handleUpdateStatus = async (orderId: string, newStatus: Order['status']) => {
     try {
       await orderService.updateOrder(orderId, { status: newStatus });
-      
-      // If order is confirmed, try to auto-assign a transporter
-      if (newStatus === 'confirmed') {
-        await orderService.autoAssignTransporter(orderId);
-      }
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
-          order.id === orderId ? { ...order, status: newStatus } : order
-        )
-      );
-      toast.success(`Order ${orderId} status updated to ${newStatus}`);
+      toast.success(`Order status updated to ${newStatus}`);
+      fetchOrders(); // Refresh
     } catch (error: any) {
       toast.error("Failed to update order status", { description: error.message });
     }
@@ -71,91 +77,25 @@ export default function ReceivedOrdersPage() {
   const handleAssignTransporter = async (orderId: string, transporterId: string) => {
     try {
       await orderService.assignOrderToTransporter(orderId, transporterId);
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
-          order.id === orderId ? { ...order, transporter_id: transporterId, status: 'in_transit' } : order
-        )
-      );
-      toast.success(`Transporter assigned to order ${orderId}`);
+      toast.success(`Transporter assigned successfully`);
+      fetchOrders(); // Refresh
     } catch (error: any) {
       toast.error("Failed to assign transporter", { description: error.message });
     }
   };
 
   useEffect(() => {
-    if (!user) {
-      router.push('/');
-      return;
+    if (!authLoading) {
+      if (!user || user.role !== 'TRADER') {
+        router.push('/');
+        return;
+      }
+      fetchOrders();
+      fetchTransporters();
     }
+  }, [user, authLoading, router, fetchOrders, fetchTransporters]);
 
-    const fetchOrders = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          profiles:buyer_id (full_name),
-          order_items (
-            quantity,
-            products (
-              name
-            )
-          )
-        `)
-        .eq('trader_id', user.id);
-
-      if (error) {
-        toast.error("Failed to fetch orders", { description: error.message });
-      } else {
-        setOrders(data as OrderWithDetails[]);
-      }
-      setLoading(false);
-    };
-
-    const fetchTransporters = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, location')
-        .eq('role', 'transporter');
-
-      if (error) {
-        console.error('Error fetching transporters:', error);
-      } else {
-        setTransporters(data as Profile[]);
-      }
-    };
-
-    fetchOrders();
-    fetchTransporters();
-
-    // Set up Supabase Realtime listener for orders
-    const ordersChannel = orderService.supabase
-      .channel('trader_orders_changes')
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `trader_id=eq.${user.id}` },
-        async (payload) => {
-          const updatedOrder = payload.new as Order;
-          // Re-fetch detailed order to get nested data
-          const detailedUpdatedOrder = await orderService.getDetailedOrderById(updatedOrder.id);
-          if (detailedUpdatedOrder) {
-            setOrders(prevOrders => 
-              prevOrders.map(order => 
-                order.id === detailedUpdatedOrder.id ? detailedUpdatedOrder : order
-              )
-            );
-            toast.info(`Order ${detailedUpdatedOrder.title} status updated to ${detailedUpdatedOrder.status}`);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      ordersChannel.unsubscribe();
-    };
-  }, [user, router, supabase]);
-
-  if (loading) {
+  if (loading || authLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading received orders...</div>;
   }
 
@@ -182,17 +122,19 @@ export default function ReceivedOrdersPage() {
               <TableBody>
                 {orders.map((order) => (
                   <TableRow key={order.id}>
-                    <TableCell>{order.title}</TableCell>
+                    <TableCell className="font-medium">{order.title}</TableCell>
                     <TableCell>{order.profiles?.full_name || 'N/A'}</TableCell>
                     <TableCell>
                       {order.order_items.map((item, index) => (
-                        <div key={index}>
+                        <div key={index} className="text-xs">
                           {item.products.name} (x{item.quantity})
                         </div>
                       ))}
                     </TableCell>
-                    <TableCell>KSh {order.amount.toFixed(2)}</TableCell>
-                    <TableCell>{order.status}</TableCell>
+                    <TableCell>KSh {Number(order.amount).toLocaleString()}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="capitalize">{order.status}</Badge>
+                    </TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -224,7 +166,7 @@ export default function ReceivedOrdersPage() {
                                       onClick={() => handleAssignTransporter(order.id, transporter.id)}
                                       disabled={order.status === 'delivered' || order.status === 'cancelled' || !!order.transporter_id}
                                     >
-                                      {transporter.full_name} ({transporter.location})
+                                      {transporter.name} ({transporter.location})
                                     </DropdownMenuItem>
                                   ))
                                 )}

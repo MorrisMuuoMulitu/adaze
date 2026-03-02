@@ -1,6 +1,3 @@
-import { createClient } from '@/lib/supabase/client';
-import { ErrorHandler } from '@/lib/errorHandler';
-
 export interface Notification {
   id: string;
   user_id: string;
@@ -9,7 +6,7 @@ export interface Notification {
   type: 'info' | 'success' | 'warning' | 'error';
   is_read: boolean;
   related_order_id?: string;
-  created_at: string;
+  created_at: string | Date;
 }
 
 export interface CreateNotificationData {
@@ -21,135 +18,183 @@ export interface CreateNotificationData {
 }
 
 class NotificationService {
-  private supabase = createClient();
+  private isServer = typeof window === 'undefined';
+
+  private mapPrismaToNotification(n: any): Notification {
+    return {
+      id: n.id,
+      user_id: n.userId,
+      title: n.title,
+      message: n.message,
+      type: n.type.toLowerCase() as any,
+      is_read: n.isRead,
+      related_order_id: n.relatedOrderId || undefined,
+      created_at: n.createdAt,
+    };
+  }
 
   async getUnreadNotifications(userId: string): Promise<Notification[]> {
+    if (!this.isServer) {
+      const res = await fetch('/api/notifications?unread=true');
+      return res.json();
+    }
+
     try {
-      const { data, error } = await this.supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('is_read', false)
-        .order('created_at', { ascending: false });
+      const { prisma } = await import('@/lib/prisma');
+      const data = await prisma.notification.findMany({
+        where: {
+          userId,
+          isRead: false,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
 
-      if (error) {
-        throw error;
-      }
-
-      return data as Notification[];
+      return data.map(n => this.mapPrismaToNotification(n));
     } catch (error) {
-      const appError = ErrorHandler.handle(error, 'NotificationService.getUnreadNotifications');
-      ErrorHandler.showErrorToast(appError);
+      console.error('Error fetching unread notifications:', error);
       throw error;
     }
   }
 
   async getAllNotifications(userId: string): Promise<Notification[]> {
+    if (!this.isServer) {
+      const res = await fetch('/api/notifications');
+      return res.json();
+    }
+
     try {
-      const { data, error } = await this.supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+      const { prisma } = await import('@/lib/prisma');
+      const data = await prisma.notification.findMany({
+        where: {
+          userId,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
 
-      if (error) {
-        throw error;
-      }
-
-      return data as Notification[];
+      return data.map(n => this.mapPrismaToNotification(n));
     } catch (error) {
-      const appError = ErrorHandler.handle(error, 'NotificationService.getAllNotifications');
-      ErrorHandler.showErrorToast(appError);
+      console.error('Error fetching all notifications:', error);
       throw error;
     }
   }
 
   async createNotification(notificationData: CreateNotificationData): Promise<Notification | null> {
+    if (!this.isServer) {
+      const res = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(notificationData),
+      });
+      return res.json();
+    }
+
     try {
-      const notificationWithDefaults = {
-        ...notificationData,
-        type: notificationData.type || 'info'
-      };
-
-      const { data, error } = await this.supabase
-        .from('notifications')
-        .insert([notificationWithDefaults])
-        .select()
-        .single();
-
-      if (error) {
-        throw error;
+      const { prisma } = await import('@/lib/prisma');
+      const { NotificationType } = await import('@prisma/client');
+      const { user_id, title, message, type, related_order_id } = notificationData;
+      
+      let prismaType: any = NotificationType.INFO;
+      if (type) {
+        switch (type.toLowerCase()) {
+          case 'success': prismaType = NotificationType.SUCCESS; break;
+          case 'warning': prismaType = NotificationType.WARNING; break;
+          case 'error': prismaType = NotificationType.ERROR; break;
+        }
       }
 
-      return data as Notification;
+      const data = await prisma.notification.create({
+        data: {
+          userId: user_id,
+          title,
+          message,
+          type: prismaType,
+          relatedOrderId: related_order_id,
+        },
+      });
+
+      return this.mapPrismaToNotification(data);
     } catch (error) {
-      const appError = ErrorHandler.handle(error, 'NotificationService.createNotification');
-      ErrorHandler.showErrorToast(appError);
+      console.error('Error creating notification:', error);
       throw error;
     }
   }
 
   async markAsRead(notificationId: string): Promise<Notification | null> {
+    if (!this.isServer) {
+      const res = await fetch(`/api/notifications/${notificationId}`, {
+        method: 'PATCH',
+      });
+      return res.json();
+    }
+
     try {
-      const { data, error } = await this.supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('id', notificationId)
-        .select()
-        .single();
+      const { prisma } = await import('@/lib/prisma');
+      const data = await prisma.notification.update({
+        where: { id: notificationId },
+        data: { isRead: true },
+      });
 
-      if (error) {
-        throw error;
-      }
-
-      return data as Notification;
+      return this.mapPrismaToNotification(data);
     } catch (error) {
-      const appError = ErrorHandler.handle(error, 'NotificationService.markAsRead');
-      ErrorHandler.showErrorToast(appError);
+      console.error('Error marking notification as read:', error);
       throw error;
     }
   }
 
   async markAllAsRead(userId: string): Promise<boolean> {
-    try {
-      const { error } = await this.supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', userId)
-        .eq('is_read', false);
+    if (!this.isServer) {
+      const res = await fetch('/api/notifications', {
+        method: 'PUT',
+      });
+      const data = await res.json();
+      return data.success;
+    }
 
-      if (error) {
-        throw error;
-      }
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      await prisma.notification.updateMany({
+        where: {
+          userId,
+          isRead: false,
+        },
+        data: {
+          isRead: true,
+        },
+      });
 
       return true;
     } catch (error) {
-      const appError = ErrorHandler.handle(error, 'NotificationService.markAllAsRead');
-      ErrorHandler.showErrorToast(appError);
+      console.error('Error marking all notifications as read:', error);
       throw error;
     }
   }
 
   async deleteNotification(notificationId: string): Promise<boolean> {
-    try {
-      const { error } = await this.supabase
-        .from('notifications')
-        .delete()
-        .eq('id', notificationId);
+    if (!this.isServer) {
+      const res = await fetch(`/api/notifications/${notificationId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      return data.success;
+    }
 
-      if (error) {
-        throw error;
-      }
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      await prisma.notification.delete({
+        where: { id: notificationId },
+      });
 
       return true;
     } catch (error) {
-      const appError = ErrorHandler.handle(error, 'NotificationService.deleteNotification');
-      ErrorHandler.showErrorToast(appError);
+      console.error('Error deleting notification:', error);
       throw error;
     }
   }
 
-  // Create specific notification for order status changes
   async createOrderNotification(
     userId: string, 
     orderId: string, 

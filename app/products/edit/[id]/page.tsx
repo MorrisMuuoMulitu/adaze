@@ -10,11 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { createClient } from '@/lib/supabase/client';
+import { productService, Product } from '@/lib/productService';
 import { useAuth } from '@/components/auth/auth-provider';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { Product } from '@/lib/productService';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
@@ -32,7 +31,6 @@ export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
   const { id } = params;
-  const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const [product, setProduct] = useState<Product | null>(null);
 
@@ -52,51 +50,52 @@ export default function EditProductPage() {
     if (!id) return;
 
     const fetchProduct = async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', id)
-        .single();
+      try {
+        const data = await productService.getProductById(id as string);
 
-      if (error) {
+        if (!data) {
+          toast.error("Product not found");
+          router.push('/dashboard/trader');
+          return;
+        }
+        
+        setProduct(data);
+        form.reset({
+          name: data.name,
+          description: data.description || "",
+          price: data.price,
+          category: data.category || "",
+          image_url: data.image_url || "",
+          stock_quantity: data.stock_quantity,
+        });
+      } catch (error: any) {
         toast.error("Failed to fetch product", { description: error.message });
-        router.push('/products/manage');
-      } else {
-        setProduct(data as Product);
-        form.reset(data);
+        router.push('/dashboard/trader');
       }
     };
 
     fetchProduct();
-  }, [id, supabase, router, form]);
+  }, [id, router, form]);
 
   const onSubmit = async (values: z.infer<typeof productSchema>) => {
-    if (!user) {
-      toast.error("You must be logged in to edit a product.");
+    if (!user || !id) {
+      toast.error("Error updating product.");
       return;
     }
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('products')
-        .update({
-          name: values.name,
-          description: values.description,
-          price: values.price,
-          category: values.category,
-          image_url: values.image_url,
-          stock_quantity: values.stock_quantity,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id);
-
-      if (error) {
-        throw error;
-      }
+      await productService.updateProduct(id as string, {
+        name: values.name,
+        description: values.description || null,
+        price: values.price,
+        category: values.category || null,
+        image_url: values.image_url || null,
+        stock_quantity: values.stock_quantity,
+      });
 
       toast.success("Product updated successfully!");
-      router.push('/products/manage');
+      router.push('/dashboard/trader');
     } catch (error: any) {
       toast.error("Failed to update product", {
         description: error.message,

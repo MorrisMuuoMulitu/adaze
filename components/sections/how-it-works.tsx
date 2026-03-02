@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Search, ShoppingCart, Truck, Star, UserPlus, Package } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 
 const steps = [
   {

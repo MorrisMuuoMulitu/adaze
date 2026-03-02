@@ -9,8 +9,6 @@
  * Documentation: https://developer.safaricom.co.ke/docs
  */
 
-import { createClient } from '@/lib/supabase/client';
-
 interface MpesaConfig {
   consumerKey: string;
   consumerSecret: string;
@@ -48,7 +46,6 @@ interface PaymentStatus {
 class MpesaService {
   private config: MpesaConfig;
   private baseUrl: string;
-  private supabase = createClient();
 
   constructor() {
     // Get config from environment variables
@@ -232,21 +229,21 @@ class MpesaService {
     status: 'pending' | 'completed' | 'failed' | 'cancelled';
     mpesaReceiptNumber?: string;
   }) {
-    const { error } = await this.supabase.from('mpesa_transactions').insert([
-      {
-        order_id: data.orderId,
-        user_id: data.userId,
-        amount: data.amount,
-        phone_number: data.phoneNumber,
-        checkout_request_id: data.checkoutRequestId,
-        merchant_request_id: data.merchantRequestId,
-        status: data.status,
-        mpesa_receipt_number: data.mpesaReceiptNumber,
-        created_at: new Date().toISOString(),
-      },
-    ]);
-
-    if (error) {
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      await prisma.mpesaTransaction.create({
+        data: {
+          orderId: data.orderId,
+          userId: data.userId,
+          amount: data.amount,
+          phoneNumber: data.phoneNumber,
+          checkoutRequestId: data.checkoutRequestId,
+          merchantRequestId: data.merchantRequestId,
+          status: this.mapStatus(data.status),
+          mpesaReceiptNumber: data.mpesaReceiptNumber,
+        },
+      });
+    } catch (error) {
       console.error('Error saving transaction:', error);
       throw error;
     }
@@ -260,16 +257,16 @@ class MpesaService {
     status: 'completed' | 'failed' | 'cancelled',
     mpesaReceiptNumber?: string
   ) {
-    const { error } = await this.supabase
-      .from('mpesa_transactions')
-      .update({
-        status,
-        mpesa_receipt_number: mpesaReceiptNumber,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('checkout_request_id', checkoutRequestId);
-
-    if (error) {
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      await prisma.mpesaTransaction.update({
+        where: { checkoutRequestId },
+        data: {
+          status: this.mapStatus(status),
+          mpesaReceiptNumber,
+        },
+      });
+    } catch (error) {
       console.error('Error updating transaction:', error);
       throw error;
     }
@@ -279,26 +276,31 @@ class MpesaService {
    * Get user's payment history
    */
   async getUserTransactions(userId: string) {
-    const { data, error } = await this.supabase
-      .from('mpesa_transactions')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      return await prisma.mpesaTransaction.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+      });
+    } catch (error) {
       console.error('Error fetching transactions:', error);
       throw error;
     }
+  }
 
-    return data;
+  private mapStatus(status: string): any {
+    switch (status.toLowerCase()) {
+      case 'completed': return 'COMPLETED';
+      case 'failed': return 'FAILED';
+      case 'cancelled': return 'CANCELLED';
+      default: return 'PENDING';
+    }
   }
 
   /**
    * Validate callback from M-Pesa
    */
   validateCallback(callbackData: any): boolean {
-    // Add validation logic here
-    // Check signature, timestamp, etc.
     return true;
   }
 }

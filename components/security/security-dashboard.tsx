@@ -1,371 +1,91 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import {
-  Shield,
-  Smartphone,
-  Globe,
-  AlertTriangle,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Trash2,
-  RefreshCw,
-  Lock,
-  Unlock,
-  Eye
-} from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-
-interface LoginHistory {
-  id: string;
-  login_time: string;
-  ip_address: string;
-  device_type: string;
-  browser: string;
-  location_city: string;
-  location_country: string;
-  status: 'success' | 'failed' | 'blocked';
-  is_suspicious: boolean;
-}
-
-interface ActiveSession {
-  id: string;
-  device_name: string;
-  device_type: string;
-  browser: string;
-  location_city: string;
-  location_country: string;
-  last_activity_at: string;
-  is_active: boolean;
-}
-
-interface SecuritySettings {
-  require_2fa: boolean;
-  login_notifications: boolean;
-  unusual_activity_alerts: boolean;
-  auto_logout_minutes: number;
-}
+import { Shield, Clock, Smartphone, Globe, Lock, AlertTriangle, LogOut, ShieldCheck } from 'lucide-react';
+import { useAuth } from '@/components/auth/auth-provider';
+import { toast } from 'sonner';
 
 export function SecurityDashboard() {
+  const { user, loading: authLoading } = useAuth();
+  const [loginHistory, setLoginHistory] = useState<any[]>([]);
+  const [activeSessions, setActiveSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loginHistory, setLoginHistory] = useState<LoginHistory[]>([]);
-  const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
-  const [settings, setSettings] = useState<SecuritySettings>({
-    require_2fa: false,
-    login_notifications: true,
-    unusual_activity_alerts: true,
-    auto_logout_minutes: 60,
-  });
-
-  const supabase = createClient();
-  const { toast } = useToast();
 
   const fetchSecurityData = useCallback(async () => {
+    if (!user) return;
     try {
       setLoading(true);
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Fetch login history
-      const { data: historyData } = await supabase
-        .from('login_history')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('login_time', { ascending: false })
-        .limit(10);
-
-      setLoginHistory(historyData || []);
-
-      // Fetch active sessions
-      const { data: sessionsData } = await supabase
-        .from('active_sessions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .order('last_activity_at', { ascending: false });
-
-      setActiveSessions(sessionsData || []);
-
-      // Fetch security settings
-      const { data: settingsData } = await supabase
-        .from('user_security_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (settingsData) {
-        setSettings({
-          require_2fa: settingsData.require_2fa,
-          login_notifications: settingsData.login_notifications,
-          unusual_activity_alerts: settingsData.unusual_activity_alerts,
-          auto_logout_minutes: settingsData.auto_logout_minutes,
-        });
-      }
+      const res = await fetch('/api/account/security-stats');
+      if (!res.ok) throw new Error('Failed to fetch security data');
+      const data = await res.json();
+      setLoginHistory(data.loginHistory);
+      setActiveSessions(data.activeSessions);
     } catch (error) {
       console.error('Error fetching security data:', error);
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [user]);
 
   useEffect(() => {
-    fetchSecurityData();
-  }, [fetchSecurityData]);
-
-  const handleSettingChange = async (field: keyof SecuritySettings, value: any) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { error } = await supabase
-        .from('user_security_settings')
-        .upsert({
-          user_id: user.id,
-          [field]: value,
-          updated_at: new Date().toISOString(),
-        });
-
-      if (error) throw error;
-
-      setSettings(prev => ({ ...prev, [field]: value }));
-
-      toast({
-        title: 'Settings Updated',
-        description: 'Your security settings have been saved',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to update settings',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const terminateSession = async (sessionId: string) => {
-    try {
-      const { error } = await supabase
-        .from('active_sessions')
-        .delete()
-        .eq('id', sessionId);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Session Terminated',
-        description: 'The session has been successfully terminated',
-      });
-
+    if (!authLoading && user) {
       fetchSecurityData();
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to terminate session',
-        variant: 'destructive',
-      });
     }
-  };
+  }, [user, authLoading, fetchSecurityData]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'success':
-        return 'bg-green-500';
-      case 'failed':
-        return 'bg-red-500';
-      case 'blocked':
-        return 'bg-orange-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  if (loading || authLoading) return <div className="p-8 text-center uppercase font-black tracking-widest text-[10px]">Accessing security archive...</div>;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold">Security Center</h2>
-        <p className="text-muted-foreground">Manage your account security and monitor activity</p>
-      </div>
+    <div className="space-y-8">
+      <div className="grid md:grid-cols-2 gap-8">
+        <Card className="rounded-none border-border/50 bg-muted/5">
+          <CardHeader>
+            <CardTitle className="text-lg font-black uppercase tracking-tighter flex items-center gap-2">
+              <Smartphone className="h-5 w-5 text-accent" /> Active Access Nodes
+            </CardTitle>
+            <CardDescription className="text-[10px] font-bold uppercase tracking-widest opacity-50">Currently established session links</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {activeSessions.map((session) => (
+              <div key={session.id} className="flex items-center justify-between p-4 border border-border/30 bg-background hover:border-accent/30 transition-colors">
+                <div>
+                  <div className="text-xs font-black uppercase tracking-tight">{session.deviceName || 'Unknown Node'}</div>
+                  <div className="text-[9px] font-mono text-muted-foreground uppercase">{session.ipAddress} // {session.locationCity}</div>
+                </div>
+                <Badge variant="outline" className="rounded-none text-[8px] font-black uppercase">CURRENT</Badge>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
 
-      {/* Security Settings */}
-      <Card className="border-0 shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-blue-600" />
-            Security Settings
-          </CardTitle>
-          <CardDescription>Configure your security preferences</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label>Two-Factor Authentication</Label>
-              <p className="text-sm text-muted-foreground">
-                Require 2FA code for every login
-              </p>
-            </div>
-            <Switch
-              checked={settings.require_2fa}
-              onCheckedChange={(checked) => handleSettingChange('require_2fa', checked)}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label>Login Notifications</Label>
-              <p className="text-sm text-muted-foreground">
-                Get notified when someone logs into your account
-              </p>
-            </div>
-            <Switch
-              checked={settings.login_notifications}
-              onCheckedChange={(checked) => handleSettingChange('login_notifications', checked)}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label>Unusual Activity Alerts</Label>
-              <p className="text-sm text-muted-foreground">
-                Alert me of suspicious login attempts
-              </p>
-            </div>
-            <Switch
-              checked={settings.unusual_activity_alerts}
-              onCheckedChange={(checked) => handleSettingChange('unusual_activity_alerts', checked)}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Active Sessions */}
-      <Card className="border-0 shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Smartphone className="h-5 w-5 text-purple-600" />
-            Active Sessions ({activeSessions.length})
-          </CardTitle>
-          <CardDescription>Devices currently signed into your account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {activeSessions.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Globe className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No active sessions</p>
-            </div>
-          ) : (
+        <Card className="rounded-none border-border/50 bg-muted/5">
+          <CardHeader>
+            <CardTitle className="text-lg font-black uppercase tracking-tighter flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-accent" /> Authentication Log
+            </CardTitle>
+            <CardDescription className="text-[10px] font-bold uppercase tracking-widest opacity-50">Recent identity verification events</CardDescription>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-4">
-              {activeSessions.map((session) => (
-                <div
-                  key={session.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 bg-purple-100 rounded-lg">
-                      <Smartphone className="h-5 w-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <div className="font-medium">
-                        {session.device_name || session.browser} • {session.device_type}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {session.location_city}, {session.location_country}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Active {formatDistanceToNow(new Date(session.last_activity_at), { addSuffix: true })}
-                      </div>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => terminateSession(session.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Terminate
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Login History */}
-      <Card className="border-0 shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-green-600" />
-            Login History
-          </CardTitle>
-          <CardDescription>Recent login attempts on your account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loginHistory.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No login history</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
               {loginHistory.map((login) => (
-                <div
-                  key={login.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`w-2 h-2 rounded-full ${getStatusColor(login.status)}`} />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{login.browser}</span>
-                        {login.is_suspicious && (
-                          <Badge variant="destructive" className="text-xs">
-                            <AlertTriangle className="h-3 w-3 mr-1" />
-                            Suspicious
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {login.location_city}, {login.location_country} • {login.ip_address}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(login.login_time), { addSuffix: true })}
-                      </div>
-                    </div>
-                  </div>
+                <div key={login.id} className="flex items-center justify-between border-b border-border/20 pb-3 last:border-0">
                   <div>
-                    {login.status === 'success' ? (
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                    ) : login.status === 'failed' ? (
-                      <XCircle className="h-5 w-5 text-red-500" />
-                    ) : (
-                      <Lock className="h-5 w-5 text-orange-500" />
-                    )}
+                    <div className="text-[10px] font-black uppercase tracking-tight">{login.browser} on {login.os}</div>
+                    <div className="text-[9px] font-mono text-muted-foreground">{new Date(login.loginTime).toLocaleString()}</div>
                   </div>
+                  <Badge variant={login.status === 'SUCCESS' ? 'default' : 'destructive'} className="rounded-none text-[8px] font-black uppercase">
+                    {login.status}
+                  </Badge>
                 </div>
               ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

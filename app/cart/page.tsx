@@ -19,8 +19,8 @@ interface CartItem {
   user_id: string;
   product_id: string;
   quantity: number;
-  created_at: string;
-  updated_at: string;
+  created_at: string | Date;
+  updated_at: string | Date;
   // Additional product info
   product_name: string;
   product_price: number;

@@ -3,8 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/auth/auth-provider';
-import { createClient } from '@/lib/supabase/client';
-import { Product } from '@/lib/productService';
+import { productService, Product } from '@/lib/productService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
@@ -22,7 +21,6 @@ import {
 export default function ManageProductsPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const supabase = createClient();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,21 +32,18 @@ export default function ManageProductsPage() {
 
     const fetchProducts = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('trader_id', user.id);
-
-      if (error) {
+      try {
+        const data = await productService.getProductsByTrader(user.id);
+        setProducts(data);
+      } catch (error: any) {
         toast.error("Failed to fetch products", { description: error.message });
-      } else {
-        setProducts(data as Product[]);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchProducts();
-  }, [user, router, supabase]);
+  }, [user, router]);
 
   const handleDelete = async (productId: string) => {
     if (!confirm("Are you sure you want to delete this product?")) {
@@ -56,8 +51,7 @@ export default function ManageProductsPage() {
     }
 
     try {
-      const { error } = await supabase.from('products').delete().eq('id', productId);
-      if (error) throw error;
+      await productService.deleteProduct(productId);
       setProducts(products.filter(p => p.id !== productId));
       toast.success("Product deleted successfully");
     } catch (error: any) {

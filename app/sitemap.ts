@@ -1,42 +1,34 @@
 import { MetadataRoute } from 'next';
-import { createClient } from '@supabase/supabase-js';
+import { prisma } from '@/lib/prisma';
+
+export const dynamic = 'force-dynamic'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://adazeconnect.com';
 
-  // Create a direct client for server-side fetching during build
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const products = await prisma.product.findMany({
+    select: { id: true, updatedAt: true },
+    where: { stockQuantity: { gt: 0 } }
+  });
 
-  // Get all products
-  const { data: products } = await supabase
-    .from('products')
-    .select('id, updated_at')
-    .eq('status', 'active');
-
-  const productUrls = (products || []).map((product) => ({
+  const productUrls = products.map((product) => ({
     url: `${baseUrl}/products/${product.id}`,
-    lastModified: new Date(product.updated_at),
+    lastModified: new Date(product.updatedAt),
   }));
 
   return [
-    // Homepage - highest priority
     {
       url: baseUrl,
       lastModified: new Date(),
       changeFrequency: 'daily' as const,
       priority: 1.0,
     },
-    // Main marketplace pages
     {
       url: `${baseUrl}/marketplace`,
       lastModified: new Date(),
       changeFrequency: 'hourly' as const,
       priority: 0.9,
     },
-    // Information pages
     {
       url: `${baseUrl}/about`,
       lastModified: new Date(),
@@ -61,7 +53,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly' as const,
       priority: 0.5,
     },
-    // Legal pages
     {
       url: `${baseUrl}/privacy`,
       lastModified: new Date(),
@@ -74,7 +65,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'yearly' as const,
       priority: 0.3,
     },
-    // Product pages - dynamic, medium-high priority
     ...productUrls.map((product) => ({
       ...product,
       changeFrequency: 'daily' as const,

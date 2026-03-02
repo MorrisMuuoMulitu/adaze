@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/navbar';
 import { Hero } from '@/components/sections/hero';
@@ -18,10 +17,8 @@ import { ShoppingBag } from 'lucide-react';
 
 export default function Home() {
   const router = useRouter();
-  const supabase = createClient();
   const [authModal, setAuthModal] = useState<'login' | 'register' | null>(null);
-  const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, profile, loading } = useAuth();
 
   // Check for suspension/deletion error in URL
   useEffect(() => {
@@ -47,97 +44,42 @@ export default function Home() {
     }
   }, []);
 
-  // Handle OAuth callback
-  useEffect(() => {
-    const handleOAuthCallback = async () => {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get('code');
-
-      if (code) {
-        try {
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) {
-            console.error('OAuth error:', error);
-            router.push('/?error=auth_failed');
-          } else {
-            window.history.replaceState({}, '', '/');
-            window.location.reload();
-          }
-        } catch (error) {
-          console.error('OAuth callback error:', error);
-        }
-      }
-    };
-    handleOAuthCallback();
-  }, [router, supabase.auth]);
-
   // Redirect logged-in users based on role
   useEffect(() => {
-    const checkRoleAndRedirect = async () => {
-      if (!user) {
-        setIsLoading(false);
-        return;
+    if (loading) return;
+
+    if (user) {
+      console.log('Home: User detected, initiating redirect', { role: user.role });
+      
+      const role = user.role?.toLowerCase();
+      
+      if (role === 'admin') router.push('/admin');
+      else if (role === 'buyer') router.push('/marketplace');
+      else if (role === 'trader') router.push('/dashboard/trader');
+      else if (role === 'transporter') router.push('/dashboard/transporter');
+      else if (role === 'wholesaler') router.push('/dashboard/wholesaler');
+      else {
+        console.warn('Home: User has no role or unknown role, defaulting to marketplace');
+        router.push('/marketplace');
       }
-
-      try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-
-        const role = profile?.role;
-
-        if (role === 'admin') router.push('/admin');
-        else if (role === 'buyer') router.push('/marketplace');
-        else if (role === 'trader') router.push('/dashboard/trader');
-        else if (role === 'transporter') router.push('/dashboard/transporter');
-        else if (role === 'wholesaler') router.push('/dashboard/wholesaler');
-        else router.push('/marketplace'); // Fallback
-      } catch (error) {
-        console.error('Role check error:', error);
-        setIsLoading(false);
-      }
-    };
-
-    if (user !== undefined) {
-      checkRoleAndRedirect();
     }
-  }, [user, router, supabase]);
+  }, [user, loading, router]);
 
   const handleAuthSuccess = () => {
     setAuthModal(null);
   };
 
-  if (isLoading || (user && !isLoading)) {
+  // Only show the full-screen loading state if we are actually loading the initial session
+  // or if we have a user and are waiting for the redirect to fire.
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
-        {/* Animated Background Elements */}
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            rotate: [0, 90, 0],
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-24 -right-24 w-96 h-96 bg-primary/10 rounded-full blur-[100px]"
-        />
-        <motion.div
-          animate={{
-            scale: [1, 1.3, 1],
-            rotate: [0, -90, 0],
-          }}
-          transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-          className="absolute -bottom-24 -left-24 w-96 h-96 bg-accent/10 rounded-full blur-[100px]"
-        />
-
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
           className="text-center space-y-8 relative z-10"
         >
           <div className="relative w-24 h-24 mx-auto">
-            <div className="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
@@ -147,26 +89,9 @@ export default function Home() {
               <ShoppingBag className="h-8 w-8 text-primary" />
             </div>
           </div>
-
-          <div className="space-y-2">
-            <motion.h2
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-3xl font-black tracking-tighter bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer"
-              style={{ backgroundSize: '200% auto' }}
-            >
-              ADAZE
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="text-muted-foreground font-medium"
-            >
-              {user ? 'Preparing your personalized experience...' : 'Crafting excellence...'}
-            </motion.p>
-          </div>
+          <p className="text-muted-foreground font-medium animate-pulse">
+            Establishing connection...
+          </p>
         </motion.div>
       </div>
     );
@@ -192,7 +117,7 @@ export default function Home() {
             <div className="text-center max-w-md">
               <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
               <h2 className="text-2xl font-bold mb-2">
-                Welcome back, {user.user_metadata.full_name || (user.email ? user.email.split('@')[0] : 'User')}!
+                Welcome back, {user.name || (user.email ? user.email.split('@')[0] : 'User')}!
               </h2>
               <p className="text-muted-foreground mb-6">
                 Redirecting to your dashboard...
@@ -216,15 +141,15 @@ export default function Home() {
         <>
           <LiveChat user={{
             id: user.id,
-            name: user.user_metadata.full_name || user.email,
+            name: user.name || user.email,
             email: user.email || '',
-            role: user.user_metadata.role || 'buyer',
-            avatar: user.user_metadata.avatar_url,
+            role: user.role || 'BUYER',
+            avatar: user.image,
           }} />
           <NotificationCenter user={{
             id: user.id,
-            name: user.user_metadata.full_name || user.email,
-            role: user.user_metadata.role || 'buyer',
+            name: user.name || user.email,
+            role: user.role || 'BUYER',
           }} />
         </>
       )}

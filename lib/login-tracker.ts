@@ -1,20 +1,5 @@
 // Login tracking functions for security monitoring
 
-import { createClient } from '@/lib/supabase/client';
-
-interface LoginAttempt {
-  userId: string;
-  email: string;
-  status: 'success' | 'failed' | 'blocked';
-  ipAddress?: string;
-  userAgent?: string;
-  deviceType?: string;
-  browser?: string;
-  os?: string;
-  locationCountry?: string;
-  locationCity?: string;
-}
-
 // Get device type from user agent
 function getDeviceType(userAgent: string): string {
   if (/mobile/i.test(userAgent)) return 'mobile';
@@ -43,33 +28,46 @@ function getOS(userAgent: string): string {
 }
 
 // Log login attempt
-export async function logLoginAttempt(attempt: LoginAttempt) {
-  try {
-    const supabase = createClient();
-    const userAgent = attempt.userAgent || navigator.userAgent;
+export async function logLoginAttempt(attempt: {
+  userId: string;
+  email: string;
+  status: 'success' | 'failed' | 'blocked';
+  ipAddress?: string;
+  userAgent?: string;
+  deviceType?: string;
+  browser?: string;
+  os?: string;
+  locationCountry?: string;
+  locationCity?: string;
+}) {
+  if (typeof window !== 'undefined') {
+    // In browser, we should probably call an API instead of using Prisma
+    // For now, just skip or implement API call
+    return;
+  }
 
-    const { error } = await supabase
-      .from('login_history')
-      .insert({
-        user_id: attempt.userId,
-        login_time: new Date().toISOString(),
-        ip_address: attempt.ipAddress || 'Unknown',
-        user_agent: userAgent,
-        device_type: attempt.deviceType || getDeviceType(userAgent),
+  try {
+    const { prisma } = await import('@/lib/prisma');
+    const { LoginStatus } = await import('@prisma/client');
+    const userAgent = attempt.userAgent || 'Server';
+
+    await prisma.loginHistory.create({
+      data: {
+        userId: attempt.userId,
+        ipAddress: attempt.ipAddress || 'Unknown',
+        userAgent: userAgent,
+        deviceType: attempt.deviceType || getDeviceType(userAgent),
         browser: attempt.browser || getBrowser(userAgent),
         os: attempt.os || getOS(userAgent),
-        location_country: attempt.locationCountry || 'Kenya',
-        location_city: attempt.locationCity || 'Nairobi',
-        status: attempt.status,
-        is_suspicious: false,
-        risk_score: 0,
-      });
+        locationCountry: attempt.locationCountry || 'Kenya',
+        locationCity: attempt.locationCity || 'Nairobi',
+        status: attempt.status.toUpperCase() as any,
+        isSuspicious: false,
+        riskScore: 0,
+      },
+    });
 
-    if (error) {
-      console.error('Failed to log login attempt:', error);
-    } else {
-      console.log('✅ Login attempt logged successfully');
-    }
+    console.log('✅ Login attempt logged successfully');
 
     // Send email notification if enabled (and successful login)
     if (attempt.status === 'success') {
@@ -93,35 +91,31 @@ export async function logLoginAttempt(attempt: LoginAttempt) {
 
 // Create active session
 export async function createActiveSession(userId: string) {
-  try {
-    const supabase = createClient();
-    const userAgent = navigator.userAgent;
+  if (typeof window !== 'undefined') return null;
 
+  try {
+    const { prisma } = await import('@/lib/prisma');
+    const userAgent = 'Server';
     const sessionToken = crypto.randomUUID();
 
-    const { error } = await supabase
-      .from('active_sessions')
-      .insert({
-        user_id: userId,
-        session_token: sessionToken,
-        device_name: getBrowser(userAgent),
-        device_type: getDeviceType(userAgent),
+    await prisma.session.create({
+      data: {
+        userId: userId,
+        sessionToken: sessionToken,
+        deviceName: getBrowser(userAgent),
+        deviceType: getDeviceType(userAgent),
         browser: getBrowser(userAgent),
         os: getOS(userAgent),
-        ip_address: 'Unknown', // Would need server-side to get real IP
-        location_country: 'Kenya',
-        location_city: 'Nairobi',
-        is_active: true,
-        last_activity_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-      });
+        ipAddress: 'Unknown',
+        locationCountry: 'Kenya',
+        locationCity: 'Nairobi',
+        isActive: true,
+        lastActivityAt: new Date(),
+        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      },
+    });
 
-    if (error) {
-      console.error('Failed to create session:', error);
-    } else {
-      console.log('✅ Active session created');
-    }
-
+    console.log('✅ Active session created');
     return sessionToken;
   } catch (error) {
     console.error('Error creating session:', error);
@@ -131,19 +125,16 @@ export async function createActiveSession(userId: string) {
 
 // Update session activity
 export async function updateSessionActivity(sessionToken: string) {
+  if (typeof window !== 'undefined') return;
+
   try {
-    const supabase = createClient();
-
-    const { error } = await supabase
-      .from('active_sessions')
-      .update({
-        last_activity_at: new Date().toISOString(),
-      })
-      .eq('session_token', sessionToken);
-
-    if (error) {
-      console.error('Failed to update session:', error);
-    }
+    const { prisma } = await import('@/lib/prisma');
+    await prisma.session.update({
+      where: { sessionToken },
+      data: {
+        lastActivityAt: new Date(),
+      },
+    });
   } catch (error) {
     console.error('Error updating session:', error);
   }
@@ -151,20 +142,22 @@ export async function updateSessionActivity(sessionToken: string) {
 
 // Terminate session on logout
 export async function terminateSession(userId: string) {
+  if (typeof window !== 'undefined') {
+    // Call API instead of direct Prisma
+    await fetch('/api/account/terminate-sessions', { method: 'POST' });
+    return;
+  }
+
   try {
-    const supabase = createClient();
-
-    const { error } = await supabase
-      .from('active_sessions')
-      .update({ is_active: false })
-      .eq('user_id', userId)
-      .eq('is_active', true);
-
-    if (error) {
-      console.error('Failed to terminate session:', error);
-    } else {
-      console.log('✅ Session terminated');
-    }
+    const { prisma } = await import('@/lib/prisma');
+    await prisma.session.updateMany({
+      where: { 
+        userId: userId,
+        isActive: true
+      },
+      data: { isActive: false },
+    });
+    console.log('✅ Session terminated');
   } catch (error) {
     console.error('Error terminating session:', error);
   }

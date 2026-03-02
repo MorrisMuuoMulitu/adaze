@@ -3,29 +3,12 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Package } from 'lucide-react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 import { ProductCard } from '@/components/products/product-card';
 import { ProductSkeleton } from '@/components/products/product-skeleton';
 
-interface DBProduct {
-  id: string;
-  trader_id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  image_url: string | null;
-  stock_quantity: number;
-  rating: number;
-  created_at: string;
-  updated_at: string;
-  is_featured: boolean;
-}
-
 export function FeaturedProducts() {
-  const [featuredProducts, setFeaturedProducts] = useState<DBProduct[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,30 +16,10 @@ export function FeaturedProducts() {
     const fetchFeaturedProducts = async () => {
       try {
         setLoading(true);
-        const supabase = createClient();
-
-        // Fetch only FEATURED products that are ACTIVE
-        const { data, error } = await supabase
-          .from('products')
-          .select(`
-            *,
-            trader:profiles!trader_id (
-              is_suspended
-            )
-          `)
-          .eq('status', 'active')
-          .eq('is_featured', true)
-          .order('created_at', { ascending: false })
-          .limit(4); // Limit to 4 as requested
-
-        if (error) throw error;
-
-        // Filter out products from suspended traders
-        const activeProducts = (data || []).filter(
-          (product: any) => !product.trader?.is_suspended
-        );
-
-        setFeaturedProducts(activeProducts);
+        const res = await fetch('/api/products?featured=true&limit=4');
+        if (!res.ok) throw new Error('Failed to fetch featured products');
+        const data = await res.json();
+        setFeaturedProducts(data);
       } catch (error) {
         console.error('Error fetching featured products:', error);
         setError('Failed to load featured products');
@@ -72,10 +35,6 @@ export function FeaturedProducts() {
     return (
       <section className="py-24 bg-background relative overflow-hidden">
         <div className="container mx-auto px-6 relative z-10">
-          <div className="text-left mb-16">
-            <div className="h-4 w-32 bg-muted animate-pulse mb-4" />
-            <div className="h-12 w-96 bg-muted animate-pulse" />
-          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[...Array(4)].map((_, i) => (
               <ProductSkeleton key={i} />
@@ -131,15 +90,6 @@ export function FeaturedProducts() {
               <ProductCard product={product} index={index} />
             </motion.div>
           ))}
-        </div>
-
-        <div className="mt-16 md:hidden">
-          <Button
-            asChild
-            className="btn-premium w-full h-14 rounded-none text-[10px] font-black tracking-widest uppercase"
-          >
-            <Link href="/marketplace">VIEW ALL PIECES</Link>
-          </Button>
         </div>
       </div>
     </section>

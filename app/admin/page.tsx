@@ -3,10 +3,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
-import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, ShoppingBag, Package, DollarSign, TrendingUp, AlertCircle, BarChart3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, ShoppingBag, Package, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar';
 import { UserManagement } from '@/components/admin/user-management';
 import { ProductManagement } from '@/components/admin/product-management';
@@ -31,9 +31,8 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const supabase = createClient();
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
@@ -50,85 +49,31 @@ export default function AdminDashboard() {
     totalRevenue: 0,
     todayRevenue: 0,
   });
-  const [isAdmin, setIsAdmin] = useState(false);
 
   const fetchStats = useCallback(async () => {
-    setLoading(true);
     try {
-      // Fetch user stats
-      const { data: allUsers } = await supabase.from('profiles').select('role');
-      const buyers = allUsers?.filter(u => u.role === 'buyer').length || 0;
-      const traders = allUsers?.filter(u => u.role === 'trader').length || 0;
-      const transporters = allUsers?.filter(u => u.role === 'transporter').length || 0;
-
-      // Fetch product stats
-      const { data: products } = await supabase.from('products').select('id, status');
-      const activeProducts = products?.filter(p => p.status === 'active').length || 0;
-      const pendingProducts = products?.filter(p => p.status === 'pending').length || 0;
-
-      // Fetch order stats
-      const { data: orders } = await supabase.from('orders').select('id, status, amount, created_at');
-      const pendingOrders = orders?.filter(o => o.status === 'pending').length || 0;
-      const completedOrders = orders?.filter(o => o.status === 'delivered').length || 0;
-
-      // Calculate revenue (only from delivered orders)
-      const deliveredOrders = orders?.filter(o => o.status === 'delivered') || [];
-      const totalRevenue = deliveredOrders.reduce((sum, order) => sum + Number(order.amount), 0);
-      const today = new Date().toISOString().split('T')[0];
-      const todayRevenue = deliveredOrders
-        .filter(o => o.created_at?.startsWith(today))
-        .reduce((sum, order) => sum + Number(order.amount), 0);
-
-      setStats({
-        totalUsers: allUsers?.length || 0,
-        totalBuyers: buyers,
-        totalTraders: traders,
-        totalTransporters: transporters,
-        totalProducts: products?.length || 0,
-        activeProducts,
-        pendingProducts,
-        totalOrders: orders?.length || 0,
-        pendingOrders,
-        completedOrders,
-        totalRevenue,
-        todayRevenue,
-      });
+      const res = await fetch('/api/admin/stats');
+      if (!res.ok) throw new Error('Failed to fetch stats');
+      const data = await res.json();
+      setStats(data);
     } catch (error) {
       console.error('Error fetching admin stats:', error);
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
-    const checkAdminAndFetchStats = async () => {
-      if (!user) {
+    if (!authLoading) {
+      if (!user || user.role !== 'ADMIN') {
         router.push('/');
         return;
       }
+      fetchStats();
+    }
+  }, [user, authLoading, router, fetchStats]);
 
-      // Check if user is admin
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      if (profile?.role !== 'admin') {
-        router.push('/dashboard');
-        return;
-      }
-
-      setIsAdmin(true);
-      await fetchStats();
-    };
-
-    checkAdminAndFetchStats();
-  }, [user, router, supabase, fetchStats]);
-
-
-
-  if (!isAdmin || loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Navbar onAuthClick={() => { }} />
@@ -136,7 +81,7 @@ export default function AdminDashboard() {
           <div className="flex flex-col items-center gap-4">
             <div className="w-12 h-12 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
             <div className="text-[10px] font-black tracking-[0.3em] uppercase opacity-50">
-              {loading ? 'Authenticating Command Center...' : 'Access Restricted'}
+              Authenticating Command Center...
             </div>
           </div>
         </div>

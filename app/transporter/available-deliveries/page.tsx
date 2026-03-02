@@ -1,123 +1,57 @@
-
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/auth/auth-provider';
-import { createClient } from '@/lib/supabase/client';
-import { orderService, Order } from '@/lib/orderService';
+import { orderService } from '@/lib/orderService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Truck, Package, MapPin, DollarSign, Calendar } from 'lucide-react';
-
-interface OrderWithDetails extends Order {
-    profiles: { full_name: string } | null; // Trader's profile
-    order_items: {
-        quantity: number;
-        products: {
-            name: string;
-        };
-    }[];
-}
+import { Badge } from '@/components/ui/badge';
 
 export default function AvailableDeliveriesPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const supabase = createClient();
-  const [availableOrders, setAvailableOrders] = useState<OrderWithDetails[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/');
-      return;
-    }
-
-    const fetchAvailableOrders = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          profiles:trader_id (full_name),
-          order_items (
-            quantity,
-            products (
-              name
-            )
-          )
-        `)
-        .eq('status', 'confirmed') // Orders ready for pickup
-        .is('transporter_id', null); // Not yet assigned to a transporter
-
-      if (error) {
-        toast.error("Failed to fetch available deliveries", { description: error.message });
-      } else {
-        setAvailableOrders(data as OrderWithDetails[]);
-      }
+  const fetchOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/transporter/available-deliveries');
+      if (!res.ok) throw new Error('Failed to fetch available deliveries');
+      const data = await res.json();
+      setOrders(data);
+    } catch (error: any) {
+      toast.error("Failed to fetch orders", { description: error.message });
+    } finally {
       setLoading(false);
-    };
-
-    fetchAvailableOrders();
-
-    // Set up Supabase Realtime listener for orders
-    const ordersChannel = orderService.supabase
-      .channel('available_deliveries_changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'orders' }, // Listen for all events
-        async (payload) => {
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const order = payload.new as Order;
-            // Check if the order is confirmed and not assigned to a transporter
-            if (order.status === 'confirmed' && order.transporter_id === null) {
-              const detailedOrder = await orderService.getDetailedOrderById(order.id);
-              if (detailedOrder) {
-                setAvailableOrders(prevOrders => {
-                  // Add if new, update if existing
-                  const exists = prevOrders.some(o => o.id === detailedOrder.id);
-                  if (!exists) {
-                    toast.info(`New delivery available: ${detailedOrder.title}`);
-                    return [...prevOrders, detailedOrder];
-                  }
-                  return prevOrders.map(o => o.id === detailedOrder.id ? detailedOrder : o);
-                });
-              }
-            } else {
-              // If order is no longer available (e.g., accepted by another transporter, status changed)
-              setAvailableOrders(prevOrders => prevOrders.filter(o => o.id !== order.id));
-            }
-          } else if (payload.eventType === 'DELETE') {
-            const deletedOrder = payload.old as Order;
-            setAvailableOrders(prevOrders => prevOrders.filter(o => o.id !== deletedOrder.id));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      ordersChannel.unsubscribe();
-    };
-  }, [user, router, supabase]);
-
-  const handleAcceptDelivery = async (orderId: string) => {
-    if (!user) {
-      toast.error("You must be logged in to accept deliveries.");
-      return;
     }
+  }, []);
 
+  const handleAcceptOrder = async (orderId: string) => {
+    if (!user) return;
     try {
       await orderService.assignOrderToTransporter(orderId, user.id);
-      setAvailableOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
-      toast.success(`Delivery ${orderId} accepted!`);
+      toast.success("Order accepted successfully!");
+      fetchOrders(); // Refresh list
     } catch (error: any) {
-      toast.error("Failed to accept delivery", { description: error.message });
+      toast.error("Failed to accept order", { description: error.message });
     }
   };
 
-  if (loading) {
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user || user.role !== 'TRANSPORTER') {
+        router.push('/');
+        return;
+      }
+      fetchOrders();
+    }
+  }, [user, authLoading, router, fetchOrders]);
+
+  if (loading || authLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading available deliveries...</div>;
   }
 
@@ -127,41 +61,37 @@ export default function AvailableDeliveriesPage() {
         <Card>
           <CardHeader>
             <CardTitle>Available Deliveries</CardTitle>
-            <CardDescription>Orders ready for pickup and awaiting a transporter.</CardDescription>
+            <CardDescription>Select an order to start delivering.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order Title</TableHead>
-                  <TableHead>Trader</TableHead>
-                  <TableHead>Products</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Shipping Address</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {availableOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>{order.title}</TableCell>
-                    <TableCell>{order.profiles?.full_name || 'N/A'}</TableCell>
-                    <TableCell>
-                      {order.order_items.map((item, index) => (
-                        <div key={index}>
-                          {item.products.name} (x{item.quantity})
-                        </div>
-                      ))}
-                    </TableCell>
-                    <TableCell>KSh {order.amount.toFixed(2)}</TableCell>
-                    <TableCell>{order.shipping_address}</TableCell>
-                    <TableCell>
-                      <Button onClick={() => handleAcceptDelivery(order.id)}>Accept Delivery</Button>
-                    </TableCell>
+            {orders.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">No available deliveries at the moment.</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Order Title</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Action</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {orders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-medium">{order.title}</TableCell>
+                      <TableCell>{order.shipping_address.split(',')[0]}</TableCell>
+                      <TableCell>KSh {Number(order.amount).toLocaleString()}</TableCell>
+                      <TableCell>
+                        <Button size="sm" onClick={() => handleAcceptOrder(order.id)}>
+                          Accept Mission
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>

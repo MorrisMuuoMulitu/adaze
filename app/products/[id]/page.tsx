@@ -23,10 +23,10 @@ export async function generateMetadata(
 
   return {
     title: `${product.name} - ADAZE`,
-    description: product.description,
+    description: product.description || undefined,
     openGraph: {
       title: `${product.name} - ADAZE`,
-      description: product.description,
+      description: product.description || undefined,
       images: [
         {
           url: product.image_url || '/og-image.png',
@@ -51,8 +51,8 @@ export default async function ProductDetailPage({ params }: Props) {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
-    image: product.image_url,
-    description: product.description,
+    image: product.image_url || undefined,
+    description: product.description || undefined,
     sku: product.id,
     offers: {
       '@type': 'Offer',
@@ -62,9 +62,7 @@ export default async function ProductDetailPage({ params }: Props) {
       url: `https://adazeconnect.com/products/${product.id}`,
       seller: {
         '@type': 'Person',
-        name: product.trader_id // Ideally this would be the trader's name, but ID is what we have readily available here without extra fetch or join if not already present. 
-        // Actually productService.getProductById might return trader info if joined. Let's check the type or assume basic for now.
-        // Looking at previous file content, product type isn't fully visible but likely has basic fields.
+        name: 'ADAZE Trader'
       }
     }
   };

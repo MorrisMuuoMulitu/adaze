@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { createClient } from '@/lib/supabase/client';
+import { productService } from '@/lib/productService';
 import { useAuth } from '@/components/auth/auth-provider';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -31,7 +31,6 @@ const productSchema = z.object({
 export default function AddProductPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const supabase = createClient();
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof productSchema>>({
@@ -54,21 +53,15 @@ export default function AddProductPage() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.from('products').insert([
-        {
-          trader_id: user.id,
-          name: values.name,
-          description: values.description,
-          price: values.price,
-          category: values.category,
-          image_url: values.image_url,
-          stock_quantity: values.stock_quantity,
-        },
-      ]);
-
-      if (error) {
-        throw error;
-      }
+      await productService.createProduct({
+        trader_id: user.id,
+        name: values.name,
+        description: values.description || null,
+        price: values.price,
+        category: values.category,
+        image_url: values.image_url || null,
+        stock_quantity: values.stock_quantity,
+      });
 
       toast.success("Product added successfully!");
       router.push('/dashboard/trader');

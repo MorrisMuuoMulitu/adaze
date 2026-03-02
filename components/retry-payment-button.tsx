@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { MpesaPaymentButton } from '@/components/mpesa-payment-button';
 import { Button } from '@/components/ui/button';
-import { createClient } from '@/lib/supabase/client';
+import { orderService } from '@/lib/orderService';
 import { toast } from 'sonner';
 import { RefreshCw } from 'lucide-react';
 
@@ -23,7 +23,6 @@ export function RetryPaymentButton({
   onPaymentSuccess,
 }: RetryPaymentButtonProps) {
   const [showPayment, setShowPayment] = useState(false);
-  const supabase = createClient();
 
   // Only show retry for pending payments
   if (paymentStatus === 'paid' || orderStatus === 'cancelled') {
@@ -35,16 +34,11 @@ export function RetryPaymentButton({
   };
 
   const handlePaymentSuccess = async () => {
-    // Update order status to confirmed
+    // Update order status to confirmed via isomorphic service
     try {
-      await supabase
-        .from('orders')
-        .update({ 
-          status: 'confirmed',
-          payment_status: 'paid',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', orderId);
+      await orderService.updateOrder(orderId, { 
+        status: 'confirmed',
+      });
 
       toast.success('Payment completed! Order confirmed.');
       onPaymentSuccess?.();

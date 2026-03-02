@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/components/auth/auth-provider';
-import { createClient } from '@/lib/supabase/client';
 import { Navbar } from '@/components/layout/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,57 +24,24 @@ import { toast } from 'sonner';
 export default function WholesalerDashboard() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const supabase = createClient();
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalOrders: 0,
     totalRevenue: 0,
     pendingOrders: 0,
   });
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [roleLoading, setRoleLoading] = useState(true);
 
-  // Get user role from profiles table
-  useEffect(() => {
-    const fetchUserRole = async () => {
-      if (user) {
-        try {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
-          
-          if (error) {
-            console.error('Error fetching user role:', error);
-            // Redirect to home if unable to fetch role
-            router.push('/');
-            return;
-          }
-          
-          setUserRole(profile?.role || null);
-          
-          if (profile?.role !== 'wholesaler') {
-            router.push('/');
-            toast.error('Access denied. Wholesalers only.');
-          }
-        } catch (error) {
-          console.error('Error in fetchUserRole:', error);
-          router.push('/');
-          toast.error('Access denied. Please log in again.');
-        } finally {
-          setRoleLoading(false);
-        }
-      } else {
-        setRoleLoading(false);
-      }
-    };
-
-    fetchUserRole();
-  }, [user, router, supabase]);
+  const userRole = user?.role?.toLowerCase();
 
   // Mock data for stats - in real app, this would come from API
   useEffect(() => {
+    if (loading) return;
+    
+    if (!user || userRole !== 'wholesaler') {
+      router.push('/');
+      return;
+    }
+
     const fetchStats = async () => {
       // In a real app, this would fetch from API
       setStats({
@@ -86,12 +52,10 @@ export default function WholesalerDashboard() {
       });
     };
 
-    if (userRole === 'wholesaler') {
-      fetchStats();
-    }
-  }, [userRole]);
+    fetchStats();
+  }, [user, userRole, loading, router]);
 
-  if (loading || roleLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>

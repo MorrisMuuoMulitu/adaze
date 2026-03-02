@@ -1,12 +1,11 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/client';
+import { SessionProvider, useSession } from 'next-auth/react';
 
 type AuthContextType = {
-  session: Session | null;
-  user: User | null;
+  session: any | null;
+  user: any | null;
   profile: any | null;
   loading: boolean;
 };
@@ -18,68 +17,38 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
 });
 
-// AuthProvider manages the authentication state across the application
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [supabase] = useState(() => createClient());
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+// Internal provider that connects NextAuth session to our AuthContext
+const AuthStateManager = ({ children }: { children: React.ReactNode }) => {
+  const { data: session, status } = useSession();
+  const [user, setUser] = useState<any | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching profile:', error);
-        return null;
-      }
-      return data;
-    } catch (err) {
-      console.error('Unexpected error fetching profile:', err);
-      return null;
-    }
-  };
+  const loading = status === 'loading';
 
   useEffect(() => {
-    // Fetch the initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        fetchProfile(session.user.id).then(profileData => {
-          setProfile(profileData);
-          setLoading(false);
-        });
-      } else {
-        setLoading(false);
-      }
-    });
-
-    // Listen for changes in auth state
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          const profileData = await fetchProfile(session.user.id);
-          setProfile(profileData);
-        } else {
-          setProfile(null);
-        }
-      }
-    );
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, [supabase]);
+    console.log('AuthProvider: Session update', { status, hasUser: !!session?.user });
+    if (session?.user) {
+      const userData = {
+        id: session.user.id,
+        email: session.user.email,
+        name: session.user.name,
+        role: session.user.role,
+        image: session.user.image,
+      };
+      setUser(userData);
+      
+      // Profile is essentially the user in our new Prisma-backed Auth.js setup
+      setProfile({
+        ...userData,
+        full_name: session.user.name,
+        avatar_url: session.user.image,
+        phone: (session.user as any).phone,
+        location: (session.user as any).location,
+      });
+    } else {
+      setUser(null);
+      setProfile(null);
+    }
+  }, [session, status]);
 
   const value = {
     session,
@@ -89,6 +58,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <SessionProvider>
+      <AuthStateManager>
+        {children}
+      </AuthStateManager>
+    </SessionProvider>
+  );
 };
 
 export const useAuth = () => {

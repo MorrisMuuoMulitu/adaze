@@ -1,47 +1,25 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
-import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function AdminTestPage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
-  const supabase = createClient();
-  const [role, setRole] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkRole = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      setRole(profile?.role || null);
-      setLoading(false);
-
-      if (profile?.role !== 'admin') {
-        router.push('/');
-      }
-    };
-
-    checkRole();
-  }, [user, router, supabase]);
+    if (!loading && (!user || user.role !== 'ADMIN')) {
+      router.push('/');
+    }
+  }, [user, loading, router]);
 
   if (loading) {
     return <div className="p-8">Loading...</div>;
   }
 
-  if (role !== 'admin') {
+  if (!user || user.role !== 'ADMIN') {
     return <div className="p-8">Access Denied - Not Admin</div>;
   }
 
@@ -53,13 +31,13 @@ export default function AdminTestPage() {
         </CardHeader>
         <CardContent>
           <p className="text-green-600 font-semibold">
-            You have admin access! This page bypasses middleware.
+            You have admin access! This page verifies your role from the session.
           </p>
           <p className="text-sm text-muted-foreground mt-4">
-            Role: {role}
+            Role: {user.role}
           </p>
           <p className="text-sm text-muted-foreground">
-            User ID: {user?.id}
+            User ID: {user.id}
           </p>
         </CardContent>
       </Card>

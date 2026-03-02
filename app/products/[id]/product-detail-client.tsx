@@ -10,10 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useRouter, useParams } from 'next/navigation';
-import { Package, MapPin, DollarSign, ShoppingCart, Star, Heart, ArrowLeft, Check } from 'lucide-react';
+import { Package, MapPin, DollarSign, ShoppingCart, Star, Heart, ArrowLeft, Check, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { reviewService } from '@/lib/reviewService';
-import { createClient } from '@/lib/supabase/client';
 import { wishlistService } from '@/lib/wishlistService';
 import { ProductReviews } from '@/components/reviews/product-reviews';
 
@@ -48,22 +47,15 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
   useEffect(() => {
     if (!product) return;
-    // ... existing code ...
-    const fetchExtraData = async () => {
-      // Fetch trader info
-      const supabase = createClient();
-      const { data: traderProfile, error: traderError } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', product.trader_id)
-        .single();
 
-      if (traderError) {
-        console.error('Error fetching trader profile:', traderError);
-      } else if (traderProfile) {
-        const avgRating = await reviewService.getAverageRating(product.trader_id);
-        setTraderInfo({ name: traderProfile.full_name, averageRating: avgRating });
-      }
+    const fetchExtraData = async () => {
+      // Fetch average rating separately if not in product
+      const avgRating = await reviewService.getAverageRating(product.trader_id);
+      
+      setTraderInfo({ 
+        name: product.trader?.name || 'Anonymous Trader', 
+        averageRating: avgRating 
+      });
 
       // Check wishlist status
       if (user) {

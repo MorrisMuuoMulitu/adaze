@@ -1,7 +1,5 @@
 // Email notification system for security events
 
-import { createClient } from '@/lib/supabase/client';
-
 export interface NotificationData {
   to: string;
   subject: string;
@@ -247,8 +245,6 @@ export async function logNotification(
   metadata?: any
 ) {
   try {
-    const supabase = createClient();
-    
     // You could create a notifications_log table to track all notifications
     // For now, we'll just log to console
     console.log('Notification Log:', {

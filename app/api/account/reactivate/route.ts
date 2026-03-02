@@ -1,27 +1,22 @@
+export const dynamic = "force-dynamic";import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
+    const session = await auth();
     
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
+    if (!session || !session.user || !session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Update profile to mark as active
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ is_suspended: false })
-      .eq('id', user.id);
+    const userId = session.user.id;
 
-    if (updateError) {
-      console.error('Error reactivating account:', updateError);
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
-    }
+    // Update profile via Prisma
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isSuspended: false },
+    });
 
     return NextResponse.json({ 
       message: 'Account reactivated successfully',
