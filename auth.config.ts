@@ -10,12 +10,18 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
-      if (isOnDashboard) {
+      const isDashboardRoute = nextUrl.pathname.startsWith('/dashboard') || 
+                          nextUrl.pathname.startsWith('/admin') ||
+                          nextUrl.pathname.startsWith('/profile') ||
+                          nextUrl.pathname.startsWith('/cart') ||
+                          nextUrl.pathname.startsWith('/checkout') ||
+                          nextUrl.pathname.startsWith('/orders') ||
+                          nextUrl.pathname.startsWith('/wishlist') ||
+                          nextUrl.pathname.startsWith('/transporter');
+      
+      if (isDashboardRoute) {
         if (isLoggedIn) return true;
         return false; // Redirect unauthenticated users to login page
-      } else if (isLoggedIn) {
-        return true;
       }
       return true;
     },

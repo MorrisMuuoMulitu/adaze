@@ -17,27 +17,27 @@ export async function middleware(request: NextRequest) {
 
   const session = await auth();
   const user = session?.user;
-  const userRole = user?.role ? user.role.toLowerCase() : null;
+  const userRole = user?.role ? user.role.toUpperCase() : null;
 
   const protectedRoutes: { [key: string]: string[] } = {
-    '/dashboard/buyer': ['buyer'],
-    '/dashboard/trader': ['trader'],
-    '/dashboard/transporter': ['transporter'],
-    '/dashboard/wholesaler': ['wholesaler'],
-    '/admin': ['admin'],
-    '/marketplace': ['buyer'],
-    '/products/add': ['trader'],
-    '/products/manage': ['trader'],
-    '/products/edit': ['trader'],
-    '/orders/received': ['trader'],
-    '/orders/create': ['buyer'],
-    '/cart': ['buyer'],
-    '/checkout': ['buyer'],
-    '/payment': ['buyer'],
-    '/wishlist': ['buyer'],
-    '/orders': ['buyer'],
-    '/transporter/available-deliveries': ['transporter'],
-    '/transporter/my-deliveries': ['transporter'],
+    '/dashboard/buyer': ['BUYER'],
+    '/dashboard/trader': ['TRADER'],
+    '/dashboard/transporter': ['TRANSPORTER'],
+    '/dashboard/wholesaler': ['WHOLESALER'],
+    '/admin': ['ADMIN'],
+    '/marketplace': ['BUYER'],
+    '/products/add': ['TRADER'],
+    '/products/manage': ['TRADER'],
+    '/products/edit': ['TRADER'],
+    '/orders/received': ['TRADER'],
+    '/orders/create': ['BUYER'],
+    '/cart': ['BUYER'],
+    '/checkout': ['BUYER'],
+    '/payment': ['BUYER'],
+    '/wishlist': ['BUYER'],
+    '/orders': ['BUYER'],
+    '/transporter/available-deliveries': ['TRANSPORTER'],
+    '/transporter/my-deliveries': ['TRANSPORTER'],
   };
 
   const isProtectedRoute = Object.keys(protectedRoutes).some(route => {
@@ -65,14 +65,14 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/profile', request.url));
     }
 
-    if (requiredRoles && !requiredRoles.includes(userRole) && userRole !== 'admin') {
-      if (userRole === 'buyer') {
+    if (requiredRoles && !requiredRoles.includes(userRole) && userRole !== 'ADMIN') {
+      if (userRole === 'BUYER') {
         return NextResponse.redirect(new URL('/dashboard/buyer', request.url));
-      } else if (userRole === 'trader') {
+      } else if (userRole === 'TRADER') {
         return NextResponse.redirect(new URL('/dashboard/trader', request.url));
-      } else if (userRole === 'transporter') {
+      } else if (userRole === 'TRANSPORTER') {
         return NextResponse.redirect(new URL('/dashboard/transporter', request.url));
-      } else if (userRole === 'wholesaler') {
+      } else if (userRole === 'WHOLESALER') {
         return NextResponse.redirect(new URL('/dashboard/wholesaler', request.url));
       }
       return NextResponse.redirect(new URL('/', request.url));
