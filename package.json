@@ -71,7 +71,6 @@
     "next": "^14.2.0",
     "next-auth": "^5.0.0-beta.30",
     "next-themes": "^0.3.0",
-    "openai": "^6.25.0",
     "postcss": "8.4.30",
     "prisma": "^6.14.0",
     "qrcode": "^1.5.4",

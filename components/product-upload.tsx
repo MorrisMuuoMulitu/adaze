@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Loader2, Upload, Wand2 } from 'lucide-react'
+import { Loader2, Upload } from 'lucide-react'
 import { createProduct } from '@/app/actions/product'
 import { useToast } from '@/hooks/use-toast'
 
@@ -25,7 +25,6 @@ const productSchema = z.object({
 type FormData = z.infer<typeof productSchema>
 
 export function ProductUpload() {
-  const [isGenerating, setIsGenerating] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
 
@@ -33,57 +32,10 @@ export function ProductUpload() {
     register,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(productSchema),
   })
-
-  const handleGenerateDescription = async () => {
-    const name = watch('name')
-    const category = watch('category')
-    
-    if (!name || !category) {
-      toast({
-        title: "Missing Information",
-        description: "Please enter a product name and category first.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsGenerating(true)
-    try {
-      const prompt = `Product: ${name}, Category: ${category}. Write a short description.`
-      const response = await fetch('/api/ai/generate-description', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      })
-
-      if (!response.ok) throw new Error('Failed to generate description')
-      
-      const reader = response.body?.getReader()
-      const decoder = new TextDecoder()
-      let result = ''
-
-      while (true) {
-        const { done, value } = await reader!.read()
-        if (done) break
-        const text = decoder.decode(value)
-        result += text
-        setValue('description', result, { shouldValidate: true }) // Update incrementally if desired, or at the end
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to generate description. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsGenerating(false)
-    }
-  }
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true)
@@ -159,28 +111,11 @@ export function ProductUpload() {
           </div>
 
           <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="description">Description</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleGenerateDescription}
-                disabled={isGenerating}
-                className="text-purple-600 border-purple-200 hover:bg-purple-50"
-              >
-                {isGenerating ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Wand2 className="w-4 h-4 mr-2" />
-                )}
-                Generate with AI
-              </Button>
-            </div>
-            <Textarea 
-              id="description" 
-              {...register('description')} 
-              placeholder="Describe the condition, size, and style..." 
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              {...register('description')}
+              placeholder="Describe the condition, size, and style..."
               className="min-h-[120px]"
             />
           </div>
