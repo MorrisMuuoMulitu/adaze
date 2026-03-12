@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/layout/navbar';
 import { useRouter, useParams } from 'next/navigation';
+import Image from 'next/image';
 import { 
   ArrowLeft,
   Calendar,
@@ -163,7 +164,13 @@ export default function OrderDetailPage() {
                                 <div className="flex items-center gap-6">
                                     <div className="w-16 h-16 bg-muted/20 border border-border/50 overflow-hidden relative">
                                         {item.product.imageUrl && (
-                                            <img src={item.product.imageUrl} alt={item.product.name} className="object-cover w-full h-full" />
+                                            <Image 
+                                              src={item.product.imageUrl} 
+                                              alt={item.product.name} 
+                                              fill 
+                                              className="object-cover" 
+                                              sizes="64px"
+                                            />
                                         )}
                                     </div>
                                     <div>

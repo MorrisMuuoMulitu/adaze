@@ -54,7 +54,7 @@ export function SecurityDashboard() {
               <div key={session.id} className="flex items-center justify-between p-4 border border-border/30 bg-background hover:border-accent/30 transition-colors">
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-tight">{session.deviceName || 'Unknown Node'}</div>
-                  <div className="text-[9px] font-mono text-muted-foreground uppercase">{session.ipAddress} <span className="opacity-40">//</span> {session.locationCity}</div>
+                  <div className="text-[9px] font-mono text-muted-foreground uppercase">{session.ipAddress} <span className="opacity-40">{"//"}</span> {session.locationCity}</div>
                 </div>
                 <Badge variant="outline" className="rounded-none text-[8px] font-black uppercase">CURRENT</Badge>
               </div>

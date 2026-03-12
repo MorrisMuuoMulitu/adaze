@@ -205,7 +205,7 @@ export default function CartPage() {
                 </h1>
               </div>
               <div className="text-[10px] font-black tracking-widest uppercase text-muted-foreground/60">
-                <span className="opacity-40">//</span> {cartItems.length} {cartItems.length === 1 ? 'PIECE' : 'PIECES'} READY FOR DISPATCH
+                <span className="opacity-40">{"//"}</span> {cartItems.length} {cartItems.length === 1 ? 'PIECE' : 'PIECES'} READY FOR DISPATCH
               </div>
             </div>
 
