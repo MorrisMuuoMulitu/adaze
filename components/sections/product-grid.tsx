@@ -52,6 +52,15 @@ export function ProductGrid() {
     const LIMIT = 12;
 
     useEffect(() => {
+        // Handle URL category synchronization
+        const params = new URLSearchParams(window.location.search);
+        const urlCategory = params.get('category');
+        if (urlCategory) {
+            setFilters(prev => ({ ...prev, category: urlCategory.toUpperCase() }));
+            // Set page back to 1 if we're changing category via URL
+            setPage(1);
+        }
+
         if (user) {
             wishlistService.getWishlistItems(user.id).then((items: any[]) => {
                 setWishlistIds(new Set(items.map((item: any) => item.product_id)));

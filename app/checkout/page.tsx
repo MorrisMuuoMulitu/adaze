@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -7,12 +6,12 @@ import Image from 'next/image';
 import { useAuth } from '@/components/auth/auth-provider';
 import { cartService } from '@/lib/cartService';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { MpesaPaymentButton } from '@/components/mpesa-payment-button';
-import { Package, ArrowLeft, MapPin, Phone, User } from 'lucide-react';
+import { Package, ArrowLeft, MapPin, Phone, User, CreditCard, ShieldCheck, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/layout/navbar';
 import { AuthModal } from '@/components/auth/auth-modal';
@@ -27,7 +26,7 @@ interface CartItem {
 }
 
 export default function CheckoutPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -54,45 +53,40 @@ export default function CheckoutPage() {
   };
 
   useEffect(() => {
-    if (!user) {
-      toast.error('Please log in to checkout');
-      router.push('/');
+    if (!authLoading && !user) {
+      toast.error('Identity verification required for checkout');
+      router.push('/?auth=login');
       return;
     }
 
-    const fetchCartItems = async () => {
-      try {
-        const items = await cartService.getCartItems(user.id);
-        if (items.length === 0) {
-          toast.error('Your cart is empty');
-          router.push('/cart');
-          return;
+    if (user) {
+      const fetchCartItems = async () => {
+        try {
+          const items = await cartService.getCartItems(user.id);
+          if (items.length === 0) {
+            toast.error('Manifest is empty');
+            router.push('/cart');
+            return;
+          }
+          setCartItems(items);
+        } catch (error) {
+          console.error('Error fetching cart:', error);
+          toast.error('Failed to load transaction payload');
+        } finally {
+          setLoading(false);
         }
-        setCartItems(items);
-      } catch (error) {
-        console.error('Error fetching cart:', error);
-        toast.error('Failed to load cart');
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
 
-    fetchCartItems();
-  }, [user, router]);
+      fetchCartItems();
+    }
+  }, [user, authLoading, router]);
 
   const total = cartItems.reduce((sum, item) => sum + (item.product_price * item.quantity), 0);
 
   const handleCreateOrder = async () => {
-    if (!user) {
-      toast.error('Please log in');
-      return;
-    }
-    if (!deliveryAddress.trim()) {
-      toast.error('Please enter delivery address');
-      return;
-    }
-    if (!phoneNumber.trim()) {
-      toast.error('Please enter phone number');
+    if (!user) return;
+    if (!deliveryAddress.trim() || !phoneNumber.trim()) {
+      toast.error('Logistics coordinates incomplete');
       return;
     }
 
@@ -110,216 +104,209 @@ export default function CheckoutPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.message || 'Failed to create order');
+        throw new Error(data.message || 'Synchronization failure');
       }
 
       const result = await res.json();
 
-      // If single order, set it for payment
       if (result.orderId) {
         setOrderId(result.orderId);
-        toast.success('Order created! Complete payment below.');
+        toast.success('Protocol established. Please finalize settlement.');
       } else {
-        // Multiple orders - redirect to orders page
-        toast.success(`${result.orders.length} orders created!`);
-        router.push('/orders');
+        toast.success(`${result.orders.length} protocols established.`);
+        router.push('/dashboard/buyer'); // Redirect to buyer dashboard
       }
       
-      // Notify Navbar to refresh cart count
       window.dispatchEvent(new CustomEvent('cartUpdated'));
     } catch (error: any) {
       console.error('Error creating order:', error);
-      toast.error('Failed to create order: ' + error.message);
+      toast.error('Critical failure: ' + error.message);
     } finally {
       setCreatingOrder(false);
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar onAuthClick={handleAuthClick} />
-        <AuthModal
-          isOpen={showAuthModal}
-          onClose={handleCloseAuthModal}
-          initialType={authModalType}
-          onSuccess={handleCloseAuthModal}
-        />
-        <div className="container mx-auto px-4 py-8">
-          <p className="text-center">Loading...</p>
-        </div>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
+        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground selection:bg-accent/30">
       <Navbar onAuthClick={handleAuthClick} />
+      
       <AuthModal
         isOpen={showAuthModal}
         onClose={handleCloseAuthModal}
         initialType={authModalType}
         onSuccess={handleCloseAuthModal}
       />
-      <main className="container mx-auto px-4 py-8 max-w-6xl">
-        <Button
-          variant="ghost"
-          onClick={() => router.push('/cart')}
-          className="mb-6"
+
+      <main className="container mx-auto px-6 py-32 max-w-7xl">
+        <motion.div
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           className="flex flex-col md:flex-row justify-between items-end border-b border-border/50 pb-12 mb-12 gap-8"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Cart
-        </Button>
+          <div>
+            <Button 
+                variant="ghost" 
+                size="sm" 
+                className="mb-8 -ml-2 text-[9px] font-black tracking-widest uppercase text-muted-foreground hover:text-accent transition-colors"
+                onClick={() => router.push('/cart')}
+            >
+                <ArrowLeft className="h-3 w-3 mr-2" /> Modify Manifest
+            </Button>
+            <div className="text-[10px] font-black tracking-[0.4em] uppercase text-accent mb-4">
+              Final Synchronization
+            </div>
+            <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-[0.85]">
+              Secure <span className="text-muted-foreground/30 italic">Protocol.</span>
+            </h1>
+          </div>
+          <div className="flex items-center gap-4 text-[9px] font-black tracking-[0.2em] uppercase text-muted-foreground/40">
+            <ShieldCheck className="h-4 w-4 text-accent" /> Encrypted Transaction Channel
+          </div>
+        </motion.div>
 
-        <h1 className="text-3xl font-bold mb-8">Checkout</h1>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left: Delivery Details */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Delivery Details
-                </CardTitle>
-                <CardDescription>Enter your delivery information</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="phone">Phone Number *</Label>
-                  <div className="relative mt-1">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="0712 345 678"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="pl-10"
-                      disabled={!!orderId}
-                    />
-                  </div>
+        <div className="grid lg:grid-cols-12 gap-16">
+          {/* Logistics & Inventory */}
+          <div className="lg:col-span-8 space-y-16">
+            <section className="space-y-10">
+                <div className="flex items-center gap-3">
+                    <MapPin className="h-4 w-4 text-accent" />
+                    <h3 className="text-[10px] font-black tracking-[0.3em] uppercase">Logistics Coordinates</h3>
                 </div>
-
-                <div>
-                  <Label htmlFor="address">Delivery Address *</Label>
-                  <Textarea
-                    id="address"
-                    placeholder="Enter your full delivery address"
-                    value={deliveryAddress}
-                    onChange={(e) => setDeliveryAddress(e.target.value)}
-                    rows={3}
-                    disabled={!!orderId}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="notes">Order Notes (Optional)</Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Any special instructions for delivery?"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={2}
-                    disabled={!!orderId}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Order Items Preview */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Order Items</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {cartItems.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3">
-                    <div className="relative w-16 h-16 flex-shrink-0">
-                      {item.product_image_url ? (
-                        <Image
-                          src={item.product_image_url}
-                          alt={item.product_name}
-                          width={64}
-                          height={64}
-                          className="w-full h-full object-cover rounded"
+                
+                <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                        <Label className="text-[9px] font-black tracking-widest uppercase opacity-50">Operational Number</Label>
+                        <Input 
+                            value={phoneNumber} 
+                            onChange={(e) => setPhoneNumber(e.target.value)}
+                            placeholder="+254 XXX XXX XXX"
+                            className="h-14 rounded-none border-border/50 bg-muted/5 font-mono text-xs tracking-widest uppercase focus:border-accent transition-all"
+                            disabled={!!orderId}
                         />
-                      ) : (
-                        <div className="w-full h-full bg-muted flex items-center justify-center rounded">
-                          <Package className="h-8 w-8 text-gray-400" />
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <Label className="text-[9px] font-black tracking-widest uppercase opacity-50">Delivery Terminal (Full Address)</Label>
+                    <Textarea 
+                        value={deliveryAddress} 
+                        onChange={(e) => setDeliveryAddress(e.target.value)}
+                        placeholder="SPECIFY GLOBAL COORDINATES..."
+                        className="min-h-[120px] rounded-none border-border/50 bg-muted/5 font-mono text-xs tracking-widest uppercase focus:border-accent transition-all leading-relaxed"
+                        disabled={!!orderId}
+                    />
+                </div>
+
+                <div className="space-y-4">
+                    <Label className="text-[9px] font-black tracking-widest uppercase opacity-50">Protocol Instructions (Optional)</Label>
+                    <Textarea 
+                        value={notes} 
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="SPECIAL HANDLING PROTOCOLS..."
+                        className="min-h-[80px] rounded-none border-border/50 bg-muted/5 font-mono text-xs tracking-widest uppercase focus:border-accent transition-all"
+                        disabled={!!orderId}
+                    />
+                </div>
+            </section>
+
+            <section className="space-y-10">
+                <div className="flex items-center gap-3">
+                    <Package className="h-4 w-4 text-accent" />
+                    <h3 className="text-[10px] font-black tracking-[0.3em] uppercase">Manifest Payload</h3>
+                </div>
+                
+                <div className="border border-border/50 divide-y divide-border/30">
+                    {cartItems.map((item) => (
+                        <div key={item.id} className="p-8 flex items-center justify-between group bg-background transition-colors hover:bg-muted/5">
+                            <div className="flex items-center gap-8">
+                                <div className="w-20 h-20 bg-muted/20 border border-border/50 overflow-hidden relative">
+                                    {item.product_image_url && <Image src={item.product_image_url} alt={item.product_name} fill className="object-cover" />}
+                                </div>
+                                <div>
+                                    <div className="text-[11px] font-black uppercase tracking-tight">{item.product_name}</div>
+                                    <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-2">UNIT: KSH {item.product_price.toLocaleString()} × {item.quantity}</div>
+                                </div>
+                            </div>
+                            <div className="text-sm font-black font-mono tracking-tighter">KSH {(item.product_price * item.quantity).toLocaleString()}</div>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">{item.product_name}</p>
-                      <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
-                    </div>
-                    <p className="font-semibold">KSh {(item.product_price * item.quantity).toLocaleString()}</p>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+                    ))}
+                </div>
+            </section>
           </div>
 
-          {/* Right: Order Summary & Payment */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-4">
-              <CardHeader>
-                <CardTitle>Order Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Subtotal ({cartItems.length} items)</span>
-                    <span>KSh {total.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Delivery</span>
-                    <span className="text-green-600">Free</span>
-                  </div>
-                  <div className="border-t pt-2 flex justify-between font-bold text-lg">
-                    <span>Total</span>
-                    <span>KSh {total.toLocaleString()}</span>
-                  </div>
-                </div>
-
-                {!orderId ? (
-                  <Button
-                    className="w-full african-gradient text-white hover:opacity-90 transition-opacity"
-                    size="lg"
-                    onClick={handleCreateOrder}
-                    disabled={creatingOrder || !deliveryAddress || !phoneNumber}
-                  >
-                    <span className="text-black font-black tracking-widest uppercase">
-                      {creatingOrder ? 'Creating Order...' : 'Create Order'}
-                    </span>
-                  </Button>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <p className="text-sm text-green-800 font-medium">✅ Order Created!</p>
-                      <p className="text-xs text-green-600 mt-1">Complete payment below</p>
+          {/* Settlement Control */}
+          <div className="lg:col-span-4">
+            <div className="sticky top-32 space-y-8">
+                <div className="border border-border/50 bg-background p-10 space-y-10">
+                    <div className="text-[10px] font-black tracking-[0.4em] uppercase text-accent">Financial Summary</div>
+                    
+                    <div className="space-y-6">
+                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest opacity-40">
+                            <span>Subtotal Manifest</span>
+                            <span>KSH {total.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-green-500/80">
+                            <span>Global Logistics</span>
+                            <span>COMPLIMENTARY</span>
+                        </div>
+                        <div className="pt-6 border-t border-border/30 flex justify-between items-end">
+                            <span className="text-[11px] font-black uppercase tracking-[0.2em]">Total Value</span>
+                            <span className="text-3xl font-black tracking-tighter">KSH {total.toLocaleString()}</span>
+                        </div>
                     </div>
 
-                    <MpesaPaymentButton
-                      orderId={orderId}
-                      amount={total}
-                      onSuccess={() => {
-                        toast.success('Payment successful!');
-                        router.push(`/orders`);
-                      }}
-                      onError={(error) => {
-                        toast.error('Payment failed', { description: error });
-                      }}
-                    />
+                    {!orderId ? (
+                        <Button
+                            className="w-full h-16 btn-premium rounded-none text-[10px] font-black tracking-[0.4em] uppercase flex items-center justify-center gap-4 group"
+                            onClick={handleCreateOrder}
+                            disabled={creatingOrder || !deliveryAddress || !phoneNumber}
+                        >
+                            {creatingOrder ? 'Synchronizing...' : (
+                                <>
+                                    Establish Protocol
+                                    <Sparkles className="h-4 w-4 text-accent transition-transform group-hover:scale-125" />
+                                </>
+                            )}
+                        </Button>
+                    ) : (
+                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                             <div className="p-6 bg-accent/5 border border-accent/20 text-center space-y-2">
+                                <div className="text-xs font-black uppercase tracking-widest text-accent">Protocol Success</div>
+                                <div className="text-[9px] font-bold uppercase tracking-[0.2em] opacity-60">Manifest #{orderId.slice(0, 8)} ready for settlement</div>
+                             </div>
 
-                    <p className="text-xs text-center text-muted-foreground">
-                      Secure payment via M-Pesa
+                             <MpesaPaymentButton
+                                orderId={orderId}
+                                amount={total}
+                                onSuccess={() => {
+                                    toast.success('Funds synchronized successfully');
+                                    router.push(`/dashboard/buyer`);
+                                }}
+                                onError={(error) => toast.error('Settlement interrupted', { description: error })}
+                            />
+                            
+                            <div className="flex items-center justify-center gap-2 opacity-30">
+                                <CreditCard className="h-3 w-3" />
+                                <span className="text-[8px] font-bold uppercase tracking-widest">Global Secure Settlement Access</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="p-8 bg-muted/5 border border-border/50">
+                    <p className="text-[9px] font-medium leading-relaxed uppercase tracking-widest opacity-40">
+                        By establishing this protocol, you agree to the Adaze Collective terms of service and autonomous logistics synchronization.
                     </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </div>
+            </div>
           </div>
         </div>
       </main>

@@ -98,9 +98,9 @@ export function Hero({ onGetStarted }: HeroProps) {
       {/* Editorial Decorative Elements */}
       <div className="absolute left-10 bottom-10 z-20 hidden md:block">
         <div className="flex flex-col gap-4 text-[9px] font-bold tracking-[0.5em] text-white/20 uppercase vertical-text">
-          <span>Obsidian</span>
-          <span>Heritage</span>
-          <span>Curated</span>
+          <Link href="/marketplace" className="hover:text-accent transition-colors">Obsidian</Link>
+          <Link href="/marketplace?category=HERITAGE" className="hover:text-accent transition-colors text-accent/60">Heritage</Link>
+          <Link href="/marketplace" className="hover:text-accent transition-colors">Curated</Link>
         </div>
       </div>
 

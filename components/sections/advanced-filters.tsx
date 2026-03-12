@@ -31,6 +31,7 @@ const CATEGORIES = [
     "All",
     "WOMEN",
     "MEN",
+    "HERITAGE",
     "OUTERWEAR",
     "FOOTWEAR",
     "ACCESSORIES",
