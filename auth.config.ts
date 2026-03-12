@@ -4,6 +4,9 @@ export const authConfig = {
   pages: {
     signIn: '/login',
   },
+  session: {
+    strategy: 'jwt',
+  },
   providers: [
     // Added later in auth.ts
   ],

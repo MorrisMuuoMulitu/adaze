@@ -22,6 +22,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
   providers: [
     Credentials({
       async authorize(credentials) {
+        console.log('🔐 Auth: Initiating credentials verification...');
         const parsedCredentials = z
           .object({ email: z.string().email(), password: z.string().min(6) })
           .safeParse(credentials);
@@ -29,14 +30,23 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         if (parsedCredentials.success) {
           const { email, password } = parsedCredentials.data;
           const user = await getUser(email);
-          if (!user || !user.password) return null;
+          
+          if (!user || !user.password) {
+            console.warn('🔐 Auth: User not found or missing password record');
+            return null;
+          }
           
           const passwordsMatch = await bcrypt.compare(password, user.password);
 
-          if (passwordsMatch) return user;
+          if (passwordsMatch) {
+             console.log('🔐 Auth: Verification Successful for:', email);
+             return user;
+          }
+           console.warn('🔐 Auth: Invalid password for:', email);
+        } else {
+           console.error('🔐 Auth: Schema validation failed for credentials');
         }
 
-        console.log('Invalid credentials');
         return null;
       },
     }),
