@@ -149,7 +149,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       </head>
-      <body suppressHydrationWarning className={`antialiased bg-grid-slate-900/[0.04]`}>
+      <body suppressHydrationWarning className="antialiased font-sans">
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

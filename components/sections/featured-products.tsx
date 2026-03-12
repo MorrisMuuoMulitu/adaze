@@ -33,9 +33,9 @@ export function FeaturedProducts() {
 
   if (loading) {
     return (
-      <section className="py-24 bg-background relative overflow-hidden">
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <section className="py-24 bg-background">
+        <div className="container mx-auto px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
             {[...Array(4)].map((_, i) => (
               <ProductSkeleton key={i} />
             ))}
@@ -50,46 +50,51 @@ export function FeaturedProducts() {
   }
 
   return (
-    <section className="py-32 bg-background border-t border-border/50 relative overflow-hidden">
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
+    <section className="py-32 bg-background">
+      <div className="container mx-auto px-6">
+        <div className="flex flex-col mb-24 items-center text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="max-w-2xl"
           >
-            <div className="text-[10px] font-black tracking-[0.4em] uppercase text-accent mb-4">
-              EDITORIAL CHOICE
-            </div>
-            <h2 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-none">
-              The <span className="text-muted-foreground/30">Edit.</span>
+            <span className="text-[10px] font-bold tracking-[0.5em] uppercase text-foreground/40 mb-6 block">
+              Selection / 01
+            </span>
+            <h2 className="text-4xl md:text-6xl mb-8">
+              THE CURATED <br /> EDIT.
             </h2>
-            <p className="mt-6 text-lg text-muted-foreground font-medium uppercase tracking-widest">
-              A curated selection of the season&apos;s most defining pieces.
+            <p className="text-xs uppercase tracking-[0.2em] text-foreground/50">
+              A selection of premium pre-loved pieces, verified for quality and heritage.
             </p>
           </motion.div>
-
-          <Button
-            asChild
-            className="btn-premium h-14 px-10 rounded-none text-[10px] font-black tracking-widest uppercase hidden md:flex"
-          >
-            <Link href="/marketplace">VIEW ALL PIECES</Link>
-          </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
           {featuredProducts.map((product, index) => (
             <motion.div
               key={product.id}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+              transition={{ duration: 0.8, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] }}
             >
               <ProductCard product={product} index={index} />
             </motion.div>
           ))}
+        </div>
+
+        <div className="mt-24 flex justify-center">
+          <Button
+            asChild
+            variant="outline"
+            className="h-14 px-12 group"
+          >
+            <Link href="/marketplace">
+              VIEW THE FULL COLLECTION
+            </Link>
+          </Button>
         </div>
       </div>
     </section>
