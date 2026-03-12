@@ -62,8 +62,8 @@ export function FeaturedProducts() {
             <span className="text-[10px] font-bold tracking-[0.5em] uppercase text-foreground/40 mb-6 block">
               Selection / 01
             </span>
-            <h2 className="text-4xl md:text-6xl mb-8">
-              THE CURATED <br /> EDIT.
+            <h2 className="text-4xl md:text-7xl font-black uppercase tracking-tighter mb-8 leading-none">
+              Authenticated <br /> <span className="text-muted-foreground/20 italic">Elite.</span>
             </h2>
             <p className="text-xs uppercase tracking-[0.2em] text-foreground/50">
               A selection of premium pre-loved pieces, verified for quality and heritage.

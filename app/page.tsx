@@ -7,6 +7,8 @@ import { Navbar } from '@/components/layout/navbar';
 import { Hero } from '@/components/sections/hero';
 import { ProductGrid } from '@/components/sections/product-grid';
 import { FeaturedProducts } from '@/components/sections/featured-products';
+import { CategoryGrid } from '@/components/sections/category-grid';
+import { TrustSignals } from '@/components/sections/trust-signals';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { KeyboardShortcuts } from '@/components/keyboard-shortcuts';
 import { PWAPrompt } from '@/components/pwa/pwa-prompt';
@@ -114,7 +116,9 @@ export default function Home() {
         {!user ? (
           <>
             <Hero onGetStarted={() => setAuthModal('register')} />
+            <TrustSignals />
             <FeaturedProducts />
+            <CategoryGrid />
             <ProductGrid />
           </>
         ) : (

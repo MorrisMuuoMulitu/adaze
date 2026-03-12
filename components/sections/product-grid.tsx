@@ -196,8 +196,8 @@ export function ProductGrid() {
                     <div className="text-[10px] font-black tracking-[0.3em] uppercase text-accent mb-4">
                         CURATED SELECTION
                     </div>
-                    <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 uppercase">
-                        Fresh <span className="text-muted-foreground/30">Drops.</span>
+                    <h2 className="text-5xl md:text-8xl font-black tracking-tighter mb-6 uppercase leading-none">
+                        Now <span className="text-muted-foreground/20 italic">Trending.</span>
                     </h2>
                     <p className="text-muted-foreground font-medium text-lg max-w-lg">
                         Discover unique, authenticated pre-loved pieces from our most trusted traders.
