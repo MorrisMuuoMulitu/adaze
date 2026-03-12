@@ -25,7 +25,6 @@ const AuthStateManager = ({ children }: { children: React.ReactNode }) => {
   const loading = status === 'loading';
 
   useEffect(() => {
-    console.log('AuthProvider: Session update', { status, hasUser: !!session?.user });
     if (session?.user) {
       const userData = {
         id: session.user.id,

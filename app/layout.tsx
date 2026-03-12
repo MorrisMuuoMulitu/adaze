@@ -158,7 +158,7 @@ export default function RootLayout({
         >
           <AuthProvider>
             <LanguageProvider>
-              <div className="min-h-screen bg-background text-foreground">
+              <div className="relative min-h-screen bg-background text-foreground">
                 {children}
               </div>
               <Toaster

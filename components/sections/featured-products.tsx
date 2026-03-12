@@ -33,7 +33,7 @@ export function FeaturedProducts() {
 
   if (loading) {
     return (
-      <section className="py-24 bg-background">
+      <section className="relative py-24 bg-background">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
             {[...Array(4)].map((_, i) => (
@@ -50,7 +50,7 @@ export function FeaturedProducts() {
   }
 
   return (
-    <section className="py-32 bg-background">
+    <section className="relative py-32 bg-background">
       <div className="container mx-auto px-6">
         <div className="flex flex-col mb-24 items-center text-center">
           <motion.div

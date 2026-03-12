@@ -183,7 +183,7 @@ export function ProductGrid() {
     }
 
     return (
-        <section className="container mx-auto px-6 py-24 relative">
+        <section id="products" className="relative container mx-auto px-6 py-24">
             <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
