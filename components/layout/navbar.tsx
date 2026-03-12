@@ -10,8 +10,9 @@ import {
   User,
   LogOut,
   LayoutDashboard,
-  ShoppingBag,
-  Heart
+  Heart,
+  Globe,
+  ShoppingBag
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -41,9 +42,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
   const { user } = useAuth();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -65,17 +64,9 @@ export function Navbar({ onAuthClick }: NavbarProps) {
   }, [user]);
 
   const handleLogout = async () => {
-    try {
-      await signOut({ redirect: false });
-      window.location.href = '/';
-    } catch (error) {
-      console.error('Error logging out:', error);
-      window.location.href = '/';
-    }
+    await signOut({ redirect: false });
+    window.location.href = '/';
   };
-
-  const userRole = user?.role?.toLowerCase() || 'buyer';
-  const userName = user?.name || 'User';
 
   const navItems = [
     { name: 'ARCHIVE', href: '/marketplace' },
@@ -84,133 +75,148 @@ export function Navbar({ onAuthClick }: NavbarProps) {
   ];
 
   return (
-    <motion.nav
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-1000 ${
-        isScrolled ? 'bg-black/90 backdrop-blur-2xl border-b border-white/5 py-4' : 'bg-transparent py-8'
-      }`}
+    <motion.header 
+      initial={{ y: -100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+      className="fixed top-0 left-0 right-0 z-[100] flex justify-center p-6 md:p-10 pointer-events-none"
     >
-      <div className="max-w-[1800px] mx-auto px-10">
-        <div className="flex justify-between items-center">
-          {/* Brand Logo - Radical Minimal */}
-          <Link href="/" className="text-xl md:text-2xl font-normal tracking-[0.8em] uppercase text-white hover:text-accent transition-colors">
+      <div 
+        className={`w-full max-w-[1400px] flex justify-between items-center px-8 md:px-12 py-5 transition-all duration-1000 pointer-events-auto ${
+          isScrolled 
+            ? 'glass-morphism rounded-full scale-[0.98] md:scale-100' 
+            : 'bg-transparent border-b border-white/5'
+        }`}
+      >
+        {/* Radical Branding */}
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="w-8 h-8 bg-accent flex items-center justify-center transition-transform duration-700 group-hover:rotate-[360deg]">
+            <span className="text-black font-black text-[10px]">A</span>
+          </div>
+          <span className="text-sm font-black tracking-[0.4em] uppercase text-white group-hover:text-accent transition-colors">
             ADAZE
-          </Link>
+          </span>
+        </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-16">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="text-[10px] font-bold tracking-[0.5em] uppercase text-white/50 hover:text-white transition-all duration-500 relative group"
-              >
-                {item.name}
-                <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-accent transition-all duration-500 group-hover:w-full"></span>
-              </Link>
-            ))}
-          </div>
-
-          {/* Desktop Right Actions */}
-          <div className="hidden lg:flex items-center gap-10">
-            {user ? (
-              <div className="flex items-center gap-8">
-                <div className="flex items-center gap-6 border-r border-white/10 pr-8">
-                  <Link href="/wishlist" className="relative hover:opacity-100 opacity-40 transition-opacity">
-                    <Heart className="h-4 w-4 text-white" />
-                  </Link>
-                  <CartSidebar cartCount={cartItemCount} onCartUpdate={setCartItemCount} />
-                </div>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-4 group">
-                      <Avatar className="h-9 w-9 rounded-none border border-white/10 group-hover:border-accent transition-colors">
-                        <AvatarImage src={user.image} />
-                        <AvatarFallback className="rounded-none bg-accent text-white text-[10px] font-bold">
-                          {userName?.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-64 rounded-none border border-white/5 bg-black/95 backdrop-blur-3xl p-3 mt-6">
-                    <DropdownMenuItem asChild className="focus:bg-accent focus:text-white py-4 cursor-pointer">
-                      <Link href={`/dashboard/${userRole}`} className="flex items-center gap-4">
-                        <LayoutDashboard className="h-4 w-4" />
-                        <span className="text-[10px] font-bold tracking-[0.3em] uppercase italic">The Dashboard</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="focus:bg-accent focus:text-white py-4 cursor-pointer">
-                      <Link href="/profile" className="flex items-center gap-4">
-                        <User className="h-4 w-4" />
-                        <span className="text-[10px] font-bold tracking-[0.3em] uppercase italic">User Profile</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator className="bg-white/5 mx-2" />
-                    <DropdownMenuItem className="text-red-500 focus:bg-red-500 focus:text-white py-4 cursor-pointer" onClick={handleLogout}>
-                      <LogOut className="h-4 w-4" />
-                      <span className="text-[10px] font-bold tracking-[0.3em] uppercase">Terminate Session</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            ) : (
-              <div className="flex items-center gap-10">
-                <button
-                  onClick={() => onAuthClick('login')}
-                  className="text-[10px] font-bold tracking-[0.5em] uppercase text-white/50 hover:text-white transition-opacity"
-                >
-                  ENTRY
-                </button>
-                <Button
-                  onClick={() => onAuthClick('register')}
-                  className="h-12 px-12 rounded-none bg-white text-black hover:bg-accent hover:text-white text-[9px] font-bold tracking-[0.4em] uppercase"
-                >
-                  JOIN THE COLLECTIVE
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Mobile Menu Toggle */}
-          <div className="lg:hidden flex items-center gap-6">
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-white hover:text-accent transition-colors"
+        {/* Global Hub Navigation */}
+        <div className="hidden lg:flex items-center gap-12">
+          {navItems.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className="text-[10px] font-black tracking-[0.3em] uppercase text-white/40 hover:text-accent transition-all duration-500 relative group"
             >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
+              {item.name}
+              <span className="absolute -bottom-1 left-0 w-0 h-[1.5px] bg-accent transition-all duration-500 group-hover:w-full"></span>
+            </Link>
+          ))}
+        </div>
+
+        {/* Action Node */}
+        <div className="flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-6 pr-6 border-r border-white/10">
+            <Link href="/wishlist" className="relative group p-2">
+              <Heart className="h-4 w-4 text-white/30 group-hover:text-accent transition-colors" />
+              {wishlistItemCount > 0 && (
+                <span className="absolute top-0 right-0 w-3 h-3 bg-accent rounded-full text-[7px] font-black flex items-center justify-center text-black border border-black animate-pulse">
+                  {wishlistItemCount}
+                </span>
+              )}
+            </Link>
+            <div className="p-2 opacity-50 hover:opacity-100 transition-opacity">
+               <CartSidebar cartCount={cartItemCount} onCartUpdate={setCartItemCount} />
+            </div>
           </div>
+
+          {!user ? (
+            <div className="flex items-center gap-6">
+              <button 
+                onClick={() => onAuthClick('login')}
+                className="text-[10px] font-black tracking-[0.3em] uppercase text-white/50 hover:text-white transition-colors"
+              >
+                Access
+              </button>
+              <Button 
+                onClick={() => onAuthClick('register')}
+                className="h-10 px-8 rounded-full btn-luxury text-[9px]"
+              >
+                Sync Identity
+              </Button>
+            </div>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-3 p-1 rounded-full border border-white/5 bg-white/5 hover:border-accent/40 transition-all group">
+                  <Avatar className="h-8 w-8 rounded-full border border-white/5">
+                    <AvatarImage src={user.image} />
+                    <AvatarFallback className="bg-accent text-black text-[9px] font-black">
+                      {user.name?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden md:block text-[9px] font-black tracking-[0.1em] uppercase text-white/60 group-hover:text-white px-2">
+                    {user.name?.split(' ')[0]}
+                  </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 glass-morphism rounded-3xl p-3 mt-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                <DropdownMenuItem asChild className="rounded-2xl py-4 hover:bg-white/5 focus:bg-white/5 cursor-pointer">
+                  <Link href={`/dashboard/${user.role?.toLowerCase()}`} className="flex items-center gap-4">
+                    <div className="w-8 h-8 rounded-xl bg-accent/10 flex items-center justify-center">
+                      <LayoutDashboard className="h-4 w-4 text-accent" />
+                    </div>
+                    <span className="text-[10px] font-black tracking-[0.2em] uppercase">Intelligence Hub</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="rounded-2xl py-4 text-red-400 hover:bg-red-500/10 focus:bg-red-500/10 cursor-pointer" onClick={handleLogout}>
+                   <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center">
+                      <LogOut className="h-4 w-4" />
+                   </div>
+                   <span className="text-[10px] font-black tracking-[0.2em] uppercase">Disconnect</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {/* Mobile Terminal */}
+          <button 
+            onClick={() => setIsMenuOpen(true)}
+            className="lg:hidden p-2 text-white/40 hover:text-white transition-colors"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
         </div>
       </div>
 
-      {/* Experimental Mobile Fullscreen Menu */}
+      {/* Fullscreen Neural Link (Mobile Menu) */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] bg-black p-10 flex flex-col pt-32"
+            initial={{ opacity: 0, scale: 1.1 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed inset-0 z-[200] bg-black flex flex-col pointer-events-auto p-10 pt-40"
           >
-            <button onClick={() => setIsMenuOpen(false)} className="absolute top-10 right-10 text-white">
-              <X className="h-10 w-10" />
-            </button>
-            <div className="flex flex-col gap-12">
+            <div className="absolute top-10 right-10 flex items-center gap-4 border border-white/10 rounded-full py-2 px-6">
+               <span className="text-[9px] font-black text-white/20 tracking-[0.5em] uppercase">Terminal Active</span>
+               <button onClick={() => setIsMenuOpen(false)} className="text-white">
+                 <X className="h-8 w-8" />
+               </button>
+            </div>
+            
+            <div className="flex flex-col gap-10">
               {navItems.map((item, i) => (
                 <motion.div
                   key={item.name}
-                  initial={{ x: -50, opacity: 0 }}
+                  initial={{ x: -100, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: i * 0.1 }}
+                  transition={{ delay: 0.2 + i * 0.1, duration: 0.8 }}
                 >
                   <Link
                     href={item.href}
-                    className="text-4xl font-normal tracking-[0.3em] text-white hover:text-accent uppercase"
+                    className="text-6xl font-black tracking-tighter text-white/20 hover:text-accent uppercase transition-all flex items-center gap-6 group"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    {item.name}
+                    <span className="text-xl font-mono text-accent/20 group-hover:text-accent">0{i+1}</span>
+                    <span className="group-hover:translate-x-4 transition-transform text-outline hover:text-fill">{item.name}</span>
                   </Link>
                 </motion.div>
               ))}
@@ -218,6 +224,6 @@ export function Navbar({ onAuthClick }: NavbarProps) {
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.nav>
+    </motion.header>
   );
 }
