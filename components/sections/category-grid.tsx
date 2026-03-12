@@ -21,7 +21,7 @@ const categories = [
   {
     name: 'HERITAGE',
     href: '/marketplace?category=HERITAGE',
-    image: 'https://images.unsplash.com/photo-1523461777212-f8d380abc403?q=80&w=800&h=600&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?q=80&w=800&h=600&auto=format&fit=crop',
     tag: 'ARCHIVE // 001'
   }
 ];
