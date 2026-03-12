@@ -42,3 +42,8 @@ next-env.d.ts
 app/error.tsx.bak
 supabase-wishlist-and-function-update.sql
 test-supabase-project/
+
+# scripts and data
+scripts/
+*.zip
+*.pdf
