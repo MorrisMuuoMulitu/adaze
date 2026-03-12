@@ -114,9 +114,10 @@
 
 /* Typography Overhaul */
 h1, h2, h3, h4, h5, h6 {
-  @apply tracking-tighter font-normal;
-  font-family: var(--font-serif), serif;
+  @apply tracking-tighter;
+  font-family: var(--font-display), sans-serif;
   text-wrap: balance;
+  font-weight: 900;
 }
 
 .display-mega {

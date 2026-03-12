@@ -11,6 +11,7 @@ export async function GET(request: Request) {
     let page = parseInt(searchParams.get('page') || '1');
     let limit = parseInt(searchParams.get('limit') || '12');
     const category = searchParams.get('category');
+    const search = searchParams.get('search');
     const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
     const sortBy = searchParams.get('sortBy') || 'newest';
@@ -46,6 +47,13 @@ export async function GET(request: Request) {
         equals: category,
         mode: 'insensitive'
       };
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } }
+      ];
     }
 
     if (minPrice || maxPrice) {

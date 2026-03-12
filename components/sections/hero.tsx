@@ -4,7 +4,9 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import { Search, ArrowRight } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 interface HeroProps {
   onGetStarted: () => void;
@@ -12,19 +14,20 @@ interface HeroProps {
 
 export function Hero({ onGetStarted }: HeroProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end start"]
   });
 
-  const y = useTransform(scrollYProgress, [0, 1], [0, 400]);
+  const y = useTransform(scrollYProgress, [0, 1], [0, 200]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
 
   return (
-    <section ref={containerRef} className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#0A0A0A]">
-      {/* Cinematic Background */}
-      <motion.div style={{ y, opacity, scale }} className="absolute inset-0 z-0">
+    <section ref={containerRef} className="relative min-h-[100vh] flex items-center overflow-hidden bg-black">
+      {/* Immersive Background */}
+      <motion.div style={{ y, opacity }} className="absolute inset-0 z-0">
         <Image
           src="/hero-luxury.png"
           alt="Adaze Luxury"
@@ -32,86 +35,79 @@ export function Hero({ onGetStarted }: HeroProps) {
           className="object-cover opacity-60 brightness-[0.7]"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-[#0A0A0A]"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
       </motion.div>
 
-      {/* Content Overlay */}
-      <div className="container relative z-10 px-6 pt-32">
-        <div className="flex flex-col items-center text-center">
+      {/* Main Narrative */}
+      <div className="container relative z-10 px-6">
+        <div className="max-w-4xl">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.2 }}
-            className="mb-8"
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
-            <span className="text-[10px] font-bold tracking-[0.8em] uppercase text-accent/80">
-              The Sovereign Collection // 2025
-            </span>
-          </motion.div>
+            <div className="text-[10px] font-black tracking-[0.8em] uppercase text-accent mb-8">
+              The Obsidian Archive
+            </div>
+            
+            <h1 className="text-7xl md:text-[10vw] font-black tracking-tighter uppercase leading-[0.85] text-white mb-12">
+              Heritage <br />
+              <span className="text-muted-foreground/20 italic">Redefined.</span>
+            </h1>
 
-          <motion.h1
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1.5, delay: 0.4 }}
-            className="display-mega text-white mb-12 mix-blend-exclusion"
-          >
-            ADAZE.
-          </motion.h1>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.8 }}
-            className="max-w-2xl mb-16"
-          >
-            <p className="text-sm md:text-base uppercase tracking-[0.4em] leading-relaxed text-white/50">
-              Redefining the archive. <br />
-              Africa&apos;s premier destination for curated luxury heritage.
+            <p className="text-lg md:text-xl text-white/40 font-medium tracking-tight max-w-xl mb-16 leading-relaxed uppercase">
+              Kenya&apos;s most exclusive collective of authenticated premium fashion. 
+              Curated for the few.
             </p>
           </motion.div>
 
-          {/* Action Buttons */}
+          {/* Minimalist Search Bridge */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 1 }}
-            className="flex flex-col sm:flex-row gap-8 items-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="flex flex-col md:flex-row gap-8 items-start md:items-center"
           >
+            <div className="relative group w-full max-w-md">
+              <Search className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20 group-focus-within:text-accent transition-colors" />
+              <Input 
+                placeholder="DISCOVER THE ARCHIVE..."
+                className="bg-transparent border-0 border-b border-white/10 rounded-none h-14 pl-8 text-[11px] font-black tracking-[0.2em] uppercase text-white placeholder:text-white/10 focus-visible:ring-0 focus-visible:border-accent transition-all"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && (window.location.href = `/marketplace?search=${searchQuery}`)}
+              />
+            </div>
+
             <Button
-              className="h-16 px-16 bg-white text-black hover:bg-accent hover:text-white border-none gold-glow"
+              className="h-14 px-10 bg-accent text-accent-foreground hover:bg-white hover:text-black rounded-none text-[10px] font-black tracking-[0.4em] uppercase group"
               asChild
             >
               <Link href="/marketplace">
-                EXPLORE ARCHIVE
+                ENTER <ArrowRight className="ml-3 h-3 w-3 transition-transform group-hover:translate-x-2" />
               </Link>
             </Button>
-            <button
-              onClick={onGetStarted}
-              className="text-[11px] font-bold tracking-[0.4em] uppercase text-white hover:text-accent transition-colors border-b border-white/20 pb-2"
-            >
-              OUR MISSION
-            </button>
           </motion.div>
         </div>
       </div>
 
-      {/* Editorial Decorative Elements */}
-      <div className="absolute left-10 bottom-10 z-20 hidden md:block">
-        <div className="flex flex-col gap-4 text-[9px] font-bold tracking-[0.5em] text-white/20 uppercase vertical-text">
-          <Link href="/marketplace" className="hover:text-accent transition-colors">Obsidian</Link>
-          <Link href="/marketplace?category=HERITAGE" className="hover:text-accent transition-colors text-accent/60">Heritage</Link>
-          <Link href="/marketplace" className="hover:text-accent transition-colors">Curated</Link>
-        </div>
+      {/* Aesthetic Accents */}
+      <div className="absolute right-10 bottom-10 z-20 flex flex-col items-end gap-4 opacity-20 hidden lg:flex">
+          <div className="text-[9px] font-black tracking-[0.5em] uppercase text-white vertical-text">
+            Nairobi // Node 001
+          </div>
+          <div className="h-32 w-[1px] bg-gradient-to-t from-white to-transparent"></div>
       </div>
 
-      {/* Bottom Scroll Indicator */}
-      <motion.div 
-        animate={{ y: [0, 10, 0] }}
-        transition={{ duration: 2, repeat: Infinity }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 opacity-30"
-      >
-        <div className="w-[1px] h-12 bg-white"></div>
-      </motion.div>
+      {/* Decorative Navigation Labels */}
+      <div className="absolute left-10 bottom-10 z-20 hidden md:block">
+        <div className="flex flex-col gap-6 text-[9px] font-black tracking-[0.5em] text-white/10 uppercase vertical-text">
+          <span>Obsidian</span>
+          <span className="text-accent/40 text-reveal">Heritage</span>
+          <span>Curated</span>
+        </div>
+      </div>
     </section>
   );
 }

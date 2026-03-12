@@ -42,22 +42,29 @@ export function ProductGrid() {
     const [hasMore, setHasMore] = useState(true);
     const [selectedProduct, setSelectedProduct] = useState<DBProduct | null>(null);
     const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
-    const [filters, setFilters] = useState<FilterState>({
+    const [filters, setFilters] = useState<FilterState & { search: string }>({
         category: '',
         minPrice: null,
         maxPrice: null,
-        sortBy: 'newest'
+        sortBy: 'newest',
+        search: ''
     });
     const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
     const LIMIT = 12;
 
     useEffect(() => {
-        // Handle URL category synchronization
+        // Handle URL category and search synchronization
         const params = new URLSearchParams(window.location.search);
         const urlCategory = params.get('category');
-        if (urlCategory) {
-            setFilters(prev => ({ ...prev, category: urlCategory.toUpperCase() }));
-            // Set page back to 1 if we're changing category via URL
+        const urlSearch = params.get('search');
+        
+        setFilters(prev => ({ 
+            ...prev, 
+            category: urlCategory ? urlCategory.toUpperCase() : prev.category,
+            search: urlSearch || prev.search
+        }));
+
+        if (urlCategory || urlSearch) {
             setPage(1);
         }
 
@@ -113,6 +120,7 @@ export function ProductGrid() {
                 limit: LIMIT.toString(),
                 category: currentFilters.category,
                 sortBy: currentFilters.sortBy,
+                search: currentFilters.search,
             });
 
             if (currentFilters.minPrice) queryParams.append('minPrice', currentFilters.minPrice.toString());
@@ -158,7 +166,7 @@ export function ProductGrid() {
     };
 
     const handleFilterChange = (newFilters: FilterState) => {
-        setFilters(newFilters);
+        setFilters(prev => ({ ...newFilters, search: prev.search }));
         setPage(1);
         setHasMore(true);
         setProducts([]);
