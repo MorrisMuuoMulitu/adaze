@@ -134,6 +134,10 @@ export function ProductGrid() {
 
             const data = await response.json();
 
+            if (!Array.isArray(data)) {
+                throw new Error('Malformed data received from archive');
+            }
+
             if (data.length < LIMIT) {
                 setHasMore(false);
             }

@@ -27,6 +27,7 @@ export function FeaturedProducts() {
       try {
         setLoading(true);
         const res = await fetch('/api/products?featured=true&limit=6');
+        if (!res.ok) throw new Error('Heritage Archive temporarily unavailable');
         const data = await res.json();
         setFeaturedProducts(data);
       } catch (error) {
@@ -92,7 +93,7 @@ export function FeaturedProducts() {
 
         {/* Masonry-Style Editorial Grid */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
-          {featuredProducts.slice(0, 4).map((product, index) => (
+          {Array.isArray(featuredProducts) && featuredProducts.slice(0, 4).map((product, index) => (
             <motion.div
               key={product.id}
               initial={{ opacity: 0, y: 50 }}
