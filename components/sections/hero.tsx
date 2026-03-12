@@ -35,6 +35,7 @@ export function Hero({ onGetStarted }: HeroProps) {
           fill
           className="object-cover opacity-50 brightness-[0.5] grayscale-[0.2]"
           priority
+          sizes="100vw"
         />
         {/* Advanced Light Leak Effect */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(212,175,55,0.05)_0%,transparent_50%)]" />

@@ -59,6 +59,7 @@ export function CategoryGrid() {
                 alt={cat.name} 
                 fill 
                 className="object-cover transition-all duration-1000 group-hover:scale-105 group-hover:rotate-1 grayscale group-hover:grayscale-0 brightness-[0.5] group-hover:brightness-100"
+                sizes="(max-width: 768px) 100vw, 33vw"
               />
               
               {/* Overlay Matrix */}

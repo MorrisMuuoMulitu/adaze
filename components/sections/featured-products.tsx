@@ -16,7 +16,8 @@ export function FeaturedProducts() {
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
-    offset: ["start end", "end start"]
+    offset: ["start end", "end start"],
+    layoutEffect: false
   });
 
   const xOffset = useTransform(scrollYProgress, [0, 1], [0, -200]);

@@ -155,7 +155,8 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                   </Avatar>
                   <span className="hidden md:block text-[9px] font-black tracking-[0.1em] uppercase text-white/60 group-hover:text-white px-2">
                     {user.name?.split(' ')[0]}
-                  </button>
+                  </span>
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64 glass-morphism rounded-3xl p-3 mt-6 animate-in fade-in slide-in-from-top-4 duration-500">
                 <DropdownMenuItem asChild className="rounded-2xl py-4 hover:bg-white/5 focus:bg-white/5 cursor-pointer">

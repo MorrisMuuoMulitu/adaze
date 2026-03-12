@@ -43,20 +43,14 @@ export function ProductCard({
         >
             <Link href={`/products/${product.id}`} className="block relative z-10">
                 {/* Image Vessel */}
-                <div className="relative aspect-[3/4] overflow-hidden bg-black card-luxury">
-                    <motion.div 
-                        className="w-full h-full"
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-                    >
-                        <Image
-                            src={image}
-                            alt={product.name}
-                            fill
-                            className="object-cover grayscale-[0.3] group-hover:grayscale-0 transition-all duration-1000"
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                        />
-                    </motion.div>
+                <div className="relative aspect-[3/4] overflow-hidden bg-black card-luxury group/image">
+                    <Image
+                        src={image}
+                        alt={product.name}
+                        fill
+                        className="object-cover grayscale-[0.3] group-hover/image:grayscale-0 group-hover/image:scale-110 transition-all duration-[1500ms] ease-out"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    />
                     
                     {/* Shadow Layer */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
