@@ -79,7 +79,6 @@ export function Navbar({ onAuthClick }: NavbarProps) {
 
   const navItems = [
     { name: 'ARCHIVE', href: '/marketplace' },
-    { name: 'HERITAGE', href: '#how-it-works' },
     { name: 'COLLECTIVE', href: '/collective' },
   ];
 

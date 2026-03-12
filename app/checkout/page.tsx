@@ -285,12 +285,14 @@ export default function CheckoutPage() {
 
                 {!orderId ? (
                   <Button
-                    className="w-full african-gradient text-white"
+                    className="w-full african-gradient text-white hover:opacity-90 transition-opacity"
                     size="lg"
                     onClick={handleCreateOrder}
                     disabled={creatingOrder || !deliveryAddress || !phoneNumber}
                   >
-                    {creatingOrder ? 'Creating Order...' : 'Create Order'}
+                    <span className="text-black font-black tracking-widest uppercase">
+                      {creatingOrder ? 'Creating Order...' : 'Create Order'}
+                    </span>
                   </Button>
                 ) : (
                   <div className="space-y-3">

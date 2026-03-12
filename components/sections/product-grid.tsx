@@ -125,6 +125,9 @@ export function ProductGrid() {
                 setProducts(prev => [...prev, ...data]);
             } else {
                 setProducts(data);
+                if (data.length === 0) {
+                    setHasMore(false);
+                }
             }
         } catch (err) {
             console.error('Error fetching products:', err);
@@ -133,7 +136,7 @@ export function ProductGrid() {
             setLoading(false);
             setLoadingMore(false);
         }
-    }, [filters]);
+    }, [filters, LIMIT]);
 
     useEffect(() => {
         fetchProducts(1);
@@ -148,28 +151,10 @@ export function ProductGrid() {
     const handleFilterChange = (newFilters: FilterState) => {
         setFilters(newFilters);
         setPage(1);
-        setProducts([]); // Clear current products to show loading state cleanly or just replace
-        fetchProducts(1, false, newFilters);
+        setHasMore(true);
+        setProducts([]);
+        // fetchProducts(1, false) will be called by useEffect when filters changes
     };
-
-    if (loading) {
-        return (
-            <section className="container mx-auto px-4 py-16">
-                <div className="flex items-center justify-between mb-12">
-                    <div>
-                        <div className="h-10 w-48 bg-gradient-to-r from-muted to-muted/50 animate-pulse rounded-lg mb-3" />
-                        <div className="h-4 w-64 bg-muted/50 animate-pulse rounded" />
-                    </div>
-                    <div className="h-12 w-28 bg-muted animate-pulse rounded-lg" />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-                    {[...Array(8)].map((_, i) => (
-                        <ProductSkeleton key={i} />
-                    ))}
-                </div>
-            </section>
-        );
-    }
 
     if (error) {
         return (
@@ -223,8 +208,13 @@ export function ProductGrid() {
                 </aside>
 
                 <div className="flex-1 w-full">
-
-                    {products.length === 0 ? (
+                    {loading && products.length === 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {[...Array(8)].map((_, i) => (
+                                <ProductSkeleton key={i} />
+                            ))}
+                        </div>
+                    ) : products.length === 0 ? (
                         <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-muted-foreground/25">
                             <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
                                 <ShoppingBag className="h-6 w-6 text-muted-foreground" />
@@ -260,16 +250,19 @@ export function ProductGrid() {
                                         />
                                     </motion.div>
                                 ))}
+                                {loadingMore && [...Array(4)].map((_, i) => (
+                                    <ProductSkeleton key={`skeleton-${i}`} />
+                                ))}
                             </div>
 
                             {hasMore && (
                                 <div className="mt-20 text-center">
                                     <Button
                                         onClick={handleLoadMore}
-                                        disabled={loadingMore}
+                                        disabled={loadingMore || loading}
                                         className="btn-premium min-w-[300px] h-16 rounded-none text-[11px] font-black tracking-widest uppercase"
                                     >
-                                        {loadingMore ? (
+                                        {loadingMore || (loading && products.length > 0) ? (
                                             <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
                                         ) : (
                                             "Load More Collective Pieces"

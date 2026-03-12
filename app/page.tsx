@@ -42,6 +42,11 @@ export default function Home() {
       });
       window.history.replaceState({}, '', '/');
     }
+
+    if (params.get('auth') === 'login') {
+      setAuthModal('login');
+      window.history.replaceState({}, '', '/');
+    }
   }, []);
 
   // Redirect logged-in users based on role

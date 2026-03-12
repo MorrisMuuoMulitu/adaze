@@ -16,22 +16,36 @@ export async function GET(request: Request) {
     const sortBy = searchParams.get('sortBy') || 'newest';
     const isFeatured = searchParams.get('featured') === 'true';
 
+    const traderId = searchParams.get('traderId');
+    const isManagement = searchParams.get('management') === 'true';
+
     if (isNaN(page) || page < 1) page = 1;
     if (isNaN(limit) || limit < 1) limit = 12;
-    if (limit > 50) limit = 50;
+    if (limit > 100) limit = 100;
 
     const offset = (page - 1) * limit;
 
-    const where: any = {
-      stockQuantity: { gt: 0 },
-    };
+    const where: any = {};
+    
+    // Only filter by active/in-stock for public browsing
+    if (!isManagement && !traderId) {
+      where.stockQuantity = { gt: 0 };
+      where.status = 'ACTIVE';
+    }
 
     if (isFeatured) {
       where.isFeatured = true;
     }
 
+    if (traderId) {
+      where.traderId = traderId;
+    }
+
     if (category) {
-      where.category = category;
+      where.category = {
+        equals: category,
+        mode: 'insensitive'
+      };
     }
 
     if (minPrice || maxPrice) {
@@ -75,6 +89,38 @@ export async function GET(request: Request) {
     return NextResponse.json(activeProducts);
   } catch (error: any) {
     console.error('API /api/products: Unexpected error:', error);
+    return NextResponse.json({ 
+      error: 'Internal Server Error', 
+      message: error.message 
+    }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    
+    if (!body.traderId || !body.name || !body.price) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    const product = await prisma.product.create({
+      data: {
+        traderId: body.traderId,
+        name: body.name,
+        description: body.description,
+        price: body.price,
+        category: body.category,
+        imageUrl: body.imageUrl,
+        stockQuantity: body.stockQuantity || 0,
+        status: body.status || 'ACTIVE',
+        rating: 0,
+      }
+    });
+
+    return NextResponse.json(product);
+  } catch (error: any) {
+    console.error('API /api/products POST: Unexpected error:', error);
     return NextResponse.json({ 
       error: 'Internal Server Error', 
       message: error.message 

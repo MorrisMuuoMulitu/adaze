@@ -210,6 +210,9 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
             <DialogTitle className="text-4xl sm:text-5xl font-black tracking-tighter uppercase leading-[0.9]">
               {authType === 'login' ? <>Secure <span className="font-serif italic text-muted-foreground/30 lowercase">Access.</span></> : <>Establish <span className="font-serif italic text-muted-foreground/30 lowercase">Rank.</span></>}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Authentication gateway for the Adaze Collective marketplace.
+            </DialogDescription>
           </DialogHeader>
 
           <AnimatePresence mode="wait">
@@ -221,7 +224,9 @@ export function AuthModal({ type, initialType, isOpen, onClose, onSuccess }: Aut
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[9px] font-black tracking-widest uppercase opacity-60">Identifier</FormLabel>
+                        <Label className="text-[10px] font-black tracking-widest uppercase text-destructive/80 mb-4 block">
+              Identity / Email
+            </Label>
                         <FormControl>
                           <Input placeholder="USER@COLLECTIVE.COM" {...field} className="h-14 rounded-none border-border/50 bg-muted/5 font-mono text-[11px] tracking-widest uppercase" />
                         </FormControl>

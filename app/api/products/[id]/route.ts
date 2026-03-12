@@ -40,3 +40,47 @@ export async function GET(
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+
+    const updatedProduct = await prisma.product.update({
+      where: { id },
+      data: {
+        name: body.name,
+        description: body.description,
+        price: body.price,
+        category: body.category,
+        imageUrl: body.imageUrl,
+        stockQuantity: body.stockQuantity,
+        status: body.status,
+      }
+    });
+
+    return NextResponse.json(updatedProduct);
+  } catch (error: any) {
+    console.error('Error updating product:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    await prisma.product.delete({
+      where: { id }
+    });
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Error deleting product:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
+}

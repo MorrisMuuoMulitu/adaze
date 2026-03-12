@@ -135,6 +135,16 @@ h1, h2, h3, h4, h5, h6 {
   animation: reveal-up 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Button Systems */
+.btn-premium {
+  @apply bg-foreground text-background hover:bg-accent hover:text-accent-foreground transition-all duration-500 font-bold uppercase tracking-widest border border-transparent hover:border-accent;
+}
+
+.african-gradient {
+  background: linear-gradient(135deg, #FF9933 0%, #D4AF37 50%, #FFCC33 100%);
+  @apply text-black shadow-lg hover:shadow-accent/20 transition-all;
+}
+
 /* Smooth Transitions */
 * {
   @apply transition-all duration-700;

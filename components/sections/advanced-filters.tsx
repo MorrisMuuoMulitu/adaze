@@ -29,13 +29,13 @@ export interface FilterState {
 
 const CATEGORIES = [
     "All",
-    "Men's Wear",
-    "Women's Wear",
-    "Kids' Wear",
-    "Shoes",
-    "Accessories",
-    "Household",
-    "Bags"
+    "WOMEN",
+    "MEN",
+    "OUTERWEAR",
+    "FOOTWEAR",
+    "ACCESSORIES",
+    "BAGS",
+    "KIDS"
 ];
 
 export function AdvancedFilters({ onFilterChange, className }: AdvancedFiltersProps) {
