@@ -1,6 +1,8 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { en } from '@/lib/translations/en';
+import { sw } from '@/lib/translations/sw';
 
 interface LanguageContextType {
   language: 'en' | 'sw';
@@ -10,86 +12,7 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-const translations = {
-  en: {
-    // Navigation
-    'nav.marketplace': 'Marketplace',
-    'nav.how_it_works': 'How it Works',
-    'nav.about': 'About',
-    'nav.contact': 'Contact',
-    'nav.login': 'Login',
-    'nav.get_started': 'Get Started',
-    
-    // Hero Section
-    'hero.badge': '🇰🇪 Kenya\'s Premier Mitumba Marketplace',
-    'hero.title': 'Discover Quality Mitumba Fashion',
-    'hero.subtitle': 'Connect with trusted traders, find unique pieces, and enjoy seamless delivery across all 47 counties in Kenya. Your sustainable fashion journey starts here.',
-    'hero.cta_primary': 'Start Shopping in Kenya',
-    'hero.cta_secondary': 'Watch Demo',
-    
-    // Stats
-    'stats.active_traders': 'Active Traders in Kenya',
-    'stats.products_listed': 'Products Available',
-    'stats.cities_covered': 'Counties Covered',
-    'stats.customer_satisfaction': 'Customer Satisfaction',
-    
-    // Common
-    'common.loading': 'Loading...',
-    'common.error': 'Something went wrong',
-    'common.success': 'Success!',
-    'common.cancel': 'Cancel',
-    'common.save': 'Save',
-    'common.delete': 'Delete',
-    'common.edit': 'Edit',
-    'common.view': 'View',
-    'common.add_to_cart': 'Add to Cart',
-    'common.buy_now': 'Buy Now',
-    'common.price': 'Price',
-    'common.location': 'Location',
-    'common.condition': 'Condition',
-    'common.size': 'Size',
-    'common.category': 'Category'
-  },
-  sw: {
-    // Navigation
-    'nav.marketplace': 'Soko',
-    'nav.how_it_works': 'Jinsi Inavyofanya Kazi',
-    'nav.about': 'Kuhusu',
-    'nav.contact': 'Wasiliana',
-    'nav.login': 'Ingia',
-    'nav.get_started': 'Anza',
-    
-    // Hero Section
-    'hero.badge': '🇰🇪 Soko Kuu la Mitumba Kenya',
-    'hero.title': 'Gundua Mitumba ya Ubora',
-    'hero.subtitle': 'Unganisha na wafanyabiashara waaminifu, pata vitu vya kipekee, na furahia uwasilishaji rahisi katika kaunti zote 47 za Kenya. Safari yako ya mitumba inaanza hapa.',
-    'hero.cta_primary': 'Anza Ununuzi Kenya',
-    'hero.cta_secondary': 'Angalia Onyesho',
-    
-    // Stats
-    'stats.active_traders': 'Wafanyabiashara Hai Kenya',
-    'stats.products_listed': 'Bidhaa Zinazopatikana',
-    'stats.cities_covered': 'Kaunti Zilizoshughulikiwa',
-    'stats.customer_satisfaction': 'Kuridhika kwa Wateja',
-    
-    // Common
-    'common.loading': 'Inapakia...',
-    'common.error': 'Kuna tatizo',
-    'common.success': 'Imefanikiwa!',
-    'common.cancel': 'Ghairi',
-    'common.save': 'Hifadhi',
-    'common.delete': 'Futa',
-    'common.edit': 'Hariri',
-    'common.view': 'Angalia',
-    'common.add_to_cart': 'Ongeza Kwenye Kikapu',
-    'common.buy_now': 'Nunua Sasa',
-    'common.price': 'Bei',
-    'common.location': 'Mahali',
-    'common.condition': 'Hali',
-    'common.size': 'Ukubwa',
-    'common.category': 'Aina'
-  }
-};
+const translations = { en, sw };
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<'en' | 'sw'>('en');
@@ -107,7 +30,18 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   };
 
   const t = (key: string): string => {
-    return translations[language][key as keyof typeof translations['en']] || key;
+    const keys = key.split('.');
+    let value: any = translations[language];
+
+    for (const k of keys) {
+      if (value && typeof value === 'object' && k in value) {
+        value = value[k];
+      } else {
+        return key;
+      }
+    }
+
+    return typeof value === 'string' ? value : key;
   };
 
   return (

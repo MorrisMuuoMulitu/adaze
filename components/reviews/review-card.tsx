@@ -54,15 +54,15 @@ export function ReviewCard({
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-start gap-4">
             <Avatar>
-              <AvatarImage src={review.user_avatar || undefined} />
+              <AvatarImage src={review.reviewer?.image || undefined} />
               <AvatarFallback>
-                {review.user_name?.charAt(0).toUpperCase() || 'U'}
+                {review.reviewer?.name?.charAt(0).toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
 
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="font-semibold">{review.user_name}</span>
+                <span className="font-semibold">{review.reviewer?.name || 'Anonymous'}</span>
                 {review.verified_purchase && (
                   <Badge variant="secondary" className="text-xs">
                     Verified Purchase

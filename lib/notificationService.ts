@@ -3,9 +3,10 @@ export interface Notification {
   user_id: string;
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
+  type: 'info' | 'success' | 'warning' | 'error' | 'price_drop' | 'new_message' | 'order_update';
   is_read: boolean;
   related_order_id?: string;
+  related_product_id?: string;
   created_at: string | Date;
 }
 
@@ -13,8 +14,9 @@ export interface CreateNotificationData {
   user_id: string;
   title: string;
   message: string;
-  type?: 'info' | 'success' | 'warning' | 'error';
+  type?: 'info' | 'success' | 'warning' | 'error' | 'price_drop' | 'new_message' | 'order_update';
   related_order_id?: string;
+  related_product_id?: string;
 }
 
 class NotificationService {
@@ -29,6 +31,7 @@ class NotificationService {
       type: n.type.toLowerCase() as any,
       is_read: n.isRead,
       related_order_id: n.relatedOrderId || undefined,
+      related_product_id: n.relatedProductId || undefined,
       created_at: n.createdAt,
     };
   }
@@ -95,14 +98,17 @@ class NotificationService {
     try {
       const { prisma } = await import('@/lib/prisma');
       const { NotificationType } = await import('@prisma/client');
-      const { user_id, title, message, type, related_order_id } = notificationData;
-      
+      const { user_id, title, message, type, related_order_id, related_product_id } = notificationData;
+
       let prismaType: any = NotificationType.INFO;
       if (type) {
         switch (type.toLowerCase()) {
           case 'success': prismaType = NotificationType.SUCCESS; break;
           case 'warning': prismaType = NotificationType.WARNING; break;
           case 'error': prismaType = NotificationType.ERROR; break;
+          case 'price_drop': prismaType = NotificationType.PRICE_DROP; break;
+          case 'new_message': prismaType = NotificationType.NEW_MESSAGE; break;
+          case 'order_update': prismaType = NotificationType.ORDER_UPDATE; break;
         }
       }
 
@@ -113,6 +119,7 @@ class NotificationService {
           message,
           type: prismaType,
           relatedOrderId: related_order_id,
+          // Note: relatedProductId might need to be added to the prisma schema or handled as metadata
         },
       });
 
@@ -125,8 +132,8 @@ class NotificationService {
 
   async markAsRead(notificationId: string): Promise<Notification | null> {
     if (!this.isServer) {
-      const res = await fetch(`/api/notifications/${notificationId}`, {
-        method: 'PATCH',
+      const res = await fetch(`/api/notifications/${notificationId}/read`, {
+        method: 'POST',
       });
       return res.json();
     }
@@ -147,8 +154,8 @@ class NotificationService {
 
   async markAllAsRead(userId: string): Promise<boolean> {
     if (!this.isServer) {
-      const res = await fetch('/api/notifications', {
-        method: 'PUT',
+      const res = await fetch('/api/notifications/read-all', {
+        method: 'POST',
       });
       const data = await res.json();
       return data.success;
@@ -203,28 +210,24 @@ class NotificationService {
   ): Promise<Notification | null> {
     let title = '';
     let message = '';
-    let type: 'info' | 'success' | 'warning' | 'error' = 'info';
+    let type: any = 'order_update';
 
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'confirmed':
         title = 'Order Confirmed';
         message = `Your order "${orderTitle}" has been confirmed by a trader.`;
-        type = 'success';
         break;
       case 'in_transit':
         title = 'Order In Transit';
         message = `Your order "${orderTitle}" is now being delivered.`;
-        type = 'info';
         break;
       case 'delivered':
         title = 'Order Delivered';
         message = `Your order "${orderTitle}" has been successfully delivered.`;
-        type = 'success';
         break;
       case 'cancelled':
         title = 'Order Cancelled';
         message = `Your order "${orderTitle}" has been cancelled.`;
-        type = 'error';
         break;
       default:
         title = 'Order Status Updated';
@@ -238,6 +241,40 @@ class NotificationService {
       message,
       type,
       related_order_id: orderId
+    });
+  }
+
+  async createPriceDropNotification(
+    userId: string,
+    productId: string,
+    productName: string,
+    oldPrice: number,
+    newPrice: number
+  ): Promise<Notification | null> {
+    const savings = oldPrice - newPrice;
+    const percentage = Math.round((savings / oldPrice) * 100);
+
+    return await this.createNotification({
+      user_id: userId,
+      title: 'Price Drop Alert!',
+      message: `Great news! "${productName}" is now KSh ${newPrice.toLocaleString()} (Save ${percentage}% / KSh ${savings.toLocaleString()}).`,
+      type: 'price_drop',
+      related_product_id: productId
+    });
+  }
+
+  async createMessageNotification(
+    userId: string,
+    senderName: string,
+    conversationId: string,
+    messageContent: string
+  ): Promise<Notification | null> {
+    return await this.createNotification({
+      user_id: userId,
+      title: `New message from ${senderName}`,
+      message: messageContent.length > 50 ? messageContent.substring(0, 47) + '...' : messageContent,
+      type: 'new_message',
+      related_order_id: conversationId // Overloading related_order_id for simplicity or handle as metadata
     });
   }
 }

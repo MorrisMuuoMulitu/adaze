@@ -1,4 +1,6 @@
 // Login tracking functions for security monitoring
+import { extractClientIP, isValidIP } from './ip-utils';
+import { getGeoLocation, formatLocation } from './geo-location';
 
 // Get device type from user agent
 function getDeviceType(userAgent: string): string {
@@ -27,19 +29,27 @@ function getOS(userAgent: string): string {
   return 'Unknown';
 }
 
-// Log login attempt
-export async function logLoginAttempt(attempt: {
-  userId: string;
-  email: string;
-  status: 'success' | 'failed' | 'blocked';
-  ipAddress?: string;
-  userAgent?: string;
-  deviceType?: string;
-  browser?: string;
-  os?: string;
-  locationCountry?: string;
-  locationCity?: string;
-}) {
+/**
+ * Log login attempt with IP and geo-location tracking
+ *
+ * @param attempt - Login attempt details
+ * @param headers - Optional headers for IP extraction (server-side)
+ */
+export async function logLoginAttempt(
+  attempt: {
+    userId: string;
+    email: string;
+    status: 'success' | 'failed' | 'blocked';
+    ipAddress?: string;
+    userAgent?: string;
+    deviceType?: string;
+    browser?: string;
+    os?: string;
+    locationCountry?: string;
+    locationCity?: string;
+  },
+  headers?: Headers
+) {
   if (typeof window !== 'undefined') {
     // In browser, we should probably call an API instead of using Prisma
     // For now, just skip or implement API call
@@ -51,16 +61,44 @@ export async function logLoginAttempt(attempt: {
     const { LoginStatus } = await import('@prisma/client');
     const userAgent = attempt.userAgent || 'Server';
 
+    // Extract real IP from headers if provided
+    let ipAddress = attempt.ipAddress;
+    if (headers && !ipAddress) {
+      ipAddress = extractClientIP(headers);
+    }
+    if (!ipAddress) {
+      ipAddress = 'Unknown';
+    }
+
+    // Get geo-location from IP
+    let locationCountry = attempt.locationCountry;
+    let locationCity = attempt.locationCity;
+
+    if (isValidIP(ipAddress) && ipAddress !== 'Unknown') {
+      try {
+        const geo = await getGeoLocation(ipAddress);
+        locationCountry = locationCountry || geo.country || 'Unknown';
+        locationCity = locationCity || geo.city || 'Unknown';
+      } catch (geoError) {
+        console.warn('Failed to get geo-location:', geoError);
+        locationCountry = locationCountry || 'Unknown';
+        locationCity = locationCity || 'Unknown';
+      }
+    } else {
+      locationCountry = locationCountry || 'Unknown';
+      locationCity = locationCity || 'Unknown';
+    }
+
     await prisma.loginHistory.create({
       data: {
         userId: attempt.userId,
-        ipAddress: attempt.ipAddress || 'Unknown',
+        ipAddress: ipAddress,
         userAgent: userAgent,
         deviceType: attempt.deviceType || getDeviceType(userAgent),
         browser: attempt.browser || getBrowser(userAgent),
         os: attempt.os || getOS(userAgent),
-        locationCountry: attempt.locationCountry || 'Kenya',
-        locationCity: attempt.locationCity || 'Nairobi',
+        locationCountry: locationCountry,
+        locationCity: locationCity,
         status: attempt.status.toUpperCase() as any,
         isSuspicious: false,
         riskScore: 0,
@@ -77,8 +115,8 @@ export async function logLoginAttempt(attempt: {
           attempt.userId,
           attempt.email,
           `${getBrowser(userAgent)} on ${getOS(userAgent)}`,
-          attempt.locationCity || 'Nairobi, Kenya',
-          attempt.ipAddress || 'Unknown'
+          `${locationCity}, ${locationCountry}`,
+          ipAddress
         );
       } catch (notifyError) {
         console.error('Failed to send login notification:', notifyError);

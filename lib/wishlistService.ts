@@ -13,6 +13,8 @@ export const wishlistService = {
 
     try {
       const { prisma } = await import('@/lib/prisma');
+      const product = await prisma.product.findUnique({ where: { id: productId } });
+      
       return await prisma.wishlist.upsert({
         where: {
           userId_productId: {
@@ -24,10 +26,41 @@ export const wishlistService = {
         create: {
           userId,
           productId,
+          originalPrice: product?.price || 0,
         },
       });
     } catch (error) {
       console.error('Error adding to wishlist:', error);
+      throw error;
+    }
+  },
+
+  async updatePriceAlert(userId: string, productId: string, notifyOnPriceDrop: boolean, targetPrice?: number) {
+    if (!this.isServer) {
+      const res = await fetch('/api/wishlist', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, notifyOnPriceDrop, targetPrice }),
+      });
+      return res.json();
+    }
+
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      return await prisma.wishlist.update({
+        where: {
+          userId_productId: {
+            userId,
+            productId,
+          },
+        },
+        data: {
+          notifyOnPriceDrop,
+          targetPrice,
+        },
+      });
+    } catch (error) {
+      console.error('Error updating price alert:', error);
       throw error;
     }
   },

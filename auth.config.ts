@@ -32,6 +32,7 @@ export const authConfig = {
       if (user) {
         token.role = user.role;
         token.id = user.id;
+        token.isVerified = user.isVerified;
         token.phone = (user as any).phone;
         token.location = (user as any).location;
       }
@@ -41,6 +42,7 @@ export const authConfig = {
       if (token && session.user) {
         session.user.role = token.role as any;
         session.user.id = token.id as string;
+        session.user.isVerified = token.isVerified as boolean;
         (session.user as any).phone = token.phone;
         (session.user as any).location = token.location;
       }

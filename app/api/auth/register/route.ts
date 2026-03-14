@@ -2,14 +2,30 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { Role } from '@prisma/client';
+import { registerRateLimit } from '@/lib/rate-limit';
+import { extractClientIP } from '@/lib/ip-utils';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   console.log('🚀 [REGISTER API] Registration request received');
-  
+
+  // Extract client IP for rate limiting
+  const clientIP = extractClientIP(request.headers);
+
+  // Apply rate limiting (3 registrations per hour per IP)
+  const rateLimitResult = await registerRateLimit(clientIP);
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { message: 'Too many registration attempts. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { email, password, firstName, lastName, phone, location, role } = body;
-    
+
     console.log('📝 [REGISTER API] Registration data:', {
       email,
       firstName,
@@ -60,15 +76,15 @@ export async function POST(request: Request) {
       email: user.email,
     });
 
-    return NextResponse.json({ 
-      message: 'User registered successfully', 
-      user: { id: user.id, email: user.email, name: user.name } 
+    return NextResponse.json({
+      message: 'User registered successfully',
+      user: { id: user.id, email: user.email, name: user.name }
     });
   } catch (err: any) {
     console.error('💥 [REGISTER API] Unexpected error:', err);
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: 'An unexpected error occurred during registration',
-      error: err.message 
+      error: err.message
     }, { status: 500 });
   }
 }

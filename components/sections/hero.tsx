@@ -13,21 +13,17 @@ interface HeroProps {
 }
 
 export function Hero({ onGetStarted }: HeroProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end start"],
-    layoutEffect: false
-  });
-
-  const y = useTransform(scrollYProgress, [0, 1], [0, 400]);
-  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
+  const { scrollY } = useScroll();
+  
+  // Adjusted transforms for global scroll position
+  const y = useTransform(scrollY, [0, 1000], [0, 400]);
+  const opacity = useTransform(scrollY, [0, 500], [1, 0]);
+  const scale = useTransform(scrollY, [0, 1000], [1, 1.1]);
 
   return (
-    <section ref={containerRef} className="relative min-h-[115vh] flex items-center overflow-hidden bg-black selection:bg-accent selection:text-black">
+    <section className="relative min-h-[115vh] flex items-center overflow-hidden bg-black selection:bg-accent selection:text-black">
       {/* 10000x Better Cinematic Background */}
       <motion.div style={{ y, opacity, scale }} className="absolute inset-0 z-0">
         <Image

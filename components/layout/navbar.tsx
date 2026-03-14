@@ -28,6 +28,7 @@ import Link from 'next/link';
 import { useAuth } from '@/components/auth/auth-provider';
 import { signOut } from 'next-auth/react';
 import { CartSidebar } from './cart-sidebar';
+import { VerifiedBadge } from '@/components/ui/verified-badge';
 
 interface NavbarProps {
   onAuthClick: (type: 'login' | 'register') => void;
@@ -156,6 +157,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
                   <span className="hidden md:block text-[9px] font-black tracking-[0.1em] uppercase text-white/60 group-hover:text-white px-2">
                     {user.name?.split(' ')[0]}
                   </span>
+                  {user.isVerified && <VerifiedBadge size="sm" className="mr-2" />}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64 glass-morphism rounded-3xl p-3 mt-6 animate-in fade-in slide-in-from-top-4 duration-500">

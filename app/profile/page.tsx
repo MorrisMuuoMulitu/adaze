@@ -22,16 +22,29 @@ import {
   Save,
   CreditCard,
   ShoppingBag,
-  Heart
+  Heart,
+  Star,
+  MessageSquare
 } from 'lucide-react';
 import { LogoutButton } from '@/components/LogoutButton';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/layout/navbar';
+import { ProfileSkeleton } from '@/components/skeletons';
+
+interface Stats {
+  ordersCount: number;
+  totalSpent: number;
+  wishlistCount: number;
+  reviewsGiven: number;
+  reviewsReceived: number;
+}
 
 export default function ProfilePage() {
   const { user, profile: authProfile, loading: authLoading } = useAuth();
   const [isEditing, setIsIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -50,6 +63,26 @@ export default function ProfilePage() {
       });
     }
   }, [authProfile]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('/api/account/stats');
+        if (res.ok) {
+          const data = await res.ok ? await res.json() : null;
+          setStats(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    if (user) {
+      fetchStats();
+    }
+  }, [user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -79,8 +112,15 @@ export default function ProfilePage() {
     }
   };
 
-  if (authLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading profile...</div>;
+  if (authLoading || (user && loadingStats && !stats)) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Navbar onAuthClick={() => {}} />
+        <main className="container mx-auto px-6 py-24 max-w-5xl">
+          <ProfileSkeleton />
+        </main>
+      </div>
+    );
   }
 
   if (!user) {
@@ -116,14 +156,64 @@ export default function ProfilePage() {
               <Badge className="bg-accent text-white rounded-none text-[10px] font-black tracking-widest uppercase w-fit mx-auto md:mx-0">
                 {authProfile?.role || 'BUYER'}
               </Badge>
+              {authProfile?.is_verified && (
+                <Badge variant="outline" className="border-accent text-accent rounded-none text-[8px] font-black tracking-widest uppercase w-fit mx-auto md:mx-0">
+                  Verified Trader
+                </Badge>
+              )}
             </div>
-            <p className="text-muted-foreground font-medium tracking-tight">Member since {new Date().getFullYear()}</p>
+            <p className="text-muted-foreground font-medium tracking-tight">Member since {new Date(authProfile?.created_at || Date.now()).getFullYear()}</p>
           </div>
           
           <div className="flex items-center gap-3">
             <LogoutButton variant="outline" className="rounded-none border-border h-12 px-6 text-[10px] font-black tracking-widest uppercase" />
           </div>
         </motion.div>
+
+        {/* Real Stats Section */}
+        {stats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="rounded-none border-border/50 bg-muted/5 shadow-none group hover:border-accent transition-colors">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <ShoppingBag className="h-4 w-4 text-accent" />
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-50">Total Orders</p>
+                </div>
+                <p className="text-3xl font-black tracking-tighter">{stats.ordersCount}</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="rounded-none border-border/50 bg-muted/5 shadow-none group hover:border-accent transition-colors">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <CreditCard className="h-4 w-4 text-accent" />
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-50">Total Spent</p>
+                </div>
+                <p className="text-3xl font-black tracking-tighter">KSh {stats.totalSpent.toLocaleString()}</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="rounded-none border-border/50 bg-muted/5 shadow-none group hover:border-accent transition-colors">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <Heart className="h-4 w-4 text-accent" />
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-50">Wishlist Items</p>
+                </div>
+                <p className="text-3xl font-black tracking-tighter">{stats.wishlistCount}</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="rounded-none border-border/50 bg-muted/5 shadow-none group hover:border-accent transition-colors">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <Star className="h-4 w-4 text-accent" />
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-50">Reviews Given</p>
+                </div>
+                <p className="text-3xl font-black tracking-tighter">{stats.reviewsGiven}</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         <Tabs defaultValue="identity" className="w-full">
           <TabsList className="bg-muted/30 p-1 rounded-none border border-border/50 w-full md:w-fit grid grid-cols-2 md:flex h-auto">

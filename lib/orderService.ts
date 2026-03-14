@@ -149,6 +149,12 @@ class OrderService {
       const { OrderStatus } = await import('@prisma/client');
       const { cartService } = await import('@/lib/cartService');
       const { notificationService } = await import('@/lib/notificationService');
+      const { notifyOrderConfirmation } = await import('@/lib/notifications');
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true }
+      });
 
       const cartItems = await cartService.getCartItems(userId);
       
@@ -175,6 +181,15 @@ class OrderService {
             })),
           },
         },
+        include: {
+          items: {
+            include: {
+              product: {
+                select: { name: true }
+              }
+            }
+          }
+        }
       });
 
       await cartService.clearCart(userId);
@@ -185,6 +200,21 @@ class OrderService {
         order.title,
         'pending'
       );
+
+      // Send confirmation email
+      if (user?.email) {
+        try {
+          await notifyOrderConfirmation(
+            user.email,
+            order.id,
+            order.id.split('-')[0].toUpperCase(), // Short order number
+            Number(order.amount),
+            order.items
+          );
+        } catch (emailError) {
+          console.error('Failed to send order confirmation email:', emailError);
+        }
+      }
 
       return this.mapPrismaToOrder(order);
     } catch (error) {

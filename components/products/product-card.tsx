@@ -4,6 +4,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowRight, Heart, Eye, ShoppingCart } from 'lucide-react';
+import { VerifiedBadge } from '@/components/ui/verified-badge';
+import { TrendingBadge } from '@/components/social-proof/trending-badge';
 
 export interface ProductCardProps {
     product: {
@@ -16,6 +18,7 @@ export interface ProductCardProps {
         rating: number;
         location?: string;
         condition?: string;
+        isVerifiedTrader?: boolean;
     };
     index?: number;
     isWishlisted?: boolean;
@@ -41,6 +44,8 @@ export function ProductCard({
             transition={{ delay: index * 0.05, duration: 1, ease: [0.16, 1, 0.3, 1] }}
             className="group block relative perspective-1000"
         >
+            <TrendingBadge productId={product.id} />
+            
             <Link href={`/products/${product.id}`} className="block relative z-10">
                 {/* Image Vessel */}
                 <div className="relative aspect-[3/4] overflow-hidden bg-black card-luxury group/image">
@@ -60,6 +65,7 @@ export function ProductCard({
                         <div className="p-2 glass-morphism rounded-full">
                             <span className="text-[8px] font-black tracking-widest uppercase text-accent">0{index + 1}</span>
                         </div>
+                        {product.isVerifiedTrader && <VerifiedBadge size="sm" className="glass-morphism border-white/10" />}
                     </div>
 
                     {/* Interactive Controls Overlay */}

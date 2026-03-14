@@ -236,6 +236,111 @@ Make sure you saved your backup codes and have access to your authenticator app.
   return sendEmailNotification({ to: email, subject, html, text });
 }
 
+// Send order confirmation notification
+export async function notifyOrderConfirmation(
+  email: string,
+  orderId: string,
+  orderNumber: string,
+  totalAmount: number,
+  items: any[]
+) {
+  const subject = `✅ Order Confirmed - ${orderNumber}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #10b981;">Order Confirmed!</h2>
+      <p>Hi there,</p>
+      <p>Thank you for shopping with ADAZE. Your order has been successfully placed and is being processed.</p>
+      
+      <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <p style="margin: 0 0 10px 0; font-weight: bold; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px;">
+          Order Details
+        </p>
+        <p style="margin: 5px 0;"><strong>Order Number:</strong> ${orderNumber}</p>
+        <p style="margin: 5px 0;"><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+        
+        <div style="margin-top: 15px;">
+          ${items.map(item => `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;">
+              <span>${item.product.name} x ${item.quantity}</span>
+              <span>KSh ${Number(item.priceAtTime * item.quantity).toLocaleString()}</span>
+            </div>
+          `).join('')}
+        </div>
+        
+        <p style="margin: 15px 0 0 0; padding-top: 10px; border-top: 1px solid #e5e7eb; font-weight: bold; font-size: 18px; text-align: right;">
+          Total: KSh ${totalAmount.toLocaleString()}
+        </p>
+      </div>
+      
+      <p>You can track your order status in your dashboard.</p>
+      <p style="margin-top: 30px;">
+        <a href="https://adazeconnect.com/orders/${orderId}" style="background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+          Track My Order
+        </a>
+      </p>
+      <p style="color: #6b7280; font-size: 12px; margin-top: 30px;">
+        Thank you for choosing ADAZE - Africa's Premier Mitumba Marketplace.
+      </p>
+    </div>
+  `;
+
+  const text = `
+Order Confirmed!
+
+Order Number: ${orderNumber}
+Total Amount: KSh ${totalAmount.toLocaleString()}
+
+View your order: https://adazeconnect.com/orders/${orderId}
+  `;
+
+  return sendEmailNotification({ to: email, subject, html, text });
+}
+
+// Send password reset notification
+export async function notifyPasswordReset(
+  email: string,
+  resetToken: string,
+  expiresInMinutes: number = 60
+) {
+  const resetUrl = `https://adazeconnect.com/reset-password?token=${resetToken}`;
+  const subject = '🔑 Reset your Adaze account password';
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #8b5cf6;">Password Reset Request</h2>
+      <p>Hi there,</p>
+      <p>We received a request to reset the password for your Adaze account.</p>
+      <p>Click the button below to set a new password. This link will expire in ${expiresInMinutes} minutes.</p>
+      <div style="margin: 30px 0; text-align: center;">
+        <a href="${resetUrl}" style="background: #8b5cf6; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+          Reset Password
+        </a>
+      </div>
+      <p>If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.</p>
+      <p>For security, never share this link with anyone.</p>
+      <p style="margin-top: 30px; color: #6b7280; font-size: 12px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+        If you're having trouble clicking the button, copy and paste the link below into your web browser:<br>
+        <span style="word-break: break-all; color: #3b82f6;">${resetUrl}</span>
+      </p>
+      <p style="color: #6b7280; font-size: 12px; margin-top: 20px;">
+        This is an automated security notification from Adaze Marketplace.
+      </p>
+    </div>
+  `;
+
+  const text = `
+Reset your Adaze account password
+
+We received a request to reset the password for your Adaze account.
+Follow the link below to set a new password. This link will expire in ${expiresInMinutes} minutes.
+
+Reset Password: ${resetUrl}
+
+If you didn't request a password reset, you can safely ignore this email.
+  `;
+
+  return sendEmailNotification({ to: email, subject, html, text });
+}
+
 // Log notification to database (for tracking)
 export async function logNotification(
   userId: string,

@@ -17,6 +17,7 @@ model User {
   role                 Role                 @default(BUYER)
   phone                String?
   location             String?
+  isVerified           Boolean              @default(false)
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
   isSuspended          Boolean              @default(false)
@@ -41,11 +42,30 @@ model User {
   products             Product[]            @relation("TraderProducts")
   reviewsReceived      Review[]             @relation("Reviewed")
   reviewsGiven         Review[]             @relation("Reviewer")
+  helpfulMarks         ReviewHelpful[]
+  passwordResetTokens  PasswordResetToken[]
+  conversationsAsBuyer Conversation[]       @relation("BuyerConversations")
+  conversationsAsTrader Conversation[]      @relation("TraderConversations")
+  sentMessages         Message[]
   sessions             Session[]
   suspiciousActivities SuspiciousActivity[]
   wishlist             Wishlist[]
 
   @@map("users")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 model Account {
@@ -125,6 +145,7 @@ model Product {
   imageUrl      String?
   stockQuantity Int           @default(0)
   rating        Decimal       @default(0.0) @db.Decimal(2, 1)
+  viewCount     Int           @default(0)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   isFeatured    Boolean       @default(false)
@@ -134,6 +155,8 @@ model Product {
   trader        User          @relation("TraderProducts", fields: [traderId], references: [id])
   reviews       Review[]
   wishlist      Wishlist[]
+  views         ProductView[]
+  conversations Conversation[]
 
   @@index([name])
   @@index([category])
@@ -156,15 +179,85 @@ model CartItem {
 }
 
 model Wishlist {
-  id        String   @id @default(uuid())
-  userId    String
-  productId String
-  createdAt DateTime @default(now())
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String    @id @default(uuid())
+  userId            String
+  productId         String
+  notifyOnPriceDrop Boolean   @default(false)
+  originalPrice     Decimal?  @db.Decimal(10, 2)
+  targetPrice       Decimal?  @db.Decimal(10, 2)
+  lastNotifiedAt    DateTime?
+  createdAt         DateTime  @default(now())
+  product           Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
+  @@index([notifyOnPriceDrop])
   @@map("wishlist")
+}
+
+model ReviewHelpful {
+  id        String   @id @default(uuid())
+  reviewId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@index([reviewId])
+  @@map("review_helpful")
+}
+
+model ProductView {
+  id        String   @id @default(uuid())
+  productId String
+  userId    String?
+  sessionId String?
+  viewedAt  DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([viewedAt])
+  @@map("product_views")
+}
+
+model Conversation {
+  id        String    @id @default(uuid())
+  buyerId   String
+  traderId  String
+  orderId   String?
+  productId String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  buyer    User      @relation("BuyerConversations", fields: [buyerId], references: [id])
+  trader   User      @relation("TraderConversations", fields: [traderId], references: [id])
+  order    Order?    @relation(fields: [orderId], references: [id])
+  product  Product?  @relation(fields: [productId], references: [id])
+  messages Message[]
+
+  @@index([buyerId])
+  @@index([traderId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String
+  attachments    String[]
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@map("messages")
 }
 
 model Order {
@@ -186,6 +279,7 @@ model Order {
   trader            User?              @relation("TraderOrders", fields: [traderId], references: [id])
   transporter       User?              @relation("TransporterOrders", fields: [transporterId], references: [id])
   reviews           Review[]
+  conversations     Conversation[]
 
   @@index([buyerId])
   @@index([traderId])
@@ -226,7 +320,11 @@ model Review {
   product            Product?  @relation(fields: [productId], references: [id])
   reviewed           User      @relation("Reviewed", fields: [reviewedId], references: [id])
   reviewer           User      @relation("Reviewer", fields: [reviewerId], references: [id])
+  helpfulMarks       ReviewHelpful[]
 
+  @@index([productId])
+  @@index([reviewedId])
+  @@index([createdAt])
   @@map("reviews")
 }
 
@@ -318,6 +416,9 @@ enum NotificationType {
   SUCCESS
   WARNING
   ERROR
+  PRICE_DROP
+  NEW_MESSAGE
+  ORDER_UPDATE
 }
 
 enum MpesaStatus {

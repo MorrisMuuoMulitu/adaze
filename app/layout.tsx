@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { LanguageProvider } from '@/components/language-provider';
 import { RealtimeNotifications } from '@/components/notifications/realtime-notifications';
+import { InstallPrompt } from '@/components/pwa/install-prompt';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -178,6 +179,7 @@ export default function RootLayout({
                 }}
               />
               <RealtimeNotifications />
+              <InstallPrompt />
             </LanguageProvider>
           </AuthProvider>
         </ThemeProvider>

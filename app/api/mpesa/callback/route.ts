@@ -1,6 +1,7 @@
 import { processMpesaCallback } from '@/lib/mpesa/callback';
 import { isSafaricomIp, isDuplicateRequest } from '@/lib/mpesa/middleware';
 import { NextResponse } from 'next/server';
+import { mpesaCallbackRateLimit } from '@/lib/rate-limit';
 
 /**
  * POST /api/mpesa/callback
@@ -20,7 +21,15 @@ export async function POST(request: Request) {
     const body = await request.json();
     const checkoutRequestId = body.Body?.stkCallback?.CheckoutRequestID;
 
-    // 2. Idempotency Check
+    // 2. Rate Limiting (Prevent abuse)
+    const rateLimitIdentifier = checkoutRequestId || ip;
+    const rateLimitResult = await mpesaCallbackRateLimit(rateLimitIdentifier);
+    if (!rateLimitResult.success) {
+      console.warn(`[API/Mpesa/Callback] Rate limit exceeded for ${rateLimitIdentifier}`);
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
+    // 3. Idempotency Check
     if (checkoutRequestId && isDuplicateRequest(checkoutRequestId)) {
       console.log(`[API/Mpesa/Callback] Duplicate request received for ${checkoutRequestId}. Skipping.`);
       return NextResponse.json({ ResultCode: 0, ResultDesc: "Duplicate accepted" });
@@ -29,14 +38,14 @@ export async function POST(request: Request) {
     // Log the received callback
     console.log(`[API/Mpesa/Callback] Received callback for ${checkoutRequestId} at:`, new Date().toISOString());
     
-    // 3. Asynchronously process the callback
+    // 4. Asynchronously process the callback
     // We don't await this because Safaricom has a strict timeout (usually < 5s)
     // and expects a 200 OK response immediately.
     processMpesaCallback(body).catch(err => {
       console.error('[API/Mpesa/Callback] Async processing error:', err);
     });
 
-    // 2. Respond to Safaricom immediately
+    // 5. Respond to Safaricom immediately
     return NextResponse.json({
       ResultCode: 0,
       ResultDesc: "Accepted successfully"

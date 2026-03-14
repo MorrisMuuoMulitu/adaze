@@ -32,6 +32,7 @@ const AuthStateManager = ({ children }: { children: React.ReactNode }) => {
         name: session.user.name,
         role: session.user.role,
         image: session.user.image,
+        isVerified: session.user.isVerified,
       };
       setUser(userData);
       
@@ -42,6 +43,7 @@ const AuthStateManager = ({ children }: { children: React.ReactNode }) => {
         avatar_url: session.user.image,
         phone: (session.user as any).phone,
         location: (session.user as any).location,
+        is_verified: session.user.isVerified,
       });
     } else {
       setUser(null);
